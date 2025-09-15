@@ -4,7 +4,7 @@
 
 <div align="center">
 
-# Project: Smart Healthcare and AI Triage System
+# Project: Smart Healthcare Appointment and AI Triage System
 ### Course: IT314 SOFTWARE ENGINEERING
 ### University: Dhirubhai Ambani University
 ### Professor: Prof. Saurabh Tiwari
@@ -36,7 +36,7 @@
 </div>
 
 ---
-# IntelliConsult: Smart Medical Consultation Platform
+# IntelliConsult: Smart Healthcare Appointment and AI Triage System
 
 ---
 
