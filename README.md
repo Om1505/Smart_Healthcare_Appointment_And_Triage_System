@@ -36,3 +36,51 @@
 </div>
 
 ---
+# IntelliConsult: Smart Medical Consultation Platform
+
+---
+
+## Introduction
+
+IntelliConsult is a smart digital platform being developed to streamline and enhance the medical consultation experience for patients. At its core, the project aims to bridge the gap between patients and healthcare providers by using technology to make their interactions simpler, faster, and more effective.
+
+IntelliConsult addresses the pain points by creating a unified, user-friendly platform. It acts as a personal health assistant that aims to manage the entire consultation lifecycle.
+
+---
+
+## Key Proposed Features
+
+-   **Intelligent Scheduling:** An easy-to-use system for finding doctors and booking appointments based on availability, specialty, and location.
+-   **Pre-Consultation Prep:** An optional tool for patients to list their symptoms and medical history beforehand, allowing the doctor to be better prepared and making the consultation more efficient.
+-   **Integrated Telemedicine:** Secure and high-quality video consultation features to allow patients to connect with doctors remotely, saving time and travel costs.
+-   **Digital Health Dashboard:** A centralized place for patients to access their prescriptions, lab reports, consultation notes, and appointment history.
+
+---
+
+## Requirements Gathering & Stakeholder Analysis
+
+To ensure the platform meets the needs of its users, a thorough requirements elicitation process was conducted.
+
+### Elicitation Techniques
+
+The following techniques were used to gather requirements from various stakeholders:
+
+-   Google Form Surveys
+-   Interviews
+-   Brainstorming
+-   Task Observation
+-   Stakeholder Analysis
+-   Prototyping
+-   Joint Application Design
+-   Analysis of Existing System or Documentation
+
+### Stakeholders
+
+The primary stakeholders and the specific techniques used to gather their requirements are detailed below:
+
+| Stakeholder                                                      | Elicitation Techniques used                                                        |
+| :--------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| **Patient** | Google Form Surveys, Brainstorming, Task Observation, Analysis of Existing System or Observation |
+| **Doctor** | Interviews, Brainstorming, Task Observation, Analysis of Existing System or Observation |
+| **Admin** (Manages the system and verifies doctor during sign-up) | Task Observation, Prototyping, Analysis of Existing System or Observation          |
+| **Development Team** | Prototyping, Joint Application Design, Brainstorming                               |
