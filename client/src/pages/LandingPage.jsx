@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video  } from "lucide-react";
 
 const ManualButton = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
   const baseClasses =
@@ -143,6 +143,77 @@ export default function LandingPage() {
         </div>
       </section>
 
+          {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-16 animate-fadeInUp">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Choose IntelliConsult?
+            </h2>
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+              Our platform revolutionizes healthcare delivery through intelligent automation and seamless user
+              experiences.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.1s' }}> 
+              <CardHeader>
+                <Brain className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">AI-Powered Triage</CardTitle>
+                <CardDescription className="text-gray-700">
+                  Intelligent symptom assessment and priority scoring to ensure urgent cases get immediate attention.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.2s' }}> 
+              <CardHeader>
+                <Video className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">Secure Video Consultations</CardTitle>
+                <CardDescription className="text-gray-700">
+                  HIPAA-compliant video calls with real-time transcription and automated clinical note generation.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.3s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+              <CardHeader>
+                <Clock className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">Smart Scheduling</CardTitle>
+                <CardDescription className="text-gray-700">
+                  Intelligent appointment management that optimizes doctor availability and patient preferences.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.4s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+              <CardHeader>
+                <Shield className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">Privacy & Security</CardTitle>
+                <CardDescription className="text-gray-700">
+                  End-to-end encryption and GDPR compliance ensure your health data remains completely secure.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.5s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+              <CardHeader>
+                <Users className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">For Patients & Doctors</CardTitle>
+                <CardDescription className="text-gray-700">
+                  Dual-sided platform designed to enhance experiences for both healthcare seekers and providers.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.6s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+              <CardHeader>
+                <Stethoscope className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
+                <CardTitle className="font-bold">Digital Prescriptions</CardTitle>
+                <CardDescription className="text-gray-700">
+                  Seamless e-prescription system with direct pharmacy integration and medication tracking.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
   </div>
   );
 }
