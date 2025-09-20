@@ -293,6 +293,50 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      <footer className="border-t border-gray-200 py-12 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <img src="Logo.svg" className="h-15 w-10" style={{ color: primaryColor }} />
+                <span className="text-lg font-bold">IntelliConsult</span>
+              </div>
+              <p className="text-gray-700">
+                Making healthcare proactive, efficient, and accessible through intelligent technology.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Platform</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li><Link to="/signup" className="hover:text-gray-900 transition-colors">For Patients</Link></li>
+                <li><Link to="/signup" className="hover:text-gray-900 transition-colors">For Doctors</Link></li>
+                <li><a href="#features" className="hover:text-gray-900 transition-colors">Features</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li><a href="#about" className="hover:text-gray-900 transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-4">Support</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li className="hover:text-gray-900 transition-colors" >Help Center</li>
+                <li className="hover:text-gray-900 transition-colors">Contact Us</li>
+                <li><Link to="/login" className="hover:text-gray-900 transition-colors">Login</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
+            <p>&copy; {new Date().getFullYear()} IntelliConsult. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
   </div>
+  
+                    
   );
 }
