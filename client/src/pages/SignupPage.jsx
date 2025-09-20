@@ -84,7 +84,7 @@ export default function SignupPage() {
                             placeholder="Select your role"
                             options={userTypeOptions}
                             value={formData.userType}
-                            onValueChange={handleSelectChange}
+                            onChange={handleSelectChange}
                           />
               </div>
 
