@@ -277,7 +277,22 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+      <section className="py-20 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: primaryColor }}>
+        <div className="container mx-auto text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fadeInUp">Ready to Experience Smart Healthcare?</h2>
+          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto animate-fadeInUp" style={{ animationDelay: '0.2s' }}>
+            Join network of patients and doctors who are already benefiting from our intelligent healthcare platform.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <Link to="/signup">
+              <ManualButton size="lg" variant="secondary" className="w-full sm:w-auto">
+                Get Started Today
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </ManualButton>
+            </Link>
+          </div>
+        </div>
+      </section>
   </div>
   );
 }
