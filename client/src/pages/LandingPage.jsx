@@ -214,6 +214,70 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+          {/* About Section */}
+      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-emerald-50"> 
+        <div className="container mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="animate-slideInLeft"> 
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                About Our Platform: A Commitment to Smarter, Safer Healthcare
+              </h2>
+              <p className="text-lg text-gray-700 mb-6">
+            We are transforming healthcare by building a platform that is intelligent, secure, and designed for people. Our mission is to eliminate the barriers between patients and doctors by creating a seamless digital experience built on a foundation of trust and thoughtful innovation.
+              </p>
+              <p className="text-lg text-gray-700 mb-8">
+            This platform wasn't created on assumptions; it was co-designed with the very users it serves. We conducted in-depth interviews with doctors to understand their needs, shaping our AI triage logic and pre-visit forms with their expert insights. We observed real-world clinical processes to ensure our e-prescriptions are safe and intuitive. 
+
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link to="/signup">
+                  <ManualButton size="lg">Join Our Platform</ManualButton>
+                </Link>
+                <a href="#features">
+                  <ManualButton variant="outline" size="lg">
+                    View Features
+                  </ManualButton>
+                </a>
+              </div>
+            </div>
+            <div className="relative animate-slideInRight" style={{ animationDelay: '0.2s' }}> 
+              <Card className="p-8 border-gray-200 bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"> 
+                <CardContent className="space-y-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"> 
+                      <Users className="h-6 w-6" style={{ color: primaryColor }} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Hospital Partners</h3>
+                      <p className="text-gray-700">Trusted by leading healthcare institutions</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"> 
+                      <Shield className="h-6 w-6" style={{ color: primaryColor }} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">DPDP Act 2023 Compliant</h3>
+                      <p className="text-gray-700">Your data security is our priority</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"> 
+                      <Brain className="h-6 w-6" style={{ color: primaryColor }} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">AI-Powered</h3>
+                      <p className="text-gray-700">Intelligent Triage for prioritized care</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
   </div>
   );
 }
