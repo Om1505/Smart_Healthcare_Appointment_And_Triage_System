@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { Stethoscope, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
-// import axios from 'axios'; // No longer needed for frontend-only display
+import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select } from "@/components/ui/select"; // Added necessary Select components
 import { Textarea } from "@/components/ui/textarea";
 
 export default function SignupPage() {
@@ -33,20 +33,32 @@ export default function SignupPage() {
 
   const primaryColor = '#0F5257';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
+    
+    if (!formData.userType) {
+        alert("Please select a user role.");
+        return;
+    }
 
-    alert("Redirecting to login page");
-    window.location.href = '/login';
+    try {
+      const response = await axios.post('http://localhost:5001/api/auth/signup', formData);
+      alert(response.data.message);
+      // Redirect to login after successful signup
+      window.location.href = '/login';
+    } catch (error) {
+      // Use a more specific error message if available
+      const message = error.response?.data?.message || "An error occurred during signup.";
+      alert(message);
+    }
   };
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
+    setFormData({...formData,
       [e.target.name]: e.target.value,
     });
   };
@@ -80,6 +92,7 @@ export default function SignupPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="userType" className="text-gray-700">I am a</Label>
+
                 <Select
                             placeholder="Select your role"
                             options={userTypeOptions}

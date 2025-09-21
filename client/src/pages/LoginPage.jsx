@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Stethoscope, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
+import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,40 +13,47 @@ export default function LoginPage() {
   const [userType, setUserType] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
   const primaryColor = '#0F5257';
-  
+
   const userTypeOptions = [
     { value: 'patient', label: 'Patient' },
     { value: 'doctor', label: 'Doctor' },
     { value: 'admin', label: 'Admin' },
   ];
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const loginData = { ...formData, userType };
 
     if (!loginData.userType) {
       alert("Please select a user role to continue.");
       return;
-    }
+    }   
 
+    try {
+      
+      const response = await axios.post('http://localhost:5001/api/auth/login', loginData);
+      localStorage.setItem('token', response.data.token);
 
-    // Redirect based on user type
-    switch (loginData.userType) {
+      
+      switch (loginData.userType) {
         case 'doctor':
           alert("In the next update you will be succesfully redirected to Doctor Dashboard");
           window.location.href = '/';
           break;
-          case 'patient':
+        case 'patient':
           alert("In the next update you will be succesfully redirected to Patinet Dashboard");
           window.location.href = '/';
           break;
-          case 'admin':
-          
+        case 'admin':
           alert("In the next update you will be succesfully redirected to admin Dashboard");
           window.location.href = '/';
           break;
         default:
           window.location.href = '/';
       }
+    } catch (error) {
+      const message = error.response?.data?.message || "An error occurred during login.";
+      alert(message);
+    }
   };
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -65,8 +73,9 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="userType" className="text-sm font-medium text-gray-700">I am a</label>
-          <Select
+                <Label htmlFor="userType" className="text-sm font-medium text-gray-700">I am a</Label>
+
+                <Select
             placeholder="Select your role"
             options={userTypeOptions}
             value={userType}
@@ -98,3 +107,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
