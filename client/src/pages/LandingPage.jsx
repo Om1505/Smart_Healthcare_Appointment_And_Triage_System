@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video  } from "lucide-react";
+import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video, } from "lucide-react";
 
 const ManualButton = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
   const baseClasses =
@@ -249,17 +249,17 @@ export default function LandingPage() {
                       <Users className="h-6 w-6" style={{ color: primaryColor }} />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Hospital Partners</h3>
-                      <p className="text-gray-700">Trusted by leading healthcare institutions</p>
+                      <h3 className="font-semibold">A Thriving Community</h3>
+                      <p className="text-gray-700">Join community of doctors and patients on an interactive platform</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"> 
+                     <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">  
                       <Shield className="h-6 w-6" style={{ color: primaryColor }} />
                     </div>
                     <div>
-                      <h3 className="font-semibold">DPDP Act 2023 Compliant</h3>
-                      <p className="text-gray-700">Your data security is our priority</p>
+                      <h3 className="font-semibold">Dependable Platform</h3>
+                      <p className="text-gray-700">Ensuring consistent availability and uninterrupted service</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -330,9 +330,12 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
-            <p>&copy; {new Date().getFullYear()} IntelliConsult. All rights reserved.</p>
-          </div>
+          {/*
+<div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
+  <p>&copy; {new Date().getFullYear()} IntelliConsult. All rights reserved.</p>
+</div>
+*/} 
+
         </div>
       </footer>
   </div>
