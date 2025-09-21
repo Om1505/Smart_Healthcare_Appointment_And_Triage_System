@@ -48,10 +48,10 @@ export default function SignupPage() {
     try {
       const response = await axios.post('http://localhost:5001/api/auth/signup', formData);
       alert(response.data.message);
-      // Redirect to login after successful signup
+      
       window.location.href = '/login';
     } catch (error) {
-      // Use a more specific error message if available
+     
       const message = error.response?.data?.message || "An error occurred during signup.";
       alert(message);
     }
@@ -71,8 +71,8 @@ export default function SignupPage() {
     <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 text-gray-800">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center space-x-2 mb-8">
-          <Stethoscope className="h-8 w-8" style={{ color: primaryColor }} />
-          <span className="text-2xl font-bold text-gray-900">IntelliConsult</span>
+          <img src="Logo.svg" className="h-30 w-15" style={{ color: primaryColor }} />
+          <span className="text-3xl font-bold text-gray-900">IntelliConsult</span>
         </div>
 
         <Card className="bg-white border-gray-200 shadow-lg">
