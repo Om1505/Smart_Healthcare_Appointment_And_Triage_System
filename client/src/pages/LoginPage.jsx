@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -72,14 +73,17 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="userType" className="text-sm font-medium text-gray-700">I am a</Label>
-
-                <Select
-            placeholder="Select your role"
-            options={userTypeOptions}
-            value={userType}
-            onChange={setUserType}
-          />
+                <Label htmlFor="userType">I am a</Label>
+                <Select value={userType} onValueChange={setUserType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="patient">Patient</SelectItem>
+                    <SelectItem value="doctor">Doctor</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
