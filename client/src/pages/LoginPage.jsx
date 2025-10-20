@@ -24,24 +24,23 @@ export default function LoginPage() {
     const loginData = { ...formData, userType };
 
     if (!loginData.userType) {
-      alert("Please select a user role to continue.");
+      alert("Please select a user role.");
       return;
-    }   
+    }
 
     try {
-      
       const response = await axios.post('http://localhost:5001/api/auth/login', loginData);
       localStorage.setItem('token', response.data.token);
+      alert(response.data.message);
 
-      
       switch (loginData.userType) {
         case 'doctor':
           alert("In the next update you will be succesfully redirected to Doctor Dashboard");
-          window.location.href = '/';
+          window.location.href = '/doctor/dashboard';
           break;
         case 'patient':
           alert("In the next update you will be succesfully redirected to Patinet Dashboard");
-          window.location.href = '/';
+          window.location.href = '/patient/dashboard';
           break;
         case 'admin':
           alert("In the next update you will be succesfully redirected to admin Dashboard");
