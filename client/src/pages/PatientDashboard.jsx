@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, Plus, Search, Stethoscope, LogOut } from "lucide-react";
+import { Calendar, Clock, Plus, Search, Stethoscope, User, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { UserProfileModal } from '@/components/UserProfileModal'; 
+import { UserProfileModal } from '@/components/UserProfileModal';
+import { X } from 'lucide-react';
 
 export default function PatientDashboard() {
   const primaryColor = '#0F5257';
@@ -63,12 +64,12 @@ export default function PatientDashboard() {
 
     const token = localStorage.getItem('token');
     try {
-      // Call the new backend endpoint
+      
       await axios.put(`http://localhost:5001/api/appointments/${appointmentId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Update the state locally to reflect the change immediately
+      
       setAppointments(prevAppointments =>
         prevAppointments.map(apt =>
           apt._id === appointmentId ? { ...apt, status: 'cancelled' } : apt
@@ -80,12 +81,12 @@ export default function PatientDashboard() {
     }
   };
 
-  // Render loading state while data is being fetched
+  
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading your dashboard...</div>;
   }
 
-  // Render error message if fetching fails
+  
   if (error) {
     return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
   }
@@ -164,11 +165,11 @@ export default function PatientDashboard() {
               {upcomingAppointments.length > 0 ? (
                   <div className="space-y-4">
                     {upcomingAppointments.map((apt) => (
-                      // --- THIS IS THE UPDATED CARD LAYOUT ---
+                      
                       <div key={apt._id} className="flex items-start space-x-4 p-4 border rounded-lg bg-emerald-50/50">
                         <Avatar><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
                         
-                        {/* Appointment Details */}
+                        
                         <div className="flex-1">
                           <h3 className="font-semibold">{apt.doctor.fullName}</h3>
                           <p className="text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
@@ -241,7 +242,7 @@ export default function PatientDashboard() {
         isOpen={isProfileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         patient={patient}
-        onProfileUpdate={setPatient} // Pass the setter function to update the state
+        onProfileUpdate={setPatient}
       />
     </div>
     
