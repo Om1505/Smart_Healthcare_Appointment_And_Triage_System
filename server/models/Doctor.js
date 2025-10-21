@@ -1,4 +1,3 @@
-//Doctor.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -17,11 +16,18 @@ const doctorSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    sparse: true,
   },
   bio: { type: String },
+  address: { type: String, required: true },
+  // ADDED: New field for consultation fee
+  consultationFee: {
+    type: Number,
+    required: true,
+    min: [0, 'Consultation fee cannot be negative.'],
+  },
 }, { timestamps: true });
 
-// Hash password before saving
 doctorSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
@@ -29,4 +35,6 @@ doctorSchema.pre('save', async function(next) {
   next();
 });
 
-module.exports = mongoose.model('Doctor', doctorSchema);
+doctorSchema.index({ fullName: 'text', specialty: 'text' });
+
+module.exports = mongoose.model('Doctor', doctorSchema);
