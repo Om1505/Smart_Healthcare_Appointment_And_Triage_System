@@ -18,7 +18,7 @@ const medicalRecordSchema = new mongoose.Schema({
     required: true,
   },
   
-  // Medical information (filled by doctor during/after appointment)
+  // Medical information 
   diagnosis: {
     type: String,
     maxlength: 1000,
