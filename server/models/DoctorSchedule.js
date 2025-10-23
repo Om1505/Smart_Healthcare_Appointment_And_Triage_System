@@ -10,36 +10,35 @@ const doctorScheduleSchema = new mongoose.Schema({
   
   // Weekly schedule
   dayOfWeek: {
-    type: Number, // 0-6 (Sunday-Saturday)
+    type: Number, 
     required: true,
     min: 0,
     max: 6
   },
   
   startTime: {
-    type: String, // "09:00"
+    type: String, 
     required: true
   },
   
   endTime: {
-    type: String, // "17:00"
+    type: String, 
     required: true
   },
   
-  // Break time
   breakStartTime: {
-    type: String, // "12:00"
+    type: String, 
     default: null
   },
   
   breakEndTime: {
-    type: String, // "13:00"
+    type: String, 
     default: null
   },
   
   // Slot configuration
   slotDuration: {
-    type: Number, // in minutes
+    type: Number, 
     default: 30,
     min: 15,
     max: 120
