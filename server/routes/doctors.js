@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Doctor = require('../models/Doctor');
+const DoctorSchedule = require('../models/DoctorSchedule');
+const authMiddleware = require('../middleware/auth');
 
 router.get('/', async (req, res) => {
   try {
@@ -42,4 +44,25 @@ router.get('/:id', async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// Get my schedule
+router.get('/schedule/my-schedule', authMiddleware, async (req, res) => {
+  try {
+    // Check if user is a doctor
+    if (req.user.userType !== 'doctor') {
+      return res.status(403).json({ message: 'Access denied. Not a doctor.' });
+    }
+
+    const schedules = await DoctorSchedule.find({ 
+      doctor: req.user.userId,
+      isActive: true 
+    }).sort({ dayOfWeek: 1 });
+
+    res.json(schedules);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 module.exports = router;
