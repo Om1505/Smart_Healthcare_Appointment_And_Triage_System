@@ -1,7 +1,9 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video, } from "lucide-react";
+import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video, LogOut } from "lucide-react";
 
 const ManualButton = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
   const baseClasses =
@@ -30,6 +32,56 @@ const ManualButton = ({ children, variant = 'default', size = 'default', classNa
 
 export default function LandingPage() {
   const primaryColor = '#0F5257';
+  
+  // State to track user authentication and type
+  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(null); // 'doctor' or 'patient'
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // Decode token to get userType without API call
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const decoded = JSON.parse(jsonPayload);
+          
+          // Verify token is still valid by making API call
+          const response = await axios.get('http://localhost:5001/api/users/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          setUser(response.data);
+          setIsLoggedIn(true);
+          setUserType(decoded.userType || 'patient');
+        } catch (err) {
+          // Token is invalid, remove it
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+        }
+      }
+    };
+    checkAuthStatus();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setUser(null);
+    setUserType(null);
+  };
+
+  const getDashboardRoute = () => {
+    if (userType === 'doctor') {
+      return '/doctor/dashboard';
+    }
+    return '/patient/dashboard';
+  };
 
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
@@ -101,12 +153,31 @@ export default function LandingPage() {
             <a href="#about" className="text-gray-600 hover:text-gray-900 transition-colors">
               About Us
             </a>
-            <Link to="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
-              Login
-            </Link>
-            <Link to="/signup">
-              <ManualButton className="animate-pulse">Get Started</ManualButton>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <span className="text-gray-600">Welcome, {user?.fullName?.split(' ')[0] || 'User'}</span>
+                <button 
+                  onClick={handleLogout}
+                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center space-x-1"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Login
+              </Link>
+            )}
+            {isLoggedIn ? (
+              <Link to={getDashboardRoute()}>
+                <ManualButton className="animate-pulse">Go to Dashboard</ManualButton>
+              </Link>
+            ) : (
+              <Link to="/signup">
+                <ManualButton className="animate-pulse">Get Started</ManualButton>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -128,9 +199,9 @@ export default function LandingPage() {
             consultations, and intelligent scheduling.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-bounceIn" style={{ animationDelay: '0.6s' }}> 
-            <Link to="/signup">
+            <Link to={isLoggedIn ? getDashboardRoute() : "/signup"}>
               <ManualButton size="lg" className="w-full sm:w-auto">
-                Start Your Journey
+                {isLoggedIn ? "Go to Dashboard" : "Start Your Journey"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </ManualButton>
             </Link>
@@ -143,7 +214,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-          {/* Features Section */}
+      {/* Features Section */}
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="container mx-auto">
           <div className="text-center mb-16 animate-fadeInUp">
@@ -175,7 +246,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.3s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
               <CardHeader>
                 <Clock className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Smart Scheduling</CardTitle>
@@ -184,7 +255,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.4s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
               <CardHeader>
                 <Shield className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Privacy & Security</CardTitle>
@@ -193,7 +264,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.5s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
               <CardHeader>
                 <Users className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">For Patients & Doctors</CardTitle>
@@ -202,7 +273,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.6s' }}> {/* Changed bg-green-50 to bg-emerald-50 */}
+            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
               <CardHeader>
                 <Stethoscope className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Digital Prescriptions</CardTitle>
@@ -277,6 +348,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
       <section className="py-20 px-4 sm:px-6 lg:px-8" style={{ backgroundColor: primaryColor }}>
         <div className="container mx-auto text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 animate-fadeInUp">Ready to Experience Smart Healthcare?</h2>
@@ -338,8 +410,6 @@ export default function LandingPage() {
 
         </div>
       </footer>
-  </div>
-  
-                    
+    </div>
   );
 }
