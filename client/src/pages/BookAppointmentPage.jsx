@@ -12,8 +12,8 @@ import axios from "axios";
 
 // Mock available slots for now
 const availableSlots = [
-  { date: "2025-10-20", time: "10:00 AM" }, { date: "2025-10-20", time: "02:00 PM" },
-  { date: "2025-10-21", time: "09:00 AM" }, { date: "2025-10-21", time: "11:00 AM" },
+  { date: "2025-11-20", time: "10:00 AM" }, { date: "2025-11-20", time: "02:00 PM" },
+  { date: "2025-11-21", time: "09:00 AM" }, { date: "2025-11-21", time: "11:00 AM" },
 ];
 
 export default function BookAppointmentPage() {
