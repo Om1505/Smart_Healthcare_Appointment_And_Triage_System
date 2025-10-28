@@ -5,6 +5,39 @@ const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Admin = require('../models/Admin');
 
+// Add the new route for getting all users
+router.get('/all', authMiddleware, async (req, res) => {
+  try {
+    console.log('Accessing /all endpoint');
+    console.log('User type:', req.user.userType);
+    
+    // Check if the requesting user is an admin
+    if (req.user.userType !== 'admin') {
+      console.log('Access denied: user is not admin');
+      return res.status(403).json({ message: 'Access denied. Admin only.' });
+    }
+
+    // Fetch users from all collections
+    const patients = await Patient.find().select('-password');
+    const doctors = await Doctor.find().select('-password');
+    const admins = await Admin.find().select('-password');
+
+    console.log('Data fetched successfully');
+    console.log('Patients:', patients.length);
+    console.log('Doctors:', doctors.length);
+    console.log('Admins:', admins.length);
+
+    res.json({
+      patients,
+      doctors,
+      admins
+    });
+  } catch (err) {
+    console.error('Error in /all endpoint:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 const models = {
   patient: Patient,
   doctor: Doctor,

@@ -1,9 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const app = express();
-const PORT =5001;
+const PORT = process.env.PORT || 5001;
+
+// Verify environment variables are loaded
+console.log('MongoDB URI:', process.env.MONGO_URI ? 'Defined' : 'Not defined');
+
+// Configure CORS with specific options
+app.use(cors({
+  origin: 'http://localhost:5173', // Allow your React app's origin
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
+}));
 app.use(cors());
 app.use(express.json());
 mongoose.connect(process.env.MONGO_URI)
