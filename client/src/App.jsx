@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import FindDoctorsPage from './pages/FindDoctorsPage';
 import BookAppointmentPage from './pages/BookAppointmentPage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
@@ -19,6 +20,7 @@ function App() {
 
  <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
  <Route path="/patient/dashboard" element={<PatientDashboard />} />
+ <Route path="/admin/dashboard" element={<AdminDashboard />} />
  <Route path="/patient/doctors" element={<FindDoctorsPage />} />
 <Route path="/patient/book/:doctorId" element={<BookAppointmentPage />} />
 <Route path="/doctor/:id" element={<DoctorProfilePage />} />

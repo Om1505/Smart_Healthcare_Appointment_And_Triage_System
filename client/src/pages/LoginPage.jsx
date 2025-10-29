@@ -45,7 +45,7 @@ export default function LoginPage() {
           break;
         case 'admin':
           alert("In the next update you will be succesfully redirected to admin Dashboard");
-          window.location.href = '/';
+          window.location.href = '/admin/dashboard';
           break;
         default:
           window.location.href = '/';
