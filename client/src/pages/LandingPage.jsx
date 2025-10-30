@@ -80,6 +80,9 @@ export default function LandingPage() {
     if (userType === 'doctor') {
       return '/doctor/dashboard';
     }
+    if (userType === 'admin') {
+      return '/admin/dashboard';
+    }
     return '/patient/dashboard';
   };
 
