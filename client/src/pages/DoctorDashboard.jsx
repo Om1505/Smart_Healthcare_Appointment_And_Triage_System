@@ -197,7 +197,7 @@ export default function DoctorDashboard() {
                             <CardContent className="space-y-3">
                                 <Button variant="outline" className="w-full justify-start"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Button>
                                 <Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button>
-                                <Button variant="outline" className="w-full justify-start"><DollarSign className="h-4 w-4 mr-2" /> View Earnings</Button>
+                                <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><DollarSign className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
                             </CardContent>
                         </Card>
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">

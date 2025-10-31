@@ -7,6 +7,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import FindDoctorsPage from './pages/FindDoctorsPage';
 import BookAppointmentPage from './pages/BookAppointmentPage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
+import DoctorEarningsPage from './pages/EarningPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AppointmentsPage from './pages/Appointment';
 import AuthCallback from './pages/AuthCallback';
@@ -24,6 +25,7 @@ function App() {
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+      <Route path="/doctor/earnings" element={<DoctorEarningsPage />} />
       <Route path="/patient/dashboard" element={<PatientDashboard />} />
       <Route path="/patient/doctors" element={<FindDoctorsPage />} />
       <Route path="/patient/book/:doctorId" element={<BookAppointmentPage />} />
