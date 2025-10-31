@@ -9,8 +9,9 @@ import PatientDashboard from './pages/PatientDashboard';
 import FindDoctorsPage from './pages/FindDoctorsPage';
 import BookAppointmentPage from './pages/BookAppointmentPage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
-import AdminDashboard from './pages/AdminDashboard'; // <-- IMPORT NEW ADMIN PAGE';
-import AppointmentsPage from './pages/Appointment'; // <-- IMPORT NEW APPOINTMENTS PAGE';
+import AdminDashboard from './pages/AdminDashboard'; 
+import AppointmentsPage from './pages/Appointment'; 
+import DoctorProfileAdmin from './pages/DoctorProfileAdmin';
 
 function App() {
   // This component now only contains the Routes.
@@ -21,6 +22,7 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
+      <Route path="/admin/doctor/:id" element={<DoctorProfileAdmin />} />
 
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
       <Route path="/patient/dashboard" element={<PatientDashboard />} />
