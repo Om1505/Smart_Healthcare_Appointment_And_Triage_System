@@ -56,3 +56,6 @@ IntelliConsult addresses the pain points by creating a unified, user-friendly pl
 -   **Digital Health Dashboard:** A centralized place for patients to access their prescriptions, lab reports, consultation notes, and appointment history.
 
 ---
+
+## 🎨 Design File
+[View the Figma Design](https://www.figma.com/design/pz66xFant8X7XStcmmRB6y/Smart_HealthCare_Triage_System?t=Otoaww9YIknDKcmk-1)
