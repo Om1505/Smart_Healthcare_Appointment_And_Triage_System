@@ -1,42 +1,15 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/auth');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 const Admin = require('../models/Admin');
-
-// An object to easily access the correct model based on userType
 const models = {
   patient: Patient,
   doctor: Doctor,
   admin: Admin,
 };
-
-// Add the /all endpoint for admin access
-router.get('/all', authMiddleware, async (req, res) => {
-  try {
-    // Check if the requesting user is an admin
-    if (req.user.userType !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admin only.' });
-    }
-
-    // Fetch all users from each collection
-    const patients = await Patient.find().select('-password');
-    const doctors = await Doctor.find().select('-password');
-    const admins = await Admin.find().select('-password');
-
-    // Send all users data
-    res.json({
-      patients,
-      doctors,
-      admins
-    });
-  } catch (err) {
-    console.error('Error fetching all users:', err);
-    res.status(500).json({ message: 'Server error while fetching users' });
-  }
-});
-
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const { userId, userType } = req.user;
@@ -46,7 +19,6 @@ router.get('/profile', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Invalid user type found in token.' });
     }
 
-    // Find the user by their ID and remove the password from the result
     const user = await Model.findById(userId).select('-password');
 
     if (!user) {
@@ -55,38 +27,81 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
     res.json(user);
   } catch (err) {
-    console.error(err.message);
+    console.error("GET /profile Error:", err.message);
     res.status(500).send('Server Error');
   }
 });
-
-router.put('/profile', authMiddleware, async (req, res) => {
+router.put('/complete-profile', authMiddleware, async (req, res) => {
   try {
-    const { userId, userType } = req.user;
-    const { fullName } = req.body; // Get the fields to update from the request body
+    const { userId, userType: originalUserType } = req.user;
+    const { userType: newUserType, ...profileData } = req.body;
 
-    const Model = models[userType];
-    if (!Model) {
-      return res.status(400).json({ message: 'Invalid user type in token.' });
+    const OriginalModel = models[originalUserType];
+    const NewModel = models[newUserType];
+
+    if (!OriginalModel || !NewModel) {
+      return res.status(400).json({ message: 'Invalid user type specified.' });
     }
-
-    // Find the user by ID and update their details
-    // The { new: true } option ensures the updated document is returned
-    const updatedUser = await Model.findByIdAndUpdate(
-      userId,
-      { fullName }, // Pass an object with the fields to update
-      { new: true }
-    ).select('-password'); // Exclude the password from the response
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+    const originalUser = await OriginalModel.findById(userId);
+    if (!originalUser) {
+      return res.status(404).json({ message: 'Original user account not found.' });
     }
+    if (originalUserType === newUserType) {
+      const updateData = {
+        ...profileData,
+        isProfileComplete: true,
+      };
 
-    res.json(updatedUser);
+      const updatedUser = await OriginalModel.findByIdAndUpdate(
+        userId,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).select('-password');
+
+      return res.json({
+        message: 'Profile completed successfully!',
+        user: updatedUser,
+      });
+    }
+    const newUserProfile = {
+      ...originalUser.toObject(),
+      ...profileData,            
+      _id: originalUser._id,       
+      userType: newUserType,       
+      isProfileComplete: true,
+    };
+    
+    
+    delete newUserProfile.__v;
+
+  
+    const newUser = new NewModel(newUserProfile);
+    await newUser.save();
+
+    await OriginalModel.findByIdAndDelete(userId);
+
+    const newToken = jwt.sign(
+      { userId: newUser._id, userType: newUser.userType },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({
+      message: 'Profile transformed and completed successfully!',
+      user: newUser.toObject(),
+      token: newToken,
+    });
+
   } catch (err) {
-    console.error(err.message);
+    console.error("PUT /complete-profile Error:", err);
+   
+    if (err.name === 'ValidationError') {
+        let messages = Object.values(err.errors).map(val => val.message);
+        return res.status(400).json({ message: messages.join(', ') });
+    }
     res.status(500).send('Server Error');
   }
 });
 
 module.exports = router;
+

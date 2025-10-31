@@ -1,31 +1,22 @@
-const jwt = require('jsonwebtoken');
-
-module.exports = function(req, res, next) {
-  // Get token from the Authorization header (e.g., "Bearer <token>")
-  const token = req.header('Authorization')?.split(' ')[1];
-
-  // Check if no token is found
-  if (!token) {
-    return res.status(401).json({ message: 'No token, authorization denied' });
-  }
-
-  // Verify the token
+const Admin = require('../models/Admin');
+const adminMiddleware = async (req, res, next) => {
   try {
-    // Decode the token using your JWT_SECRET
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Attach the user's info (from the token) to the request object
-    req.user = decoded;
-    
-    // --- KEY ADMIN CHECK ---
-    // Check if the userType is 'admin'
-    if (req.user.userType !== 'admin') {
-      return res.status(403).json({ message: 'Access denied. Admin role required.' });
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required.' });
     }
-    
-    // If user is an admin, proceed to the route
+    if (req.user.userType !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: Access is restricted to administrators.' });
+    }
+    const admin = await Admin.findById(req.user.userId);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin user not found.' });
+    }
     next();
-  } catch (err) {
-    res.status(401).json({ message: 'Token is not valid' });
+
+  } catch (error) {
+    console.error('Admin middleware error:', error);
+    res.status(500).json({ message: 'Server error during admin verification.' });
   }
 };
+
+module.exports = adminMiddleware;
