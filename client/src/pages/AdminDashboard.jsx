@@ -59,12 +59,10 @@ export default function AdminDashboard() {
       try {
         // Use Promise.all to fetch all necessary data concurrently
         const [usersResponse, profileResponse] = await Promise.all([
-          // Request for all doctors and patients for the tables
-          axios.get('http://localhost:5001/api/users/all', {
+          axios.get('http://localhost:5001/api/admin/users', {
             withCredentials: true,
             headers: { 'Authorization': `Bearer ${token}` }
           }),
-          // Request for the logged-in admin's profile data
           axios.get('http://localhost:5001/api/users/profile', {
             withCredentials: true,
             headers: { 'Authorization': `Bearer ${token}` }
@@ -94,15 +92,15 @@ export default function AdminDashboard() {
     }
     setVerifyingId(userId);
     try {
-      const response = await axios.patch(
-        `http://localhost:5001/api/users/verify/${userId}`,
+      const response = await axios.put(
+        `http://localhost:5001/api/admin/verify-doctor/${userId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const updatedUser = response.data.user;
+      const updatedUser = response.data.doctor; // Backend route returns a 'doctor' object
       if (userType === 'doctor') {
         setDoctors(docs =>
-          docs.map(doc => doc._id === userId ? { ...doc, isVerified: updatedUser.isVerified } : doc)
+          docs.map(doc => doc._id === userId ? { ...doc, isProfileComplete: updatedUser.isProfileComplete } : doc)
         );
       }
     } catch (err) {
@@ -236,7 +234,8 @@ export default function AdminDashboard() {
                         <TableCell>{doctor.experience} years</TableCell>
                         <TableCell>{doctor.licenseNumber}</TableCell>
                         <TableCell className="text-center">
-                          {doctor.isVerified ? (
+                          {/* --- FIX 4: Changed check from isVerified to isProfileComplete --- */}
+                          {doctor.isProfileComplete ? (
                             <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle className="w-4 h-4 mr-1" />Verified</Badge>
                           ) : (
                             <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>

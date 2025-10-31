@@ -31,7 +31,8 @@ export default function SignupPage() {
 
   const primaryColor = '#0F5257';
 
-  const handleSubmit = async (e) => {
+  // Renamed to handleLocalSubmit
+  const handleLocalSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
@@ -58,6 +59,10 @@ export default function SignupPage() {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleGoogleSignup = () => {
+    window.location.href = 'http://localhost:5001/api/auth/google';
+  };
+
   return (
     <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 text-gray-800">
       <div className="w-full max-w-md">
@@ -72,8 +77,7 @@ export default function SignupPage() {
             <CardDescription className="text-gray-600">Get started with IntelliConsult today</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Common Fields */}
+            <form onSubmit={handleLocalSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="text-gray-700">Full Name</Label>
                 <Input id="fullName" name="fullName" type="text" placeholder="e.g., Jane Doe" value={formData.fullName} onChange={handleInputChange} required />
@@ -94,7 +98,6 @@ export default function SignupPage() {
                 </Select>
               </div>
 
-              {/* DOCTOR-SPECIFIC FIELDS */}
               {formData.userType === 'doctor' && (
                 <>
                   <div className="space-y-2">
@@ -149,6 +152,20 @@ export default function SignupPage() {
               
               <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg">Create Account</Button>
             </form>
+
+            <div className="mt-4 flex flex-col items-center">
+              <div className="relative w-full flex justify-center text-sm my-2">
+                  <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              </div>
+               <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGoogleSignup} // Call the Google handler
+                >
+                  Sign up with Google
+              </Button>
+            </div>
+
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">Already have an account?{" "}<Link to="/login" className="text-teal-700 hover:text-teal-800 font-medium">Sign in</Link></p>
             </div>
