@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
-const authMiddleware = require('../middleware/auth');
 const Doctor = require('../models/Doctor');
-
+const authMiddleware = require('../middleware/auth');
 router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
   try {
     const { doctorId } = req.params;
@@ -12,20 +11,29 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Doctor not found.' });
     }
 
+    // --- Add guard clauses to prevent crash ---
+    if (!doctor.workingHours) {
+      console.error("Doctor model is missing 'workingHours'. Skipping slot generation.");
+      return res.json([]); 
+    }
+    
     // 1. Get all upcoming appointments for this doctor
     const bookedAppointments = await Appointment.find({
       doctor: doctorId,
       status: 'upcoming',
     });
 
-    // Create a Set of booked "date_time" strings for fast lookup
     const bookedSlots = new Set();
     bookedAppointments.forEach(apt => {
+      // --- FIX: Correct template literal syntax ---
       const dateTimeString = `${new Date(apt.date).toDateString()}_${apt.time}`;
       bookedSlots.add(dateTimeString);
     });
 
-    // 2. Generate potential slots for the next 14 days
+    // 2. Get the doctor's blocked times
+    const blockedTimes = doctor.blockedTimes || []; // Use empty array if undefined
+    
+    // 3. Generate potential slots for the next 14 days
     const availableSlots = [];
     const slotDuration = 60; // 60 minutes per slot (you can change this)
     const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -34,11 +42,12 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
     for (let i = 0; i < 14; i++) { // Generate for the next 14 days
       const date = new Date(today);
       date.setDate(today.getDate() + i);
+      const dateString = date.toDateString();
       
       const dayKey = daysOfWeek[date.getDay()];
       const daySchedule = doctor.workingHours.get(dayKey);
 
-      // 3. Check if the doctor works on this day
+      // 4. Check if the doctor works on this day
       if (daySchedule && daySchedule.enabled) {
         const [startHour, startMin] = daySchedule.start.split(':').map(Number);
         const [endHour, endMin] = daySchedule.end.split(':').map(Number);
@@ -46,27 +55,38 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
         const startTime = new Date(date.setHours(startHour, startMin, 0, 0));
         const endTime = new Date(date.setHours(endHour, endMin, 0, 0));
 
-        // 4. Loop through the workday and create slots
+        // 5. Loop through the workday and create slots
         let currentSlotTime = new Date(startTime);
         while (currentSlotTime < endTime) {
-          // Format time to "10:00 AM"
           const timeString = currentSlotTime.toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
           });
-          const dateString = currentSlotTime.toDateString();
+          // --- FIX: Correct template literal syntax ---
           const dateTimeString = `${dateString}_${timeString}`;
 
-          // 5. Add to list ONLY if it's not in the booked set
-          if (!bookedSlots.has(dateTimeString)) {
+          // 6. Check for Blocks
+          let isBlocked = false;
+          for (const block of blockedTimes) {
+            const blockDate = new Date(block.date).toDateString();
+            if (blockDate === dateString) {
+              const slotTime = currentSlotTime.toTimeString().substring(0, 5); // "HH:MM"
+              if (slotTime >= block.startTime && slotTime < block.endTime) {
+                isBlocked = true;
+                break;
+              }
+            }
+          }
+
+          // 7. Add to list ONLY if not booked AND not blocked
+          if (!bookedSlots.has(dateTimeString) && !isBlocked) {
             availableSlots.push({
               date: currentSlotTime.toISOString().split('T')[0], // "YYYY-MM-DD"
               time: timeString
             });
           }
           
-          // Move to the next slot
           currentSlotTime.setMinutes(currentSlotTime.getMinutes() + slotDuration);
         }
       }
@@ -78,10 +98,15 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   GET api/appointments/my-appointments
+// @desc    Get all appointments for the logged-in patient
+// @access  Private (Patient only)
 router.get('/my-appointments', authMiddleware, async (req, res) => {
+  if (req.user.userType !== 'patient') {
+    return res.status(403).json({ message: 'Access denied. Not a patient.' });
+  }
   try {
     const appointments = await Appointment.find({ patient: req.user.userId })
-      // --- 2. FIX: 'specialty' changed to 'specialization' to match your Doctor model
       .populate('doctor', 'fullName specialization')
       .sort({ date: -1 });
 
@@ -92,103 +117,125 @@ router.get('/my-appointments', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   GET api/appointments/doctor
+// @desc    Get all appointments for the logged-in doctor
+// @access  Private (Doctor only)
 router.get('/doctor', authMiddleware, async (req, res) => {
-    // First, ensure the user is a doctor
-    if (req.user.userType !== 'doctor') {
-        return res.status(403).json({ message: 'Access denied. Not a doctor.' });
-    }
-    try {
-        const appointments = await Appointment.find({ doctor: req.user.userId })
-            .populate('patient', 'fullName') // Get patient's name from the Patient collection
-            .sort({ date: 1 }); // Sort by the soonest date
-        res.json(appointments);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
+  if (req.user.userType !== 'doctor') {
+    return res.status(403).json({ message: 'Access denied. Not a doctor.' });
+  }
+  try {
+    const appointments = await Appointment.find({ doctor: req.user.userId })
+      .populate('patient', 'fullName email') // Get patient details
+      .sort({ date: 1 });
+    res.json(appointments);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
+// @route   POST api/appointments/book
+// @desc    Book a new appointment
+// @access  Private (Patient only)
 router.post('/book', authMiddleware, async (req, res) => {
+  // 1. Destructure ALL fields from the body
   const {
-    doctorId,
-    date,
-    time,
-    patientNameForVisit,
-    reasonForVisit,
-    symptoms,
-    symptomDuration,
-    previousTreatments,
+    doctorId, date, time, patientNameForVisit,
+    // Triage fields
+    emergencyDisclaimerAcknowledged,
+    primaryReason,
+    symptomsList,
+    symptomsOther,
+    symptomsBegin,
+    severeSymptomsCheck,
+    preExistingConditions,
+    preExistingConditionsOther,
+    pastSurgeries,
+    familyHistory,
+    familyHistoryOther,
+    allergies,
     medications,
+    consentToAI
   } = req.body;
 
   try {
-    if (!doctorId || !date || !time || !patientNameForVisit /* Removed reason validation for flexibility */) {
-      return res.status(400).json({ message: 'Missing required fields: doctor, date, time, patient name.' });
+    // 2. Basic validation
+    if (!doctorId || !date || !time || !patientNameForVisit || !primaryReason) {
+      return res.status(400).json({ message: 'Missing required fields: doctor, date, time, patient name, or reason.' });
     }
+
+    // 3. Check for double-bookings (race condition)
     const existingAppointment = await Appointment.findOne({
       doctor: doctorId,
-      date: new Date(date), // Ensure date is compared as a Date object
+      date: new Date(date),
       time: time,
       status: 'upcoming'
     });
-
     if (existingAppointment) {
       return res.status(409).json({ message: 'This time slot is no longer available. Please select another.' });
     }
-    // --- 1. FETCH THE DOCTOR TO GET THEIR FEE ---
+
+    // 4. Fetch the doctor to get their fee
     const doctor = await Doctor.findById(doctorId);
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found.' });
     }
-    const fee = doctor.consultationFee; // Get the fee
+    const fee = doctor.consultationFee || 0; // Use default if fee is missing
 
+    // 5. Create new appointment with all fields
     const newAppointment = new Appointment({
       patient: req.user.userId,
       doctor: doctorId,
       date,
       time,
       patientNameForVisit,
-      reasonForVisit,
-      symptoms,
-      symptomDuration,
-      previousTreatments,
-      medications,
-      // --- 2. SET THE NEW FIELDS ---
       consultationFeeAtBooking: fee,
-      paymentStatus: 'pending', // Hardcoded for now
+      paymentStatus: 'pending',
+      // Triage fields
+      emergencyDisclaimerAcknowledged,
+      primaryReason,
+      symptomsList,
+      symptomsOther,
+      symptomsBegin,
+      severeSymptomsCheck,
+      preExistingConditions,
+      preExistingConditionsOther,
+      pastSurgeries,
+      familyHistory,
+      familyHistoryOther,
+      allergies,
+      medications,
+      consentToAI
     });
 
     const appointment = await newAppointment.save();
     res.status(201).json(appointment);
   } catch (err) {
-    console.error('Booking Error:', err.message); // Added context
+    console.error('Booking Error:', err.message);
     res.status(500).send('Server Error');
   }
 });
 
+// @route   PUT api/appointments/:id/cancel
+// @desc    Cancel an appointment
+// @access  Private (Patient only)
 router.put('/:id/cancel', authMiddleware, async (req, res) => {
   try {
     const appointment = await Appointment.findById(req.params.id);
-
-    // Check 1: Does the appointment exist?
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
-
-    // Check 2: Is the person canceling the one who booked it?
     if (appointment.patient.toString() !== req.user.userId) {
       return res.status(401).json({ message: 'User not authorized' });
     }
-    
-    // Check 3: Is it already completed or cancelled?
+    // --- FIX: Add backticks for template literal ---
     if (appointment.status !== 'upcoming') {
       return res.status(400).json({ message: `Cannot cancel an appointment that is already ${appointment.status}.` });
     }
 
-    // Update the status
     appointment.status = 'cancelled';
     await appointment.save();
-
     res.json({ message: 'Appointment cancelled successfully', appointment });
   } catch (err) {
     console.error(err.message);
@@ -196,35 +243,29 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
   }
 });
 
-
+// @route   PUT api/appointments/:id/complete
+// @desc    Mark an appointment as completed
+// @access  Private (Doctor only)
 router.put('/:id/complete', authMiddleware, async (req, res) => {
-  // 1. Verify user is a doctor
   if (req.user.userType !== 'doctor') {
     return res.status(403).json({ message: 'Access denied. Not a doctor.' });
   }
 
   try {
     const appointment = await Appointment.findById(req.params.id);
-
-    // 2. Check if appointment exists
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
-
-    // 3. Verify the logged-in doctor is assigned to this appointment
     if (appointment.doctor.toString() !== req.user.userId) {
       return res.status(403).json({ message: 'Access denied. You are not assigned to this appointment.' });
     }
-
-    // 4. Check if the appointment is 'upcoming' (can only complete upcoming)
+    // --- FIX: Add backticks for template literal ---
     if (appointment.status !== 'upcoming') {
       return res.status(400).json({ message: `Cannot complete an appointment that is already ${appointment.status}.` });
     }
 
-    // 5. Update the status
     appointment.status = 'completed';
     await appointment.save();
-
     res.json({ message: 'Appointment marked as completed successfully', appointment });
   } catch (err) {
     console.error('Complete Appointment Error:', err.message);
@@ -233,3 +274,4 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+

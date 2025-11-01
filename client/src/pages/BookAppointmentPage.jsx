@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 const commonSymptoms = [
   "Fever", "Cough", "Headache", "Nausea", "Dizziness", "Abdominal Pain",
   "Back Pain", "Shortness of Breath", "Fatigue"
@@ -34,27 +35,30 @@ const familyHistoryOptions = [
   "Heart Disease", "Stroke", "Diabetes", "High Blood Pressure", "Cancer"
 ];
 
+
 const mockAvailableSlots = [
   { date: "2025-11-20", time: "10:00 AM" }, { date: "2025-11-20", time: "02:00 PM" },
   { date: "2025-11-21", time: "09:00 AM" }, { date: "2025-11-21", time: "11:00 AM" },
-  { date: "2025-11-22", time: "10:00 AM" }, { date: "2025-11-22", time: "03:00 PM" },
+  { date: "2025-11-22", time: "03:00 PM" },
 ];
 
 export default function BookAppointmentPage() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
-   const [availableSlots, setAvailableSlots] = useState(mockAvailableSlots);
+  
+  const [availableSlots, setAvailableSlots] = useState(mockAvailableSlots);
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState({ date: "", time: "" });
   
   const [appointmentDetails, setAppointmentDetails] = useState({
-    patientFullName: "",
+   
+    patientNameForVisit: "", 
     phoneNumber: "",
     email: "",
     birthDate: "",
     sex: "",
-    primaryLanguage: "", 
+    primaryLanguage: "",
     primaryReason: "",
     symptomsList: [],
     symptomsOther: "",
@@ -83,20 +87,23 @@ export default function BookAppointmentPage() {
         return;
       }
       try {
-        const authHeaders = { headers: { Authorization: Bearer ${token} } };
+        const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
         
-        // --- 3. REMOVED SLOTS FETCH FROM PROMISE.ALL ---
+      
         const [doctorResponse, profileResponse] = await Promise.all([
-          axios.get(http://localhost:5001/api/doctors/${doctorId}),
+          
+          axios.get(`http://localhost:5001/api/doctors/${doctorId}`),
           axios.get('http://localhost:5001/api/users/profile', authHeaders),
         ]);
 
         setDoctor(doctorResponse.data);
+
         setAppointmentDetails(prev => ({ 
           ...prev, 
-          patientFullName: profileResponse.data.fullName,
+          
+          patientNameForVisit: profileResponse.data.fullName,
           email: profileResponse.data.email,
-         
+          
         }));
 
       } catch (err) {
@@ -117,10 +124,10 @@ export default function BookAppointmentPage() {
     setAppointmentDetails((prev) => {
       const list = prev[field] || [];
       if (checked) {
-        
+       
         return { ...prev, [field]: [...list, value] };
       } else {
-       
+        
         return { ...prev, [field]: list.filter((item) => item !== value) };
       }
     });
@@ -139,7 +146,8 @@ export default function BookAppointmentPage() {
     }
 
     setIsBooking(true);
-
+    
+    
     const bookingData = {
       doctorId,
       date: selectedSlot.date,
@@ -159,7 +167,7 @@ export default function BookAppointmentPage() {
     
     try {
       await axios.post('http://localhost:5001/api/appointments/book', bookingData, {
-        headers: { Authorization: Bearer ${token} }
+        headers: { Authorization: `Bearer ${token}` }
       });
       alert("Appointment booked successfully!");
       navigate('/patient/dashboard');
@@ -180,7 +188,7 @@ export default function BookAppointmentPage() {
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
-        {/* Simplified Nav for brevity */}
+        
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
                 <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
@@ -190,13 +198,13 @@ export default function BookAppointmentPage() {
       </nav>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Steps */}
+       
         <div className="flex items-center justify-center mb-8">
-          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>1</div>
-          <div className={w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}}></div>
-          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>2</div>
-          <div className={w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}}></div>
-          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>3</div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>1</div>
+          <div className={`w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}`}></div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>2</div>
+          <div className={`w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}`}></div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>3</div>
         </div>
 
         <div className="max-w-2xl mx-auto">
@@ -251,12 +259,18 @@ export default function BookAppointmentPage() {
                   </div>
                 </Alert>
 
-                
+                {/* Patient Demographics */}
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Patient Information</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="patientFullName">Patient's Full Name</Label>
-                    <Input id="patientFullName" value={appointmentDetails.patientFullName} onChange={(e) => handleDetailsChange("patientFullName", e.target.value)} />
+                    {/* --- FIX: Changed htmlFor and id --- */}
+                    <Label htmlFor="patientNameForVisit">Patient's Full Name</Label>
+                    {/* --- FIX: Changed id, value, and onChange handler --- */}
+                    <Input 
+                      id="patientNameForVisit" 
+                      value={appointmentDetails.patientNameForVisit} 
+                      onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} 
+                    />
                   </div>
                    <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -292,7 +306,7 @@ export default function BookAppointmentPage() {
                   </div>
                 </div>
 
-                
+                {/* Triage Questions */}
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Triage Questions</h3>
                   <div className="space-y-2">
@@ -338,9 +352,7 @@ export default function BookAppointmentPage() {
                     </div>
                   </div>
                 </div>
-
-                
-                <div className="space-y-4 p-4 border rounded-lg">
+                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Medical History</h3>
                   <div className="space-y-2">
                     <Label>Do you have any pre-existing medical conditions?</Label>
@@ -388,7 +400,7 @@ export default function BookAppointmentPage() {
                   </div>
                 </div>
 
-                
+                {/* Consent */}
                 <div className="flex items-start space-x-3 p-4 border rounded-lg">
                   <Checkbox id="consentToAI" checked={appointmentDetails.consentToAI} onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} />
                   <div className="grid gap-1.5 leading-none">
@@ -417,7 +429,7 @@ export default function BookAppointmentPage() {
                   <div className="flex justify-between"><span className="text-gray-600">Date & Time:</span><span className="font-medium">{new Date(selectedSlot.date).toDateString()} at {selectedSlot.time}</span></div>
                   
                   <div className="border-t pt-3 mt-3 space-y-2">
-                    <div className="flex justify-between"><span className="text-gray-600">Patient Name:</span><span className="font-medium">{appointmentDetails.patientFullName}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Patient Name:</span><span className="font-medium">{appointmentDetails.patientNameForVisit}</span></div>
                     <div className="flex justify-between"><span className="text-gray-600">Primary Reason:</span><span className="font-medium text-right">{appointmentDetails.primaryReason}</span></div>
                   </div>
                 </div>
@@ -436,3 +448,5 @@ export default function BookAppointmentPage() {
     </div>
   );
 }
+
+
