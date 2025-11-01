@@ -6,16 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, ArrowRight, ArrowLeft, AlertTriangle } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Calendar, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 const commonSymptoms = [
-  "Fever", "Cough", "Headache", "Nausea", "Dizziness", "Abdominal Pain", 
+  "Fever", "Cough", "Headache", "Nausea", "Dizziness", "Abdominal Pain",
   "Back Pain", "Shortness of Breath", "Fatigue"
 ];
 const severeSymptoms = [
@@ -28,29 +27,34 @@ const severeSymptoms = [
   "Uncontrolled bleeding"
 ];
 const preExistingConditions = [
-  "Hypertension (High Blood Pressure)", "Diabetes (Type 1 or 2)", "Astma", 
+  "Hypertension (High Blood Pressure)", "Diabetes (Type 1 or 2)", "Asthma",
   "Heart Disease", "Cancer", "Kidney Disease", "Thyroid Issues", "Depression", "Anxiety"
 ];
 const familyHistoryOptions = [
-  "Heart Disease", "Stroke", "Diabetes", "High BloodPressure", "Cancer"
+  "Heart Disease", "Stroke", "Diabetes", "High Blood Pressure", "Cancer"
 ];
-// Mock available slots for now
-const availableSlots = [
+
+const mockAvailableSlots = [
   { date: "2025-11-20", time: "10:00 AM" }, { date: "2025-11-20", time: "02:00 PM" },
   { date: "2025-11-21", time: "09:00 AM" }, { date: "2025-11-21", time: "11:00 AM" },
+  { date: "2025-11-22", time: "10:00 AM" }, { date: "2025-11-22", time: "03:00 PM" },
 ];
 
 export default function BookAppointmentPage() {
   const { doctorId } = useParams();
+  const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
+   const [availableSlots, setAvailableSlots] = useState(mockAvailableSlots);
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState({ date: "", time: "" });
   
-  // --- 1. ADD `patientNameForVisit` TO STATE ---
   const [appointmentDetails, setAppointmentDetails] = useState({
-    patientNameForVisit: "",
+    patientFullName: "",
+    phoneNumber: "",
+    email: "",
     birthDate: "",
     sex: "",
+    primaryLanguage: "", 
     primaryReason: "",
     symptomsList: [],
     symptomsOther: "",
@@ -64,46 +68,62 @@ export default function BookAppointmentPage() {
     allergies: "",
     medications: "",
     consentToAI: false,
+    emergencyDisclaimerAcknowledged: false,
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isBooking, setIsBooking] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        window.location.href = '/login';
+        navigate('/login');
         return;
       }
       try {
-        // --- 2. FETCH DOCTOR AND PATIENT PROFILE CONCURRENTLY ---
+        const authHeaders = { headers: { Authorization: Bearer ${token} } };
+        
+        // --- 3. REMOVED SLOTS FETCH FROM PROMISE.ALL ---
         const [doctorResponse, profileResponse] = await Promise.all([
-          axios.get(`http://localhost:5001/api/doctors/${doctorId}`),
-          axios.get('http://localhost:5001/api/users/profile', {
-            headers: { Authorization: `Bearer ${token}` }
-          })
+          axios.get(http://localhost:5001/api/doctors/${doctorId}),
+          axios.get('http://localhost:5001/api/users/profile', authHeaders),
         ]);
 
         setDoctor(doctorResponse.data);
-        
-        // --- 3. PRE-FILL THE NAME FIELD WITH THE LOGGED-IN USER'S NAME ---
         setAppointmentDetails(prev => ({ 
           ...prev, 
-          patientNameForVisit: profileResponse.data.fullName 
+          patientFullName: profileResponse.data.fullName,
+          email: profileResponse.data.email,
+         
         }));
 
       } catch (err) {
-        setError("Failed to fetch page details.");
+        console.error("Error fetching data:", err);
+        setError("Failed to fetch page details. The doctor may not exist or the server is down.");
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, [doctorId]);
+  }, [doctorId, navigate]);
 
   const handleDetailsChange = (field, value) => {
     setAppointmentDetails((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleChecklistChange = (field, value, checked) => {
+    setAppointmentDetails((prev) => {
+      const list = prev[field] || [];
+      if (checked) {
+        
+        return { ...prev, [field]: [...list, value] };
+      } else {
+       
+        return { ...prev, [field]: list.filter((item) => item !== value) };
+      }
+    });
   };
 
   const handleBooking = async () => {
@@ -112,41 +132,71 @@ export default function BookAppointmentPage() {
       alert("You must be logged in to book an appointment.");
       return;
     }
+    
+    if (!appointmentDetails.consentToAI) {
+      alert("You must consent to AI processing to continue.");
+      return;
+    }
 
-    // The new `patientNameForVisit` is already in `appointmentDetails`
+    setIsBooking(true);
+
     const bookingData = {
       doctorId,
-      ...selectedSlot,
+      date: selectedSlot.date,
+      time: selectedSlot.time,
       ...appointmentDetails,
+      
+      symptoms: [...appointmentDetails.symptomsList, appointmentDetails.symptomsOther].filter(Boolean),
+      preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
+      familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
     };
-
+    
+   
+    delete bookingData.symptomsList;
+    delete bookingData.symptomsOther;
+    delete bookingData.preExistingConditionsOther;
+    delete bookingData.familyHistoryOther;
+    
     try {
       await axios.post('http://localhost:5001/api/appointments/book', bookingData, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: Bearer ${token} }
       });
       alert("Appointment booked successfully!");
-      window.location.href = '/patient/dashboard';
+      navigate('/patient/dashboard');
     } catch (err) {
       alert(err.response?.data?.message || "Failed to book appointment.");
+      setIsBooking(false);
     }
   };
 
-  if (isLoading) return <div className="text-center p-8">Loading doctor details...</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
+    </div>
+  );
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
-  if (!doctor) return null; // Guard against null doctor
+  if (!doctor) return null;
 
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
-      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">{/* ...Nav JSX... */}</nav>
+      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
+        {/* Simplified Nav for brevity */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+                <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
+                <Button variant="outline" onClick={() => navigate('/patient/dashboard')}>Dashboard</Button>
+            </div>
+        </div>
+      </nav>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-8">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>1</div>
-          <div className={`w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>2</div>
-          <div className={`w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>3</div>
+          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>1</div>
+          <div className={w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}}></div>
+          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>2</div>
+          <div className={w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}}></div>
+          <div className={flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}}>3</div>
         </div>
 
         <div className="max-w-2xl mx-auto">
@@ -155,7 +205,6 @@ export default function BookAppointmentPage() {
               <Avatar className="w-16 h-16"><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
               <div className="flex-1">
                 <h2 className="text-xl font-bold">{doctor.fullName}</h2>
-                {/* --- 4. FIX: `specialty` to `specialization` --- */}
                 <Badge className="bg-teal-100 text-teal-800 mb-2">{doctor.specialization}</Badge>
               </div>
             </CardContent>
@@ -165,13 +214,18 @@ export default function BookAppointmentPage() {
             <Card className="bg-white border-gray-200">
               <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {availableSlots.map((slot, index) => (
-                    <Button key={index} variant={selectedSlot.date === slot.date && selectedSlot.time === slot.time ? "default" : "outline"} className="h-auto p-4 justify-start bg-emerald-50" onClick={() => setSelectedSlot(slot)}>
-                      <div className="flex items-center space-x-3"><Calendar className="h-4 w-4" /><div><div className="font-medium">{new Date(slot.date).toDateString()}</div><div className="text-sm opacity-70">{slot.time}</div></div></div>
-                    </Button>
-                  ))}
-                </div>
+                
+                {availableSlots.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {availableSlots.map((slot, index) => (
+                      <Button key={index} variant={selectedSlot.date === slot.date && selectedSlot.time === slot.time ? "default" : "outline"} className="h-auto p-4 justify-start bg-emerald-50" onClick={() => setSelectedSlot(slot)}>
+                        <div className="flex items-center space-x-3"><Calendar className="h-4 w-4" /><div><div className="font-medium">{new Date(slot.date).toDateString()}</div><div className="text-sm opacity-70">{slot.time}</div></div></div>
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-600">This doctor has no available slots in the next 14 days.</p>
+                )}
                 <div className="flex justify-end mt-6"><Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>Next Step <ArrowRight className="h-4 w-4 ml-2" /></Button></div>
               </CardContent>
             </Card>
@@ -191,14 +245,28 @@ export default function BookAppointmentPage() {
                   <AlertDescription>
                     If you are experiencing a medical emergency (such as severe chest pain, difficulty breathing, uncontrolled bleeding, or sudden weakness), please call your local emergency services or go to the nearest emergency room immediately.
                   </AlertDescription>
+                  <div className="flex items-center space-x-2 mt-4">
+                    <Checkbox id="emergencyDisclaimer" onCheckedChange={(checked) => handleDetailsChange("emergencyDisclaimerAcknowledged", checked)} />
+                    <Label htmlFor="emergencyDisclaimer" className="font-normal">I have read and understand this warning.</Label>
+                  </div>
                 </Alert>
 
-                {/* Patient Demographics */}
+                
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Patient Information</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="patientNameForVisit">Patient's Full Name</Label>
-                    <Input id="patientNameForVisit" value={appointmentDetails.patientNameForVisit} onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} />
+                    <Label htmlFor="patientFullName">Patient's Full Name</Label>
+                    <Input id="patientFullName" value={appointmentDetails.patientFullName} onChange={(e) => handleDetailsChange("patientFullName", e.target.value)} />
+                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phoneNumber">Phone Number</Label>
+                      <Input id="phoneNumber" type="tel" value={appointmentDetails.phoneNumber} onChange={(e) => handleDetailsChange("phoneNumber", e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input id="email" type="email" value={appointmentDetails.email} onChange={(e) => handleDetailsChange("email", e.target.value)} />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -218,9 +286,13 @@ export default function BookAppointmentPage() {
                       </Select>
                     </div>
                   </div>
+                   <div className="space-y-2">
+                    <Label htmlFor="primaryLanguage">Primary Language Spoken</Label>
+                    <Input id="primaryLanguage" value={appointmentDetails.primaryLanguage} onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} />
+                  </div>
                 </div>
 
-                {/* Triage Questions */}
+                
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Triage Questions</h3>
                   <div className="space-y-2">
@@ -267,7 +339,7 @@ export default function BookAppointmentPage() {
                   </div>
                 </div>
 
-                {/* Medical History */}
+                
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Medical History</h3>
                   <div className="space-y-2">
@@ -307,7 +379,7 @@ export default function BookAppointmentPage() {
                   
                   <div className="space-y-2">
                     <Label htmlFor="allergies">Do you have any allergies (medication, food, seasonal, etc.)?</Label>
-                    <Textarea id="allergies" placeholder="If yes, please list all allergies..." value={appointmentDetails.allergies} onChange={(e) => handleDetailsChange("allergies", e.target.value)} />
+                    <Textarea id="allergies" placeholder="If yes, please list all allergies... If no, leave blank." value={appointmentDetails.allergies} onChange={(e) => handleDetailsChange("allergies", e.target.value)} />
                   </div>
 
                   <div className="space-y-2">
@@ -316,7 +388,7 @@ export default function BookAppointmentPage() {
                   </div>
                 </div>
 
-                {/* Consent */}
+                
                 <div className="flex items-start space-x-3 p-4 border rounded-lg">
                   <Checkbox id="consentToAI" checked={appointmentDetails.consentToAI} onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} />
                   <div className="grid gap-1.5 leading-none">
@@ -329,13 +401,12 @@ export default function BookAppointmentPage() {
 
                 <div className="flex justify-between mt-6">
                   <Button variant="outline" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <Button onClick={() => setStep(3)} disabled={!appointmentDetails.consentToAI || !appointmentDetails.primaryReason}>Review Booking <ArrowRight className="h-4 w-4 ml-2" /></Button>
+                  <Button onClick={() => setStep(3)} disabled={!appointmentDetails.consentToAI || !appointmentDetails.primaryReason || !appointmentDetails.emergencyDisclaimerAcknowledged}>Review Booking <ArrowRight className="h-4 w-4 ml-2" /></Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* --- 6. REBUILT STEP 3 --- */}
           {step === 3 && (
             <Card className="bg-white border-gray-200">
               <CardHeader><CardTitle>Confirm Your Appointment</CardTitle><CardDescription>Review your details before confirming.</CardDescription></CardHeader>
@@ -346,13 +417,16 @@ export default function BookAppointmentPage() {
                   <div className="flex justify-between"><span className="text-gray-600">Date & Time:</span><span className="font-medium">{new Date(selectedSlot.date).toDateString()} at {selectedSlot.time}</span></div>
                   
                   <div className="border-t pt-3 mt-3 space-y-2">
-                    <div className="flex justify-between"><span className="text-gray-600">Patient Name:</span><span className="font-medium">{appointmentDetails.patientNameForVisit}</span></div>
+                    <div className="flex justify-between"><span className="text-gray-600">Patient Name:</span><span className="font-medium">{appointmentDetails.patientFullName}</span></div>
                     <div className="flex justify-between"><span className="text-gray-600">Primary Reason:</span><span className="font-medium text-right">{appointmentDetails.primaryReason}</span></div>
                   </div>
                 </div>
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setStep(2)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700">Confirm Booking</Button>
+                  <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isBooking}>
+                    {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {isBooking ? "Booking..." : "Confirm Booking"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
