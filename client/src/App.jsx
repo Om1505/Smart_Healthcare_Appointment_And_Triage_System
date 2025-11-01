@@ -15,7 +15,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AppointmentsPage from './pages/Appointment'; 
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage'; 
 import DoctorEarningsPage from './pages/EarningPage';
-
+import DoctorSchedulePage from './pages/SchedulePage';
 function App() {
   return (
     <Routes>
@@ -34,6 +34,7 @@ function App() {
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
       <Route path="/doctor/:id" element={<DoctorProfilePage />} />
       <Route path="/doctor/earnings" element={<DoctorEarningsPage />} />
+       <Route path="/doctor/schedule" element={<DoctorSchedulePage />} />
 
       {/* Patient Routes */}
       <Route path="/patient/dashboard" element={<PatientDashboard />} />
