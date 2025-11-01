@@ -176,7 +176,7 @@ export default function DoctorEarningsPage() {
                                                 <div><h3 className="font-semibold">{tx.patientName}</h3><p className="text-sm text-gray-500">{new Date(tx.date).toLocaleDateString()} • {tx.time}</p></div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="font-semibold">${tx.amount.toFixed(2)}</div>
+                                                <div className="font-semibold">${tx.amount?.toFixed(2) ?? '0.00'}</div>
                                                 <Badge variant={tx.status === "completed" ? "default" : "secondary"}>
                                                     {tx.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                                                 </Badge>

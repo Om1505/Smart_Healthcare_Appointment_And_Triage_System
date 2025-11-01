@@ -10,7 +10,6 @@ import {
     Stethoscope, User, Settings, Brain, LogOut, Loader2, ShieldAlert 
 } from "lucide-react";
 import { Link } from "react-router-dom";
-// import { AITriageCard } from "@/components/AITriageCard"; // Assuming you have this component
 // Mock data only for the completed count stat card
 const mockTodayStats = { completed: 3 }; // Replace or remove later
 const VerificationPending = ({ doctorName, onLogout }) => (
@@ -132,7 +131,6 @@ export default function DoctorDashboard() {
         window.location.href = '/login';
     };
 
-    // --- Handler to mark an appointment as completed ---
     const handleStartConsultation = async (appointmentId) => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -175,14 +173,11 @@ export default function DoctorDashboard() {
     
     if (!doctor) return (
         <div className="flex items-center justify-center h-screen">Loading doctor data...</div>
-    ); // Guard clause
+    ); 
 
-    // --- THIS IS THE VERIFICATION CHECK ---
-    // Check if the doctor is verified
     if (!doctor.isVerified) {
       return <VerificationPending doctorName={doctor.fullName} onLogout={handleLogout} />;
     }
-    // --- END OF VERIFICATION CHECK ---
 
 
     // Filter appointments for display logic

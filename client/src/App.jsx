@@ -14,6 +14,7 @@ import CompleteProfilePage from './pages/CompleteProfilePage';
 import AdminDashboard from './pages/AdminDashboard';
 import AppointmentsPage from './pages/Appointment'; 
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage'; 
+import DoctorEarningsPage from './pages/EarningPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
       {/* Doctor Routes */}
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
       <Route path="/doctor/:id" element={<DoctorProfilePage />} />
+      <Route path="/doctor/earnings" element={<DoctorEarningsPage />} />
 
       {/* Patient Routes */}
       <Route path="/patient/dashboard" element={<PatientDashboard />} />
