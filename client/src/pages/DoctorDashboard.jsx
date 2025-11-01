@@ -194,7 +194,7 @@ export default function DoctorDashboard() {
                             <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-4">
-                            <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900"><Calendar className="h-4 w-4 mr-2" />Schedule</Button>
+                            <Link to="/doctor/schedule"><Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900"><Calendar className="h-4 w-4 mr-2" />Schedule</Button></Link>
                             <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900"><LogOut className="h-4 w-4 mr-2" />Logout</Button>
                             <Avatar><AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} /><AvatarFallback className="bg-teal-100 text-teal-800">{doctor.fullName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
                         </div>
@@ -273,7 +273,7 @@ export default function DoctorDashboard() {
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
                             <CardHeader><CardTitle className="text-gray-900">Quick Actions</CardTitle></CardHeader>
                             <CardContent className="space-y-3">
-                                <Button asChild variant="outline" className="w-full justify-start"><Link href="/doctor/schedule"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Link></Button>
+                                <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full justify-start"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Button></Link>
                                 <Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button>
                                 <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><DollarSign className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
                             </CardContent>
@@ -289,7 +289,7 @@ export default function DoctorDashboard() {
                                         </div>
                                     ))}
                                 </div>
-                                <Button variant="outline" className="w-full mt-4">View Full Schedule</Button>
+                                <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full mt-4">View Full Schedule</Button></Link>
                             </CardContent>
                         </Card>
                     </div>
