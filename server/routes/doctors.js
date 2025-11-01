@@ -3,24 +3,17 @@ const router = express.Router();
 const Doctor = require('../models/Doctor');
 const DoctorSchedule = require('../models/DoctorSchedule');
 const authMiddleware = require('../middleware/auth');
-
 router.get('/', async (req, res) => {
   try {
     const { search, specialty } = req.query;
-    const query = {};
+    const query = { isVerified: true };
     if (specialty && specialty !== 'All Specialties') {
       query.specialization = specialty;
     }
-
-    // 2. Add a case-insensitive, "starts-with" search filter
     if (search) {
-      // Using regex for better "autocomplete" style search
       query.fullName = { $regex: new RegExp('^' + search, 'i') };
     }
-
-    
     const doctors = await Doctor.find(query).select('-password');
-
     res.json(doctors);
   } catch (err) {
     console.error(err.message);
@@ -29,26 +22,23 @@ router.get('/', async (req, res) => {
 });
 router.get('/:id', async (req, res) => {
   try {
-
+   
     const doctor = await Doctor.findById(req.params.id).select('-password');
-
 
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
-
+    if (!doctor.isVerified) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
     res.json(doctor);
   } catch (err) {
- 
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
-
-// Get my schedule
 router.get('/schedule/my-schedule', authMiddleware, async (req, res) => {
   try {
-    // Check if user is a doctor
     if (req.user.userType !== 'doctor') {
       return res.status(403).json({ message: 'Access denied. Not a doctor.' });
     }
@@ -66,3 +56,4 @@ router.get('/schedule/my-schedule', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+

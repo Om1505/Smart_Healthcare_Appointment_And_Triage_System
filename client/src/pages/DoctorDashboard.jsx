@@ -5,12 +5,41 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Users, DollarSign, AlertTriangle, CheckCircle, Stethoscope, User, Settings, Brain, LogOut } from "lucide-react";
+import { 
+    Calendar, Clock, Users, DollarSign, AlertTriangle, CheckCircle, 
+    Stethoscope, User, Settings, Brain, LogOut, Loader2, ShieldAlert 
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import { AITriageCard } from "@/components/AITriageCard"; // Assuming you have this component
-
+// import { AITriageCard } from "@/components/AITriageCard"; // Assuming you have this component
 // Mock data only for the completed count stat card
 const mockTodayStats = { completed: 3 }; // Replace or remove later
+const VerificationPending = ({ doctorName, onLogout }) => (
+  <div className="min-h-screen flex items-center justify-center bg-emerald-50 p-4">
+    <Card className="w-full max-w-md shadow-lg">
+      <CardHeader className="text-center">
+        <ShieldAlert className="w-16 h-16 mx-auto text-yellow-500" />
+        <CardTitle className="text-2xl font-bold text-gray-900 mt-4">Verification Pending</CardTitle>
+        <CardDescription className="text-gray-600">
+          Welcome, {doctorName}!
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="text-center space-y-4">
+        <p className="text-gray-700">
+          Your profile has been submitted and is currently under review by our admin team.
+          You will receive an email once your profile is verified.
+        </p>
+        <p className="text-gray-600 text-sm">
+          Patients will not be able to find your profile or book appointments until you are verified.
+        </p>
+        <Button onClick={onLogout} variant="outline" className="w-full">
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 
 const getUrgencyClasses = (score) => {
     if (score >= 4) return "bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100";
@@ -23,6 +52,33 @@ const getUrgencyLabel = (score) => {
     if (score === 3) return "Medium Priority";
     return "Low Priority";
 };
+
+// Placeholder for AITriageCard if it's not imported
+const AITriageCard = ({ patientName, urgencyScore, aiSummary, riskFactors }) => (
+    <Card className="mb-4 bg-white shadow-md">
+        <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+                <span>{patientName}</span>
+                <Badge className={getUrgencyClasses(urgencyScore)}>
+                    {getUrgencyLabel(urgencyScore)}
+                </Badge>
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-2">
+                <h4 className="font-semibold">AI Summary:</h4>
+                <p className="text-sm text-gray-700">{aiSummary}</p>
+                <h4 className="font-semibold">Risk Factors:</h4>
+                <div className="flex flex-wrap gap-2">
+                    {riskFactors.map((factor, index) => (
+                        <Badge key={index} variant="outline">{factor}</Badge>
+                    ))}
+                </div>
+            </div>
+        </CardContent>
+    </Card>
+);
+
 
 export default function DoctorDashboard() {
     const primaryColor = '#0F5257';
@@ -49,6 +105,15 @@ export default function DoctorDashboard() {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
+                
+                // Check if the user is actually a doctor
+                if (profileRes.data.userType !== 'doctor') {
+                    setError('Access denied. Not a doctor account.');
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+                
                 setDoctor(profileRes.data);
                 setAppointments(appointmentsRes.data);
             } catch (err) {
@@ -98,9 +163,27 @@ export default function DoctorDashboard() {
     };
 
 
-    if (isLoading) return <div className="flex items-center justify-center h-screen">Loading Dashboard...</div>;
-    if (error) return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
-    if (!doctor) return <div className="flex items-center justify-center h-screen">Loading doctor data...</div>; // Guard clause
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-screen">
+            <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
+        </div>
+    );
+    
+    if (error) return (
+        <div className="flex items-center justify-center h-screen text-red-600">{error}</div>
+    );
+    
+    if (!doctor) return (
+        <div className="flex items-center justify-center h-screen">Loading doctor data...</div>
+    ); // Guard clause
+
+    // --- THIS IS THE VERIFICATION CHECK ---
+    // Check if the doctor is verified
+    if (!doctor.isVerified) {
+      return <VerificationPending doctorName={doctor.fullName} onLogout={handleLogout} />;
+    }
+    // --- END OF VERIFICATION CHECK ---
+
 
     // Filter appointments for display logic
     const upcomingAppointmentsInQueue = appointments.filter(apt => apt.status === 'upcoming');
@@ -127,7 +210,7 @@ export default function DoctorDashboard() {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Good morning, Dr. {doctor.fullName.split(' ').pop()}!</h1>
-                    <p className="text-gray-600">You have {upcomingAppointmentsInQueue.length} patients in your queue for today.</p>
+                    <p className="text-gray-600">You have {upcomingAppointmentsInQueue.length} {upcomingAppointmentsInQueue.length === 1 ? 'patient' : 'patients'} in your queue for today.</p>
                 </div>
 
                 <div className="grid md:grid-cols-4 gap-6 mb-8">
@@ -220,3 +303,4 @@ export default function DoctorDashboard() {
         </div>
     );
 }
+

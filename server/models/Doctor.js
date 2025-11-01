@@ -6,7 +6,6 @@ const doctorSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: {
     type: String,
-  
     required: function() { return !this.googleId; }
   },
   userType: { type: String, default: 'doctor' },
@@ -21,28 +20,39 @@ const doctorSchema = new mongoose.Schema({
   consultationFee: { type: Number, required: true, min: [0] },
   bio: { type: String },
   googleId: { type: String, unique: true, sparse: true },
-  isProfileComplete: { type: Boolean, default: false },
+  isProfileComplete: { 
+    type: Boolean, 
+    default: false 
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
 }, { timestamps: true });
 
 doctorSchema.pre('save', async function(next) {
+  
+  if (this.password && this.isModified('password')) {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    } catch (error) {
+      return next(error);
+    }
+  }
 
-  if (this.isNew && !this.googleId) {
+  if (this.isNew) {
+    if (this.googleId) {
+      this.isProfileComplete = false;
+    } else {
       this.isProfileComplete = true;
+    }
   }
 
-  if (!this.password || !this.isModified('password')) {
-    return next();
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  next();
 });
 
-doctorSchema.index({ fullName: 'text', specialty: 'text' });
+doctorSchema.index({ fullName: 'text', specialization: 'text' });
+
 module.exports = mongoose.model('Doctor', doctorSchema);
 

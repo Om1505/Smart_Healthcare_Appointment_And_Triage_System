@@ -24,13 +24,13 @@ router.get('/profile', authMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-
     res.json(user);
   } catch (err) {
     console.error("GET /profile Error:", err.message);
     res.status(500).send('Server Error');
   }
 });
+
 router.put('/complete-profile', authMiddleware, async (req, res) => {
   try {
     const { userId, userType: originalUserType } = req.user;
@@ -65,9 +65,9 @@ router.put('/complete-profile', authMiddleware, async (req, res) => {
     }
     const newUserProfile = {
       ...originalUser.toObject(),
-      ...profileData,            
-      _id: originalUser._id,       
-      userType: newUserType,       
+      ...profileData,             
+      _id: originalUser._id,      
+      userType: newUserType,      
       isProfileComplete: true,
     };
     

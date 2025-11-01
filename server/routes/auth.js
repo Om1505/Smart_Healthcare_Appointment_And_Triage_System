@@ -115,6 +115,7 @@ router.get('/google/callback',
     if (!user.isProfileComplete) {
       redirectPath = '/complete-profile'; 
     } else {
+      
       switch (userType) {
         case 'doctor': redirectPath = '/doctor/dashboard'; break;
         case 'patient': redirectPath = '/patient/dashboard'; break;

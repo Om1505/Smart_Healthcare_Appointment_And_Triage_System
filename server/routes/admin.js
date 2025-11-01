@@ -35,7 +35,8 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
     if (!doctor) {
       return res.status(404).json({ message: 'Doctor not found' });
     }
-    doctor.isProfileComplete = true;
+
+    doctor.isVerified = true;
     
     await doctor.save();
     
@@ -46,7 +47,6 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
     res.status(500).send('Server Error');
   }
 });
-
 router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const { userType, id } = req.params;
@@ -66,7 +66,6 @@ router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (r
     }
 
     await Model.findByIdAndDelete(id);
-
     
     res.json({ message: `${userType} deleted successfully` });
 
@@ -75,6 +74,5 @@ router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (r
     res.status(500).send('Server Error');
   }
 });
-
-
 module.exports = router;
+

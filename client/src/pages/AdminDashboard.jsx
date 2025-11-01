@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate, Link } from 'react-router-dom';
-
-// Custom hook to handle clicks outside a specified element
 function useOutsideClick(ref, handler) {
   useEffect(() => {
     function handleClickOutside(event) {
@@ -28,7 +26,6 @@ function useOutsideClick(ref, handler) {
     };
   }, [ref, handler]);
 }
-
 export default function AdminDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -38,40 +35,43 @@ export default function AdminDashboard() {
   const [specializationFilter, setSpecializationFilter] = useState('all');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  
-  // State to store the logged-in admin's profile data
   const [adminProfile, setAdminProfile] = useState(null);
-
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-
   useOutsideClick(dropdownRef, () => setIsProfileOpen(false));
-
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
         setError("Authorization token not found. Please log in.");
         setLoading(false);
+        navigate('/login');
         return;
       }
 
       try {
-        // Use Promise.all to fetch all necessary data concurrently
+        
         const [usersResponse, profileResponse] = await Promise.all([
+          // Request for all doctors and patients for the tables
           axios.get('http://localhost:5001/api/admin/users', {
-            withCredentials: true,
             headers: { 'Authorization': `Bearer ${token}` }
           }),
+          
           axios.get('http://localhost:5001/api/users/profile', {
-            withCredentials: true,
             headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
 
-        setDoctors(usersResponse.data.doctors);
-        setPatients(usersResponse.data.patients);
-        setAdminProfile(profileResponse.data); // Store the admin's profile
+        
+        if (profileResponse.data.userType !== 'admin') {
+            setError("Access Denied. You are not an admin.");
+            localStorage.removeItem('token');
+            navigate('/login');
+        } else {
+            setDoctors(usersResponse.data.doctors);
+            setPatients(usersResponse.data.patients);
+            setAdminProfile(profileResponse.data);
+        }
 
       } catch (err) {
         const errorMessage = err.response?.data?.message || "An error occurred while fetching data.";
@@ -82,29 +82,35 @@ export default function AdminDashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [navigate]);
 
-  const handleVerify = async (userId, userType) => {
+  const handleVerify = async (doctorId) => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert("Session expired. Please log in again.");
       return;
     }
-    setVerifyingId(userId);
+    setVerifyingId(doctorId);
     try {
+      // Call the correct admin verification route
       const response = await axios.put(
-        `http://localhost:5001/api/admin/verify-doctor/${userId}`,
+        `http://localhost:5001/api/admin/verify-doctor/${doctorId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const updatedUser = response.data.doctor; // Backend route returns a 'doctor' object
-      if (userType === 'doctor') {
-        setDoctors(docs =>
-          docs.map(doc => doc._id === userId ? { ...doc, isProfileComplete: updatedUser.isProfileComplete } : doc)
-        );
-      }
+      
+      const updatedDoctor = response.data.doctor;
+
+      setDoctors(docs =>
+        docs.map(doc => 
+          doc._id === doctorId 
+            ? { ...doc, isVerified: updatedDoctor.isVerified } 
+            : doc
+        )
+      );
+
     } catch (err) {
-      alert(`Error: ${err.response?.data?.message || "Failed to verify user."}`);
+      alert(`Error: ${err.response?.data?.message || "Failed to verify doctor."}`);
     } finally {
       setVerifyingId(null);
     }
@@ -128,7 +134,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen p-8">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+        <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
         <span className="ml-4 text-lg text-gray-700">Loading Dashboard...</span>
       </div>
     );
@@ -157,16 +163,15 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" className="border-cyan-500 text-cyan-600 hover:bg-cyan-50" onClick={() => navigate('/appointments')}>
+            <Button variant="outline" className="border-cyan-500 text-cyan-600 hover:bg-cyan-50" onClick={() => navigate('/admin/appointments')}>
               <Calendar className="w-4 h-4 mr-2" />
-              View Appointments
+              View All Appointments
             </Button>
             <div className="relative" ref={dropdownRef}>
               <div
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="w-10 h-10 rounded-full bg-cyan-200 flex items-center justify-center text-cyan-800 font-semibold text-xs cursor-pointer hover:bg-cyan-300 transition-colors"
               >
-                {/* Display admin initials if profile is loaded */}
                 {adminProfile ? adminProfile.fullName.substring(0, 2).toUpperCase() : 'AD'}
               </div>
               {isProfileOpen && (
@@ -223,27 +228,38 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <Table>
-                <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>Experience</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Action</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {filteredDoctors.length > 0 ? (
                     filteredDoctors.map((doctor) => (
-                      <TableRow key={doctor._id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/admin/doctor/${doctor._id}`)}>
+                      <TableRow key={doctor._id}>
                         <TableCell className="font-medium">{doctor.fullName}</TableCell>
                         <TableCell>{doctor.email}</TableCell>
                         <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
-                        <TableCell>{doctor.experience} years</TableCell>
                         <TableCell>{doctor.licenseNumber}</TableCell>
                         <TableCell className="text-center">
-                          {/* --- FIX 4: Changed check from isVerified to isProfileComplete --- */}
-                          {doctor.isProfileComplete ? (
-                            <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle className="w-4 h-4 mr-1" />Verified</Badge>
+                          {doctor.isVerified ? (
+                            <Badge className="bg-green-100 text-green-800">
+                              <ShieldCheck className="w-4 h-4 mr-1" />
+                              Verified
+                            </Badge>
                           ) : (
-                            <div className="flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(doctor._id, 'doctor')} disabled={verifyingId === doctor._id}>
-                                {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                              </Button>
-                              <Button size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => alert('Reject functionality not implemented')}>Reject</Button>
-                            </div>
+                            <Badge variant="destructive" className="bg-yellow-100 text-yellow-800">
+                              <ShieldAlert className="w-4 h-4 mr-1" />
+                              Pending
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {!doctor.isVerified && (
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700" 
+                              onClick={() => handleVerify(doctor._id)} 
+                              disabled={verifyingId === doctor._id}
+                            >
+                              {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -266,13 +282,17 @@ export default function AdminDashboard() {
               <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {patients.map((patient) => (
+                  {patients.length > 0 ? (
+                    patients.map((patient) => (
                     <TableRow key={patient._id}>
                       <TableCell className="font-medium">{patient.fullName}</TableCell>
                       <TableCell>{patient.email}</TableCell>
                       <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
                     </TableRow>
-                  ))}
+                  ))
+                  ) : (
+                     <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">No patients found.</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -314,3 +334,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
