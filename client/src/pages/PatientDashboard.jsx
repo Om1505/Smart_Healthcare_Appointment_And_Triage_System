@@ -188,7 +188,7 @@ export default function PatientDashboard() {
                             size="sm"
                             className="h-8 text-xs" // Made the button small
                             onClick={() => handleCancelAppointment(apt._id)}
-                          >
+                          > 
                             Cancel Appointment
                           </Button>
                         </div>
@@ -245,7 +245,6 @@ export default function PatientDashboard() {
         onProfileUpdate={setPatient}
       />
     </div>
-    
   );
 }
 
