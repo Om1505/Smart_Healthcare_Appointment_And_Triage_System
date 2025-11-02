@@ -16,6 +16,8 @@ import AppointmentsPage from './pages/Appointment';
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage'; 
 import DoctorEarningsPage from './pages/EarningPage';
 import DoctorSchedulePage from './pages/SchedulePage';
+import VideoCallPage from './pages/VideoCallPage';
+
 function App() {
   return (
     <Routes>
@@ -41,6 +43,7 @@ function App() {
       <Route path="/patient/doctors" element={<FindDoctorsPage />} />
       <Route path="/patient/book/:doctorId" element={<BookAppointmentPage />} />
       <Route path="/appointments" element={<AppointmentsPage />} />
+      <Route path="/call/:roomId" element={<VideoCallPage />} />
       
     </Routes>
   );
