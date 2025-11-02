@@ -34,6 +34,17 @@ const appointmentSchema = new mongoose.Schema({
   allergies: { type: String, default: '' },
   medications: { type: String, default: '' },
   consentToAI: { type: Boolean, default: false },
+  
+  // Payment related fields
+  paymentId: { type: String }, // Razorpay payment ID
+  orderId: { type: String }, // Razorpay order ID
+  reasonForVisit: { type: String },
+  symptoms: [String],
+  phoneNumber: { type: String },
+  email: { type: String },
+  birthDate: { type: Date },
+  sex: { type: String },
+  primaryLanguage: { type: String },
 
 }, { timestamps: true });
 

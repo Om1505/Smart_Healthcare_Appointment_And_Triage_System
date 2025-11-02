@@ -77,6 +77,7 @@ export default function BookAppointmentPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -176,6 +177,106 @@ export default function BookAppointmentPage() {
       setIsBooking(false);
     }
   };
+
+  const handlePayment = async () => {
+    if (!doctor || !selectedSlot.date) {
+      alert("Please complete all booking details first.");
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("You must be logged in to make a payment.");
+      return;
+    }
+
+    setIsPaymentProcessing(true);
+
+    try {
+      // Create order on backend
+      const orderResponse = await axios.post('http://localhost:5001/api/appointments/create-payment-order', {
+        doctorId,
+        amount: doctor.consultationFee * 100, // Convert to paisa
+        currency: 'INR'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const { orderId, amount, currency } = orderResponse.data;
+
+      // Razorpay options
+      const options = {
+        key: 'rzp_test_Raq438yqSnyOM4', 
+        amount: amount,
+        currency: currency,
+        name: 'IntelliConsult',
+        description: `Consultation with ${doctor.fullName}`,
+        order_id: orderId,
+        handler: async function (response) {
+          try {
+            // Verify payment on backend
+            const verifyResponse = await axios.post('http://localhost:5001/api/appointments/verify-payment', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              doctorId,
+              date: selectedSlot.date,
+              time: selectedSlot.time,
+              ...appointmentDetails,
+              symptoms: [...appointmentDetails.symptomsList, appointmentDetails.symptomsOther].filter(Boolean),
+              preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
+              familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
+            }, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (verifyResponse.data.success) {
+              alert("Payment successful! Appointment booked.");
+              navigate('/patient/dashboard');
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            alert("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: appointmentDetails.patientNameForVisit,
+          email: appointmentDetails.email,
+          contact: appointmentDetails.phoneNumber
+        },
+        theme: {
+          color: '#0F5257'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error('Payment initiation error:', error);
+      alert("Failed to initiate payment. Please try again.");
+    } finally {
+      setIsPaymentProcessing(false);
+    }
+  };
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Cleanup script when component unmounts
+      const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
+    };
+  }, []);
 
   if (isLoading) return (
     <div className="flex items-center justify-center h-screen">
@@ -435,10 +536,16 @@ export default function BookAppointmentPage() {
                 </div>
                 <div className="flex justify-between">
                   <Button variant="outline" onClick={() => setStep(2)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isBooking}>
-                    {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    {isBooking ? "Booking..." : "Confirm Booking"}
-                  </Button>
+                  <div className="flex space-x-3">
+                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isBooking}>
+                      {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {isBooking ? "Booking..." : "Confirm Booking"}
+                    </Button>
+                    <Button onClick={handlePayment} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isPaymentProcessing}>
+                      {isPaymentProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {isPaymentProcessing ? "Processing..." : "Complete Payment"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -3,6 +3,17 @@ const router = express.Router();
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const authMiddleware = require('../middleware/auth');
+
+// Import Razorpay
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
+
+// Initialize Razorpay instance
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID ,
+  key_secret: process.env.RAZORPAY_KEY_SECRET 
+});
+
 router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
   try {
     const { doctorId } = req.params;
@@ -270,6 +281,121 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Complete Appointment Error:', err.message);
     res.status(500).send('Server Error');
+  }
+});
+
+// Create payment order
+router.post('/create-payment-order', authMiddleware, async (req, res) => {
+  try {
+    const { doctorId, amount, currency = 'INR' } = req.body;
+
+    // Validate doctor exists
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found.' });
+    }
+
+    // Create Razorpay order
+    const options = {
+      amount: amount, // amount in paisa
+      currency: currency,
+      receipt: `order_${Date.now()}`,
+      payment_capture: 1
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    res.json({
+      success: true,
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency
+    });
+
+  } catch (error) {
+    console.error('Payment order creation error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to create payment order' 
+    });
+  }
+});
+
+// Verify payment and book appointment
+router.post('/verify-payment', authMiddleware, async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      doctorId,
+      ...appointmentData
+    } = req.body;
+
+    // Verify payment signature
+    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || 'your_razorpay_key_secret')
+      .update(body.toString())
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed'
+      });
+    }
+
+    // Get doctor's consultation fee
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+
+    // Payment verified, now create appointment
+    const appointment = new Appointment({
+      patient: req.user.userId,
+      doctor: doctorId,
+      date: appointmentData.date,
+      time: appointmentData.time,
+      reasonForVisit: appointmentData.primaryReason,
+      symptoms: appointmentData.symptoms || [],
+      patientNameForVisit: appointmentData.patientNameForVisit,
+      phoneNumber: appointmentData.phoneNumber,
+      email: appointmentData.email,
+      birthDate: appointmentData.birthDate,
+      sex: appointmentData.sex,
+      primaryLanguage: appointmentData.primaryLanguage,
+      symptomsBegin: appointmentData.symptomsBegin,
+      severeSymptomsCheck: appointmentData.severeSymptomsCheck || [],
+      preExistingConditions: appointmentData.preExistingConditions || [],
+      pastSurgeries: appointmentData.pastSurgeries,
+      familyHistory: appointmentData.familyHistory || [],
+      allergies: appointmentData.allergies,
+      medications: appointmentData.medications,
+      consentToAI: appointmentData.consentToAI,
+      emergencyDisclaimerAcknowledged: appointmentData.emergencyDisclaimerAcknowledged,
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      paymentStatus: 'paid',
+      status: 'upcoming',
+      consultationFeeAtBooking: doctor.consultationFee || 0
+    });
+
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Payment verified and appointment booked successfully',
+      appointment: appointment
+    });
+
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Payment verification failed'
+    });
   }
 });
 
