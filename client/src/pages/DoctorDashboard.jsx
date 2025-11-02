@@ -163,14 +163,14 @@ export default function DoctorDashboard() {
                           </div>
                         </div>
                         <div className="flex flex-col space-y-2">
-                          <Link to={`/call/${appointment._id}`} state={{ userName: doctor.fullName }}>
+                          {/* <Link to={`/call/${appointment._id}`} state={{ userName: doctor.fullName }}>
                             <Button 
                               size="sm" 
                               className="bg-teal-600 text-white hover:bg-teal-700 w-full"
                             >
                               Start Consultation
                             </Button>
-                          </Link>
+                          </Link> */}
                         </div>
                       </div>
                     )) : <p className="text-center text-gray-500 py-8">You have no scheduled appointments.</p>}

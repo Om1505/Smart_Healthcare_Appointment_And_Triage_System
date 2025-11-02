@@ -182,7 +182,7 @@ export default function PatientDashboard() {
                           </div>
                         </div>
                         
-                      <Link to={`/call/${apt._id}`} state={{ userName: patient.fullName }}>
+                      {/* <Link to={`/call/${apt._id}`} state={{ userName: patient.fullName }}>
                             <Button
                               size="sm"
                               className="h-8 text-xs bg-green-600 text-white hover:bg-green-700"
@@ -190,7 +190,7 @@ export default function PatientDashboard() {
                               <Phone className="h-3 w-3 mr-1" />
                               Join Call
                             </Button>
-                          </Link>
+                          </Link> */}
 
                         {/* New container for Badge and Button */}
                         <div className="flex flex-col items-end space-y-2">
