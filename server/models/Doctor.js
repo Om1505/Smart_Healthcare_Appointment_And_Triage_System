@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto'); // <-- Added crypto import
 
 const doctorSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
@@ -20,6 +21,7 @@ const doctorSchema = new mongoose.Schema({
   consultationFee: { type: Number, required: true, min: [0] },
   bio: { type: String },
   googleId: { type: String, unique: true, sparse: true },
+  
   isProfileComplete: { 
     type: Boolean, 
     default: false 
@@ -28,10 +30,26 @@ const doctorSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+
+  // --- ADDED EMAIL VERIFICATION FIELDS ---
+  isEmailVerified: { 
+    type: Boolean, 
+    default: false 
+  },
+  emailVerificationToken: { 
+    type: String 
+  },
+  emailVerificationTokenExpires: { 
+    type: Date 
+  },
+  // ----------------------------------------
+
 }, { timestamps: true });
 
+// --- UPDATED pre('save') hook ---
 doctorSchema.pre('save', async function(next) {
   
+  // Hash password if it's new or modified
   if (this.password && this.isModified('password')) {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -41,6 +59,7 @@ doctorSchema.pre('save', async function(next) {
     }
   }
 
+  // Set profile complete status
   if (this.isNew) {
     if (this.googleId) {
       this.isProfileComplete = false;
@@ -51,6 +70,23 @@ doctorSchema.pre('save', async function(next) {
 
   next();
 });
+
+// --- ADDED EMAIL VERIFICATION METHOD ---
+doctorSchema.methods.createEmailVerificationToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  // Set expiry to 10 minutes
+  this.emailVerificationTokenExpires = Date.now() + 10 * 60 * 1000;
+
+  // Return the unhashed token (this is what we email to the user)
+  return token;
+};
+// ------------------------------------
 
 doctorSchema.index({ fullName: 'text', specialization: 'text' });
 

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Stethoscope, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom"; // Import useSearchParams
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,39 +12,52 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState("");
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [isLoading, setIsLoading] = useState(false); // Added loading state
-  const [error, setError] = useState(""); // Added error state
-  const navigate = useNavigate(); // Use the useNavigate hook
   const primaryColor = '#0F5257';
+  
+  // --- NEW STATE FOR MESSAGES ---
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams(); // Get URL params
 
-  // This is the same as the signup page, just for login
-  const handleGoogleLogin = () => {
-    // Redirect browser to the backend Google auth route
-    window.location.href = 'http://localhost:5001/api/auth/google';
-  };
+  // --- NEW EFFECT to check for verification status ---
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setSuccess('Email verified successfully! You may now log in.');
+    } else if (verified === 'false') {
+      setError('Email verification failed. The link may have expired or was invalid.');
+    }
+  }, [searchParams]);
+  // --------------------------------------------------
 
-  const handleSubmit = async (e) => {
+  const handleLocalSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); 
-    setError(""); 
+    setError('');
+    setSuccess('');
+    
     const loginData = { ...formData, userType };
 
     if (!loginData.userType) {
       setError("Please select a user role.");
-      setIsLoading(false);
       return;
     }
+    
+    setIsLoading(true);
 
     try {
       const response = await axios.post('http://localhost:5001/api/auth/login', loginData);
       localStorage.setItem('token', response.data.token);
 
+      // Handle profile completion redirect
       if (response.data.profileComplete === false) {
         navigate('/complete-profile');
-        return;
+        return; // Stop execution
       }
 
-      // Use navigate for redirection
+      // Handle dashboard redirect
       switch (loginData.userType) {
         case 'doctor':
           navigate('/doctor/dashboard');
@@ -60,10 +73,14 @@ export default function LoginPage() {
       }
     } catch (error) {
       const message = error.response?.data?.message || "An error occurred during login.";
-      setError(message); 
+      setError(message);
     } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
+  };
+  
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:5001/api/auth/google';
   };
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -79,10 +96,29 @@ export default function LoginPage() {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-gray-900">Welcome Back</CardTitle>
             <CardDescription className="text-gray-600">Sign in to your account</CardDescription>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          
+            {/* --- NEW SUCCESS/ERROR ALERTS --- */}
+            {success && (
+              <div className="mb-4 p-3 rounded-md bg-green-100 text-green-800">
+                {success}
+              </div>
+            )}
+            {error && (
+              <div className="mb-4 p-3 rounded-md bg-red-100 text-red-800">
+                {error}
+                {/* Optional: Add a resend link if the error is about verification */}
+                {error.includes("not verified") && (
+                  <Button variant="link" className="p-0 h-auto text-red-800" onClick={() => alert('Resend logic not implemented yet.')}>
+                    Resend verification email?
+                  </Button>
+                )}
+              </div>
+            )}
+            {/* ------------------------------- */}
+          
+            <form onSubmit={handleLocalSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="userType">I am a</Label>
                 <Select value={userType} onValueChange={setUserType} required>
@@ -104,7 +140,7 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
                   <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={formData.password} onChange={handleInputChange} required />
-                   <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}</Button>
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}</Button>
                 </div>
               </div>
               <div className="flex items-center justify-end">
@@ -114,21 +150,21 @@ export default function LoginPage() {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
-
+            
             <div className="mt-4 flex flex-col items-center">
               <div className="relative w-full flex justify-center text-sm my-2">
-                  <span className="px-2 bg-white text-gray-500">Or sign in with</span>
+                <span className="px-2 bg-white text-gray-500">Or sign in with</span>
               </div>
-               <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleGoogleLogin} // Call the Google handler
-                  disabled={isLoading}
-                >
-                  Sign in with Google
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+              >
+                Sign in with Google
               </Button>
             </div>
-
+            
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">Don't have an account?{" "}<Link to="/signup" className="text-teal-700 hover:text-teal-800 font-medium">Sign up</Link></p>
             </div>
@@ -138,3 +174,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
