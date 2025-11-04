@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto'); // <-- Added crypto import
+const crypto = require('crypto');
 
 const doctorSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
@@ -31,7 +31,6 @@ const doctorSchema = new mongoose.Schema({
     default: false
   },
 
-  // --- ADDED EMAIL VERIFICATION FIELDS ---
   isEmailVerified: { 
     type: Boolean, 
     default: false 
@@ -42,14 +41,12 @@ const doctorSchema = new mongoose.Schema({
   emailVerificationTokenExpires: { 
     type: Date 
   },
-  // ----------------------------------------
+
 
 }, { timestamps: true });
 
-// --- UPDATED pre('save') hook ---
 doctorSchema.pre('save', async function(next) {
-  
-  // Hash password if it's new or modified
+
   if (this.password && this.isModified('password')) {
     try {
       const salt = await bcrypt.genSalt(10);
@@ -59,7 +56,6 @@ doctorSchema.pre('save', async function(next) {
     }
   }
 
-  // Set profile complete status
   if (this.isNew) {
     if (this.googleId) {
       this.isProfileComplete = false;
@@ -71,7 +67,6 @@ doctorSchema.pre('save', async function(next) {
   next();
 });
 
-// --- ADDED EMAIL VERIFICATION METHOD ---
 doctorSchema.methods.createEmailVerificationToken = function() {
   const token = crypto.randomBytes(32).toString('hex');
 
@@ -80,15 +75,12 @@ doctorSchema.methods.createEmailVerificationToken = function() {
     .update(token)
     .digest('hex');
 
-  // Set expiry to 10 minutes
   this.emailVerificationTokenExpires = Date.now() + 10 * 60 * 1000;
 
-  // Return the unhashed token (this is what we email to the user)
   return token;
 };
-// ------------------------------------
+
 
 doctorSchema.index({ fullName: 'text', specialization: 'text' });
 
 module.exports = mongoose.model('Doctor', doctorSchema);
-

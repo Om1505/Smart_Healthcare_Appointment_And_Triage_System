@@ -14,7 +14,6 @@ const models = {
   doctor: Doctor,
   admin: Admin,
 };
-
 router.post('/signup', async (req, res) => {
   const { userType, email } = req.body;
   const Model = models[userType];
@@ -32,13 +31,10 @@ router.post('/signup', async (req, res) => {
     }
 
     const user = new Model(req.body);
-
     const verificationToken = user.createEmailVerificationToken();
-
     await user.save();
-
+    
     const verificationURL = `http://localhost:5001/api/auth/verify-email/${verificationToken}`;
-
     const message = `
       <h1>Welcome to IntelliConsult!</h1>
       <p>Thank you for registering. Please click the link below to verify your email address. This link is valid for 10 minutes.</p>
@@ -46,7 +42,6 @@ router.post('/signup', async (req, res) => {
       <p>If you did not create this account, please ignore this email.</p>
     `;
     
-
     try {
       await sendEmail({
         email: user.email,
@@ -54,18 +49,15 @@ router.post('/signup', async (req, res) => {
         html: message,
       });
       
-      
       res.status(201).json({ 
         message: `Registration successful! Please check your email at ${user.email} to verify your account.` 
       });
       
     } catch (emailError) {
       console.error(emailError);
-
       await Model.findByIdAndDelete(user._id);
       return res.status(500).json({ message: 'Failed to send verification email. Please try signing up again.' });
     }
-  
     
   } catch (error) {
     console.error('Signup Error:', error);
@@ -76,38 +68,32 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Server error during signup.', error: error.message });
   }
 });
-
 router.get('/verify-email/:token', async (req, res) => {
   try {
-   
     const token = req.params.token;
-    
-  
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
       .digest('hex');
-
+      
     const query = {
       emailVerificationToken: hashedToken,
       emailVerificationTokenExpires: { $gt: Date.now() }
     };
 
-
     let user = await Patient.findOne(query) ||
                await Doctor.findOne(query) ||
                await Admin.findOne(query);
-
+    
     if (!user) {
-      
       return res.redirect('http://localhost:5173/login?verified=false');
     }
-
+    
     user.isEmailVerified = true;
     user.emailVerificationToken = undefined;
     user.emailVerificationTokenExpires = undefined;
     await user.save();
-
+    
     res.redirect('http://localhost:5173/login?verified=true');
     
   } catch (error) {
@@ -115,9 +101,6 @@ router.get('/verify-email/:token', async (req, res) => {
     res.redirect('http://localhost:5173/login?verified=false');
   }
 });
-
-
-
 router.post('/login', async (req, res) => {
   const { email, password, userType } = req.body;
   const Model = models[userType];
@@ -130,9 +113,11 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials or user role.' });
     }
-
+    if (user.googleId && !user.password) {
+      return res.status(400).json({ message: 'This account is registered with Google. Please use Google Sign In.' });
+    }
     if (!user.password) {
-        return res.status(400).json({ message: 'This account was registered using Google. Please use Google Sign In.' });
+       return res.status(400).json({ message: 'Invalid account. No password set.' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -140,13 +125,11 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
 
-
     if (!user.isEmailVerified) {
       return res.status(401).json({ 
         message: 'Your email is not verified. Please check your inbox for the verification link.' 
       });
     }
-  
 
     const token = jwt.sign(
       { userId: user._id, userType: user.userType },
@@ -172,16 +155,19 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login.', error: error.message });
   }
 });
-
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google', passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    session: false 
+}));
 
 router.get('/google/callback',
   passport.authenticate('google', {
     failureRedirect: 'http://localhost:5173/login?error=google_failed', 
     failureMessage: true,
     session: false 
-   }),
+  }),
   (req, res) => {
+
     const user = req.user;
     const userType = user.userType; 
 
@@ -208,4 +194,3 @@ router.get('/google/callback',
 );
 
 module.exports = router;
-
