@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Stethoscope, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom"; // Import useSearchParams
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,15 +14,14 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const primaryColor = '#0F5257';
   
-  // --- NEW STATE FOR MESSAGES ---
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // Get URL params
+  const [searchParams] = useSearchParams();
 
-  // --- NEW EFFECT to check for verification status ---
+
   useEffect(() => {
     const verified = searchParams.get('verified');
     if (verified === 'true') {
@@ -31,7 +30,6 @@ export default function LoginPage() {
       setError('Email verification failed. The link may have expired or was invalid.');
     }
   }, [searchParams]);
-  // --------------------------------------------------
 
   const handleLocalSubmit = async (e) => {
     e.preventDefault();
@@ -51,13 +49,11 @@ export default function LoginPage() {
       const response = await axios.post('http://localhost:5001/api/auth/login', loginData);
       localStorage.setItem('token', response.data.token);
 
-      // Handle profile completion redirect
       if (response.data.profileComplete === false) {
         navigate('/complete-profile');
-        return; // Stop execution
+        return; 
       }
 
-      // Handle dashboard redirect
       switch (loginData.userType) {
         case 'doctor':
           navigate('/doctor/dashboard');
@@ -78,7 +74,7 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-  
+
   const handleGoogleLogin = () => {
     window.location.href = 'http://localhost:5001/api/auth/google';
   };
@@ -99,7 +95,6 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
           
-            {/* --- NEW SUCCESS/ERROR ALERTS --- */}
             {success && (
               <div className="mb-4 p-3 rounded-md bg-green-100 text-green-800">
                 {success}
@@ -108,15 +103,8 @@ export default function LoginPage() {
             {error && (
               <div className="mb-4 p-3 rounded-md bg-red-100 text-red-800">
                 {error}
-                {/* Optional: Add a resend link if the error is about verification */}
-                {error.includes("not verified") && (
-                  <Button variant="link" className="p-0 h-auto text-red-800" onClick={() => alert('Resend logic not implemented yet.')}>
-                    Resend verification email?
-                  </Button>
-                )}
               </div>
             )}
-            {/* ------------------------------- */}
           
             <form onSubmit={handleLocalSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -151,6 +139,7 @@ export default function LoginPage() {
               </Button>
             </form>
             
+            {/* --- GOOGLE SIGN IN BUTTON --- */}
             <div className="mt-4 flex flex-col items-center">
               <div className="relative w-full flex justify-center text-sm my-2">
                 <span className="px-2 bg-white text-gray-500">Or sign in with</span>
@@ -174,4 +163,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Stethoscope, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom"; // Import useNavigate
+import { Link, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,11 +19,9 @@ export default function SignupPage() {
     specialization: "", experience: "", licenseNumber: "", address: "", consultationFee: "", bio: "",
   });
   
-  // --- NEW STATE FOR MESSAGES ---
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  // ------------------------------
   
   const navigate = useNavigate();
   const primaryColor = '#0F5257';
@@ -37,31 +35,27 @@ export default function SignupPage() {
       setError("Passwords do not match!");
       return;
     }
+
+    if (!formData.userType) {
+      setError("Please select a user role.");
+      return;
+    }
     
-    setIsLoading(true); // --- SET LOADING ---
+    setIsLoading(true);
     
     try {
       const response = await axios.post('http://localhost:5001/api/auth/signup', formData);
-      
-      // --- SUCCESS! SHOW MESSAGE, DON'T REDIRECT ---
       setSuccess(response.data.message);
-      // Do not redirect: window.location.href = '/login';
-      // ---------------------------------------------
-      
     } catch (error) {
       const message = error.response?.data?.message || "An error occurred during signup.";
       setError(message);
     } finally {
-      setIsLoading(false); // --- UNSET LOADING ---
+      setIsLoading(false);
     }
   };
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const handleSelectChange = (name, value) => setFormData({ ...formData, [name]: value });
-
-  const handleGoogleSignup = () => {
-    window.location.href = 'http://localhost:5001/api/auth/google';
-  };
 
   return (
     <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 text-gray-800">
@@ -77,7 +71,6 @@ export default function SignupPage() {
           </CardHeader>
           <CardContent>
           
-            {/* --- NEW SUCCESS/ERROR ALERTS --- */}
             {success && (
               <div className="mb-4 p-3 rounded-md bg-green-100 text-green-800">
                 {success}
@@ -88,9 +81,7 @@ export default function SignupPage() {
                 {error}
               </div>
             )}
-            {/* ------------------------------- */}
 
-            {/* Don't show form if success */}
             {!success && (
               <>
                 <form onSubmit={handleLocalSubmit} className="space-y-4">
@@ -110,7 +101,7 @@ export default function SignupPage() {
                       <SelectContent>
                         <SelectItem value="patient">Patient</SelectItem>
                         <SelectItem value="doctor">Doctor</SelectItem>
-                        <SelectItem valueD="admin">Admin</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -152,7 +143,7 @@ export default function SignupPage() {
                     </>
                   )}
 
-                  {/* Password Fields */}
+                 
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-gray-700">Password</Label>
                     <div className="relative">
@@ -173,19 +164,7 @@ export default function SignupPage() {
                   </Button>
                 </form>
 
-                <div className="mt-4 flex flex-col items-center">
-                  <div className="relative w-full flex justify-center text-sm my-2">
-                    <span className="px-2 bg-white text-gray-500">Or sign up with</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGoogleSignup}
-                    disabled={isLoading}
-                  >
-                    Sign up with Google
-                  </Button>
-                </div>
+                
               </>
             )}
 
@@ -198,4 +177,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
