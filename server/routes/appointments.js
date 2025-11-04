@@ -3,6 +3,7 @@ const router = express.Router();
 const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const authMiddleware = require('../middleware/auth');
+const sendEmail = require('../utils/email_utils');
 
 // Import Razorpay
 const Razorpay = require('razorpay');
@@ -10,8 +11,8 @@ const crypto = require('crypto');
 
 // Initialize Razorpay instance
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID ,
-  key_secret: process.env.RAZORPAY_KEY_SECRET 
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
@@ -25,9 +26,9 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
     // --- Add guard clauses to prevent crash ---
     if (!doctor.workingHours) {
       console.error("Doctor model is missing 'workingHours'. Skipping slot generation.");
-      return res.json([]); 
+      return res.json([]);
     }
-    
+
     // 1. Get all upcoming appointments for this doctor
     const bookedAppointments = await Appointment.find({
       doctor: doctorId,
@@ -43,7 +44,7 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
 
     // 2. Get the doctor's blocked times
     const blockedTimes = doctor.blockedTimes || []; // Use empty array if undefined
-    
+
     // 3. Generate potential slots for the next 14 days
     const availableSlots = [];
     const slotDuration = 60; // 60 minutes per slot (you can change this)
@@ -54,7 +55,7 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dateString = date.toDateString();
-      
+
       const dayKey = daysOfWeek[date.getDay()];
       const daySchedule = doctor.workingHours.get(dayKey);
 
@@ -97,7 +98,7 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
               time: timeString
             });
           }
-          
+
           currentSlotTime.setMinutes(currentSlotTime.getMinutes() + slotDuration);
         }
       }
@@ -221,6 +222,7 @@ router.post('/book', authMiddleware, async (req, res) => {
     });
 
     const appointment = await newAppointment.save();
+
     res.status(201).json(appointment);
   } catch (err) {
     console.error('Booking Error:', err.message);
@@ -314,9 +316,9 @@ router.post('/create-payment-order', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Payment order creation error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to create payment order' 
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create payment order'
     });
   }
 });
@@ -383,6 +385,84 @@ router.post('/verify-payment', authMiddleware, async (req, res) => {
     });
 
     await appointment.save();
+
+    // Send confirmation email to patient for paid appointment
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #16a34a; margin: 0; font-size: 28px;">🎉 Payment Successful!</h1>
+          </div>
+          
+          <div style="margin-bottom: 25px;">
+            <h2 style="color: #333; margin-bottom: 15px;">Dear ${appointmentData.patientNameForVisit},</h2>
+            <p style="color: #666; line-height: 1.6; font-size: 16px;">
+              Thank you for your payment! Your appointment has been successfully confirmed with IntelliConsult.
+            </p>
+          </div>
+          
+          <div style="background-color: #f0fdf4; padding: 25px; border-radius: 10px; border: 2px solid #16a34a; margin: 25px 0;">
+            <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 18px;">📋 Appointment Details</h3>
+            <div style="color: #333; line-height: 1.8;">
+              <p style="margin: 8px 0;"><strong>👨‍⚕️ Doctor:</strong> ${doctor.fullName}</p>
+              <p style="margin: 8px 0;"><strong>🏥 Specialization:</strong> ${doctor.specialization}</p>
+              <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${new Date(appointmentData.date).toDateString()}</p>
+              <p style="margin: 8px 0;"><strong>🕐 Time:</strong> ${appointmentData.time}</p>
+              <p style="margin: 8px 0;"><strong>💰 Amount Paid:</strong> ₹${doctor.consultationFee}</p>
+              <p style="margin: 8px 0;"><strong>💳 Payment ID:</strong> ${razorpay_payment_id}</p>
+              <p style="margin: 8px 0;"><strong>✅ Status:</strong> <span style="color: #16a34a; font-weight: 600;">Confirmed & Paid</span></p>
+            </div>
+          </div>
+          
+          <div style="background-color: #dbeafe; padding: 20px; border-radius: 8px; border-left: 4px solid #2563eb; margin: 25px 0;">
+            <p style="color: #1e40af; font-weight: 600; margin: 0; font-size: 16px;">
+              📞 You will receive a video call link before your appointment time.
+            </p>
+          </div>
+          
+          <div style="margin: 25px 0;">
+            <p style="color: #666; line-height: 1.6;">
+              <strong>Preparation for your consultation:</strong>
+            </p>
+            <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
+              <li>Have your medical history and current medications ready</li>
+              <li>Prepare a list of questions you want to ask the doctor</li>
+              <li>Ensure you have a stable internet connection</li>
+              <li>Find a quiet, well-lit space for the video call</li>
+              <li>Test your camera and microphone beforehand</li>
+            </ul>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/patient/dashboard" 
+               style="background-color: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; margin-right: 10px;">
+              View My Appointments
+            </a>
+          </div>
+          
+          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
+              If you need to reschedule or have any questions, please contact our support team.
+            </p>
+            <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
+              Thank you for choosing IntelliConsult!<br>
+              <strong>IntelliConsult Team</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendEmail({
+        email: appointmentData.email,
+        subject: '🎉 Payment Successful - Appointment Confirmed | IntelliConsult',
+        html: emailHtml
+      });
+    } catch (emailError) {
+      console.error('Error sending payment confirmation email:', emailError);
+      // Continue with the response even if email fails
+    }
 
     res.json({
       success: true,
