@@ -21,7 +21,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-
   useEffect(() => {
     const verified = searchParams.get('verified');
     if (verified === 'true') {
@@ -74,12 +73,33 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
+  
   const handleGoogleLogin = () => {
     window.location.href = 'http://localhost:5001/api/auth/google';
   };
 
   const handleInputChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleResendVerification = async () => {
+    if (!formData.email || !userType) {
+      setError("Please enter your email and select your role to resend the link.");
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const response = await axios.post('http://localhost:5001/api/auth/resend-verification', {
+        email: formData.email,
+        userType: userType
+      });
+      setSuccess(response.data.message);
+    } catch (error) {
+      setError(error.response?.data?.message || "An error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 text-gray-800">
@@ -103,6 +123,16 @@ export default function LoginPage() {
             {error && (
               <div className="mb-4 p-3 rounded-md bg-red-100 text-red-800">
                 {error}
+                {error.includes("not verified") && (
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-red-800 font-bold" 
+                    onClick={handleResendVerification}
+                    disabled={isLoading}
+                  >
+                    Resend verification email?
+                  </Button>
+                )}
               </div>
             )}
           
@@ -139,7 +169,6 @@ export default function LoginPage() {
               </Button>
             </form>
             
-            {/* --- GOOGLE SIGN IN BUTTON --- */}
             <div className="mt-4 flex flex-col items-center">
               <div className="relative w-full flex justify-center text-sm my-2">
                 <span className="px-2 bg-white text-gray-500">Or sign in with</span>
