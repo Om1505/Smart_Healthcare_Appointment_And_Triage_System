@@ -18,7 +18,7 @@ export function UserProfileModal({ isOpen, onClose, patient, onProfileUpdate }) 
 
   const handleSave = async () => {
     const token = localStorage.getItem('token');
-    try {
+    try {    
       const response = await axios.put('http://localhost:5001/api/users/profile', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });

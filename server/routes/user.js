@@ -9,7 +9,7 @@ const models = {
   patient: Patient,
   doctor: Doctor,
   admin: Admin,
-};
+};   
 router.get('/profile', authMiddleware, async (req, res) => {
   try {
     const { userId, userType } = req.user;
@@ -27,6 +27,33 @@ router.get('/profile', authMiddleware, async (req, res) => {
     res.json(user);
   } catch (err) {
     console.error("GET /profile Error:", err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const { userId, userType } = req.user;
+    const { fullName } = req.body;
+
+    const Model = models[userType];
+    if (!Model) {
+      return res.status(400).json({ message: 'Invalid user type in token.' });
+    }
+
+    const updatedUser = await Model.findByIdAndUpdate(
+      userId,
+      { fullName },
+      { new: true }
+    ).select('-password'); 
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(updatedUser);
+  } catch (err) {
+    console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
