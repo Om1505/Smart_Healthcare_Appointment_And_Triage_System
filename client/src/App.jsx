@@ -17,6 +17,8 @@ import AdminAppointmentsPage from './pages/AdminAppointmentsPage';
 import DoctorEarningsPage from './pages/EarningPage';
 import DoctorSchedulePage from './pages/SchedulePage';
 import VideoCallPage from './pages/VideoCallPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 function App() {
   return (
@@ -27,6 +29,8 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/complete-profile" element={<CompleteProfilePage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

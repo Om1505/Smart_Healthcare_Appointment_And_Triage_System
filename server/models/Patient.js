@@ -7,7 +7,16 @@ const patientSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: {
     type: String,
-    required: function() { return !this.googleId; }
+    required: function() { return !this.googleId; },
+    validate: {
+      validator: function(v) {
+        if (this.isNew || this.isModified('password')) {
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
+        }
+        return true;
+      },
+      message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+    }
   },
   userType: { type: String, default: 'patient' },
   googleId: { type: String, unique: true, sparse: true },
@@ -26,7 +35,13 @@ const patientSchema = new mongoose.Schema({
   emailVerificationTokenExpires: { 
     type: Date 
   },
-  // ----------------------------------------
+
+  passwordResetToken: {
+    type: String
+  },
+  passwordResetTokenExpires: {
+    type: Date
+  },
 
 }, { timestamps: true });
 
@@ -42,7 +57,6 @@ patientSchema.pre('save', async function(next) {
   }
 
   if (this.isNew) {
-
     this.isProfileComplete = true;
   }
 
@@ -62,5 +76,17 @@ patientSchema.methods.createEmailVerificationToken = function() {
   return token;
 };
 
+patientSchema.methods.createPasswordResetToken = function() {
+  const token = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
+
+  return token;
+};
 
 module.exports = mongoose.model('Patient', patientSchema);

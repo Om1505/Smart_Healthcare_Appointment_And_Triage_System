@@ -14,6 +14,7 @@ const models = {
   doctor: Doctor,
   admin: Admin,
 };
+
 router.post('/signup', async (req, res) => {
   const { userType, email } = req.body;
   const Model = models[userType];
@@ -31,10 +32,13 @@ router.post('/signup', async (req, res) => {
     }
 
     const user = new Model(req.body);
+    
     const verificationToken = user.createEmailVerificationToken();
+    
     await user.save();
     
     const verificationURL = `http://localhost:5001/api/auth/verify-email/${verificationToken}`;
+    
     const message = `
       <h1>Welcome to IntelliConsult!</h1>
       <p>Thank you for registering. Please click the link below to verify your email address. This link is valid for 10 minutes.</p>
@@ -68,9 +72,11 @@ router.post('/signup', async (req, res) => {
     res.status(500).json({ message: 'Server error during signup.', error: error.message });
   }
 });
+
 router.get('/verify-email/:token', async (req, res) => {
   try {
     const token = req.params.token;
+    
     const hashedToken = crypto
       .createHash('sha256')
       .update(token)
@@ -101,6 +107,100 @@ router.get('/verify-email/:token', async (req, res) => {
     res.redirect('http://localhost:5173/login?verified=false');
   }
 });
+
+router.post('/forgot-password', async (req, res) => {
+  const { email, userType } = req.body;
+  const Model = models[userType];
+  
+  if (!Model) {
+    return res.status(400).json({ message: 'Invalid user type specified.' });
+  }
+
+  try {
+    const user = await Model.findOne({ email });
+
+    if (!user) {
+      return res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+    }
+
+    if (user.googleId && !user.password) {
+      return res.status(200).json({ message: 'This account is registered with Google. Please log in using Google.' });
+    }
+
+    const resetToken = user.createPasswordResetToken();
+    
+    await user.save({ validateBeforeSave: false });
+
+    const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
+
+    const message = `
+      <h1>Password Reset Request</h1>
+      <p>Please click the link below to create a new password. This link is valid for 10 minutes.</p>
+      <a href="${resetURL}" style="background-color: #0F5257; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Your Password</a>
+      <p>If you did not request this, please ignore this email.</p>
+    `;
+
+    await sendEmail({
+      email: user.email,
+      subject: 'IntelliConsult - Password Reset',
+      html: message,
+    });
+
+    res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+  }
+});
+
+router.put('/reset-password/:token', async (req, res) => {
+  try {
+    const { password, confirmPassword } = req.body;
+    const unhashedToken = req.params.token;
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: 'Passwords do not match.' });
+    }
+
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(unhashedToken)
+      .digest('hex');
+
+    const query = {
+      passwordResetToken: hashedToken,
+      passwordResetTokenExpires: { $gt: Date.now() }
+    };
+
+    let user = await Patient.findOne(query) ||
+               await Doctor.findOne(query) ||
+               await Admin.findOne(query);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Token is invalid or has expired.' });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetTokenExpires = undefined;
+    user.isEmailVerified = true; 
+
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful! You can now log in.' });
+
+  } catch (error) {
+    console.error('Reset Password Error:', error);
+    if (error.name === 'ValidationError') {
+        let messages = Object.values(error.errors).map(val => val.message);
+        return res.status(400).json({ message: messages.join(', ') });
+    }
+    res.status(500).json({ message: 'An error occurred while resetting your password.' });
+  }
+});
+
+
 router.post('/login', async (req, res) => {
   const { email, password, userType } = req.body;
   const Model = models[userType];
@@ -113,9 +213,11 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials or user role.' });
     }
+    
     if (user.googleId && !user.password) {
       return res.status(400).json({ message: 'This account is registered with Google. Please use Google Sign In.' });
     }
+    
     if (!user.password) {
        return res.status(400).json({ message: 'Invalid account. No password set.' });
     }
@@ -155,6 +257,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login.', error: error.message });
   }
 });
+
 router.get('/google', passport.authenticate('google', { 
     scope: ['profile', 'email'],
     session: false 
@@ -167,7 +270,6 @@ router.get('/google/callback',
     session: false 
   }),
   (req, res) => {
-
     const user = req.user;
     const userType = user.userType; 
 
