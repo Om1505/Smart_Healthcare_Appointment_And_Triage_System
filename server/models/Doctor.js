@@ -2,11 +2,18 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-const workingHoursSchema = new mongoose.Schema({
+const workingDaySchema = new mongoose.Schema({
   enabled: { type: Boolean, default: false },
-  start: { type: String, default: '09:00' },
-  end: { type: String, default: '17:00' },
+  start: { type: String, default: "09:00" },
+  end: { type: String, default: "17:00" },
 }, { _id: false });
+
+const blockedTimeSchema = new mongoose.Schema({
+  reason: { type: String, required: true },
+  date: { type: Date, required: true },
+  startTime: { type: String, required: true },
+  endTime: { type: String, required: true },
+});
 
 const doctorSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
@@ -69,23 +76,18 @@ const doctorSchema = new mongoose.Schema({
   
   workingHours: {
     type: Map,
-    of: workingHoursSchema,
+    of: workingDaySchema,
     default: {
-      monday: { enabled: true, start: "09:00", end: "17:00" },
-      tuesday: { enabled: true, start: "09:00", end: "17:00" },
-      wednesday: { enabled: true, start: "09:00", end: "17:00" },
-      thursday: { enabled: true, start: "09:00", end: "17:00" },
-      friday: { enabled: true, start: "09:00", end: "17:00" },
-      saturday: { enabled: false, start: "09:00", end: "17:00" },
-      sunday: { enabled: false, start: "09:00", end: "17:00" },
+        monday: { enabled: true, start: "09:00", end: "17:00" },
+        tuesday: { enabled: true, start: "09:00", end: "17:00" },
+        wednesday: { enabled: true, start: "09:00", end: "17:00" },
+        thursday: { enabled: true, start: "09:00", end: "17:00" },
+        friday: { enabled: true, start: "09:00", end: "17:00" },
+        saturday: { enabled: false, start: "09:00", end: "17:00" },
+        sunday: { enabled: false, start: "09:00", end: "17:00" }
     }
   },
-  blockedTimes: [{
-    date: { type: Date, required: true },
-    startTime: { type: String, required: true },
-    endTime: { type: String, required: true },
-    reason: { type: String }
-  }]
+  blockedTimes: [blockedTimeSchema],
 }, { timestamps: true });
 
 doctorSchema.pre('save', async function(next) {

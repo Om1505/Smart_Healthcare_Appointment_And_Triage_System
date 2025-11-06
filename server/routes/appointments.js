@@ -23,13 +23,6 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Doctor not found.' });
     }
 
-    // --- Add guard clauses to prevent crash ---
-    if (!doctor.workingHours) {
-      console.error("Doctor model is missing 'workingHours'. Skipping slot generation.");
-      return res.json([]);
-    }
-
-    // 1. Get all upcoming appointments for this doctor
     const bookedAppointments = await Appointment.find({
       doctor: doctorId,
       status: 'upcoming',
@@ -37,29 +30,24 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
 
     const bookedSlots = new Set();
     bookedAppointments.forEach(apt => {
-      // --- FIX: Correct template literal syntax ---
       const dateTimeString = `${new Date(apt.date).toDateString()}_${apt.time}`;
       bookedSlots.add(dateTimeString);
     });
 
-    // 2. Get the doctor's blocked times
-    const blockedTimes = doctor.blockedTimes || []; // Use empty array if undefined
+    const blockedTimes = doctor.blockedTimes || [];
 
-    // 3. Generate potential slots for the next 14 days
     const availableSlots = [];
-    const slotDuration = 60; // 60 minutes per slot (you can change this)
+    const slotDuration = 60; 
     const daysOfWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const today = new Date();
 
-    for (let i = 0; i < 14; i++) { // Generate for the next 14 days
+    for (let i = 0; i < 14; i++) { 
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      const dateString = date.toDateString();
-
+      
       const dayKey = daysOfWeek[date.getDay()];
       const daySchedule = doctor.workingHours.get(dayKey);
 
-      // 4. Check if the doctor works on this day
       if (daySchedule && daySchedule.enabled) {
         const [startHour, startMin] = daySchedule.start.split(':').map(Number);
         const [endHour, endMin] = daySchedule.end.split(':').map(Number);
@@ -67,7 +55,6 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
         const startTime = new Date(date.setHours(startHour, startMin, 0, 0));
         const endTime = new Date(date.setHours(endHour, endMin, 0, 0));
 
-        // 5. Loop through the workday and create slots
         let currentSlotTime = new Date(startTime);
         while (currentSlotTime < endTime) {
           const timeString = currentSlotTime.toLocaleTimeString('en-US', {
@@ -75,10 +62,8 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
             minute: '2-digit',
             hour12: true
           });
-          // --- FIX: Correct template literal syntax ---
+          const dateString = currentSlotTime.toDateString();
           const dateTimeString = `${dateString}_${timeString}`;
-
-          // 6. Check for Blocks
           let isBlocked = false;
           for (const block of blockedTimes) {
             const blockDate = new Date(block.date).toDateString();
@@ -90,15 +75,13 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
               }
             }
           }
-
-          // 7. Add to list ONLY if not booked AND not blocked
           if (!bookedSlots.has(dateTimeString) && !isBlocked) {
             availableSlots.push({
-              date: currentSlotTime.toISOString().split('T')[0], // "YYYY-MM-DD"
+              date: currentSlotTime.toISOString().split('T')[0],
               time: timeString
             });
           }
-
+          
           currentSlotTime.setMinutes(currentSlotTime.getMinutes() + slotDuration);
         }
       }
@@ -109,7 +92,6 @@ router.get('/available-slots/:doctorId', authMiddleware, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
 // @route   GET api/appointments/my-appointments
 // @desc    Get all appointments for the logged-in patient
 // @access  Private (Patient only)
@@ -129,9 +111,6 @@ router.get('/my-appointments', authMiddleware, async (req, res) => {
   }
 });
 
-// @route   GET api/appointments/doctor
-// @desc    Get all appointments for the logged-in doctor
-// @access  Private (Doctor only)
 router.get('/doctor', authMiddleware, async (req, res) => {
   if (req.user.userType !== 'doctor') {
     return res.status(403).json({ message: 'Access denied. Not a doctor.' });
@@ -180,7 +159,7 @@ router.post('/book', authMiddleware, async (req, res) => {
     // 3. Check for double-bookings (race condition)
     const existingAppointment = await Appointment.findOne({
       doctor: doctorId,
-      date: new Date(date),
+      date: new Date(date), 
       time: time,
       status: 'upcoming'
     });
