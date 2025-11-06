@@ -36,18 +36,14 @@ const familyHistoryOptions = [
 ];
 
 
-const mockAvailableSlots = [
-  { date: "2025-11-20", time: "10:00 AM" }, { date: "2025-11-20", time: "02:00 PM" },
-  { date: "2025-11-21", time: "09:00 AM" }, { date: "2025-11-21", time: "11:00 AM" },
-  { date: "2025-11-22", time: "03:00 PM" },
-];
 
 export default function BookAppointmentPage() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   
-  const [availableSlots, setAvailableSlots] = useState(mockAvailableSlots);
+   const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState({ date: "", time: "" });
   
@@ -88,6 +84,8 @@ export default function BookAppointmentPage() {
         return;
       }
       try {
+        setIsLoading(true);
+        setSlotsLoading(true); 
         const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
         
       
@@ -106,12 +104,19 @@ export default function BookAppointmentPage() {
           email: profileResponse.data.email,
           
         }));
-
+        setIsLoading(false); 
+        
+        const slotsResponse = await axios.get(
+          `http://localhost:5001/api/appointments/available-slots/${doctorId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setAvailableSlots(slotsResponse.data);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to fetch page details. The doctor may not exist or the server is down.");
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); 
+        setSlotsLoading(false);
       }
     };
     fetchData();
@@ -145,7 +150,7 @@ export default function BookAppointmentPage() {
       alert("You must consent to AI processing to continue.");
       return;
     }
-
+    if (isLoading) return <div className="text-center p-8">Loading doctor details...</div>;
     setIsBooking(true);
     
     
@@ -321,24 +326,40 @@ export default function BookAppointmentPage() {
 
           {step === 1 && (
             <Card className="bg-white border-gray-200">
-              <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
-              <CardContent>
-                
-                {availableSlots.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {availableSlots.map((slot, index) => (
-                      <Button key={index} variant={selectedSlot.date === slot.date && selectedSlot.time === slot.time ? "default" : "outline"} className="h-auto p-4 justify-start bg-emerald-50" onClick={() => setSelectedSlot(slot)}>
-                        <div className="flex items-center space-x-3"><Calendar className="h-4 w-4" /><div><div className="font-medium">{new Date(slot.date).toDateString()}</div><div className="text-sm opacity-70">{slot.time}</div></div></div>
-                      </Button>
-                    ))}
+        <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
+        <CardContent>
+          {slotsLoading ? (
+            <div className="text-center p-4">Loading available slots...</div>
+          ) : availableSlots.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {availableSlots.map((slot, index) => (
+                <Button 
+                  key={index} 
+                  variant={selectedSlot.date === slot.date && selectedSlot.time === slot.time ? "default" : "outline"} 
+                  className="h-auto p-4 justify-start bg-emerald-50" 
+                  onClick={() => setSelectedSlot(slot)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-4 w-4" />
+                    <div>
+                      <div className="font-medium">{new Date(slot.date).toDateString()}</div>
+                      <div className="text-sm opacity-70">{slot.time}</div>
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-center text-gray-600">This doctor has no available slots in the next 14 days.</p>
-                )}
-                <div className="flex justify-end mt-6"><Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>Next Step <ArrowRight className="h-4 w-4 ml-2" /></Button></div>
-              </CardContent>
-            </Card>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-4">No available slots found for this doctor.</div>
           )}
+          <div className="flex justify-end mt-6">
+            <Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>
+              Next Step <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )}
 
           {step === 2 && (
             <Card className="bg-white border-gray-200">
