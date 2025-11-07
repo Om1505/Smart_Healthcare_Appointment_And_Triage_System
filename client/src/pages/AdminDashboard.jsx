@@ -5,6 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Input } from "@/components/ui/input"; // <-- Add this
+import { Label } from "@/components/ui/label"; // <-- Add this
 import {
   Select,
   SelectContent,
@@ -32,12 +34,23 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [verifyingId, setVerifyingId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null); // <-- Add This
+  const [suspendingId, setSuspendingId] = useState(null); // <-- Add This
   const [specializationFilter, setSpecializationFilter] = useState('all');
+  const [nameFilter, setNameFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
+  const [licenseFilter, setLicenseFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [adminProfile, setAdminProfile] = useState(null);
+  const [patientNameFilter, setPatientNameFilter] = useState('');
+  const [patientEmailFilter, setPatientEmailFilter] = useState('');
+  const [patientDateFromFilter, setPatientDateFromFilter] = useState(''); // Will store 'YYYY-MM-DD'
+  const [patientDateToFilter, setPatientDateToFilter] = useState('');
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
+  
   useOutsideClick(dropdownRef, () => setIsProfileOpen(false));
   useEffect(() => {
     const fetchData = async () => {
@@ -127,10 +140,95 @@ export default function AdminDashboard() {
   }, [doctors]);
 
   const filteredDoctors = useMemo(() => {
-    if (specializationFilter === 'all') return doctors;
-    return doctors.filter(doc => doc.specialization === specializationFilter);
-  }, [doctors, specializationFilter]);
+    // Start with the full list
+    let filtered = doctors;
 
+    // 1. Filter by Specialization
+    if (specializationFilter !== 'all') {
+      filtered = filtered.filter(doc => doc.specialization === specializationFilter);
+    }
+
+    // 2. Filter by Status
+    if (statusFilter !== 'all') {
+      const isVerified = statusFilter === 'verified';
+      filtered = filtered.filter(doc => doc.isVerified === isVerified);
+    }
+
+    // 3. Filter by Name (case-insensitive)
+    if (nameFilter) {
+      filtered = filtered.filter(doc =>
+        doc.fullName.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+
+    // 4. Filter by Email (case-insensitive)
+    if (emailFilter) {
+      filtered = filtered.filter(doc =>
+        doc.email.toLowerCase().includes(emailFilter.toLowerCase())
+      );
+    }
+
+    // 5. Filter by License Number
+    if (licenseFilter) {
+      filtered = filtered.filter(doc =>
+        doc.licenseNumber?.toLowerCase().includes(licenseFilter.toLowerCase())
+      );
+    }
+
+    return filtered;
+    
+  }, [
+    doctors, 
+    specializationFilter, 
+    statusFilter, 
+    nameFilter, 
+    emailFilter, 
+    licenseFilter
+  ]); // <-- Make sure to add all new filters to the dependency array
+  const filteredPatients = useMemo(() => {
+    let filtered = patients;
+
+    // 1. Filter by Name (case-insensitive)
+    if (patientNameFilter) {
+      filtered = filtered.filter(p =>
+        p.fullName.toLowerCase().includes(patientNameFilter.toLowerCase())
+      );
+    }
+
+    // 2. Filter by Email (case-insensitive)
+    if (patientEmailFilter) {
+      filtered = filtered.filter(p =>
+        p.email.toLowerCase().includes(patientEmailFilter.toLowerCase())
+      );
+    }
+
+    // 3. Filter by Date Range
+    try {
+      // Create Date objects at midnight (for 'from') and just before midnight (for 'to')
+      // This ensures the full "from" and "to" days are included in the range.
+      const dateFrom = patientDateFromFilter ? new Date(patientDateFromFilter + 'T00:00:00') : null;
+      const dateTo = patientDateToFilter ? new Date(patientDateToFilter + 'T23:59:59') : null;
+
+      if (dateFrom) {
+        filtered = filtered.filter(p => new Date(p.createdAt) >= dateFrom);
+      }
+      if (dateTo) {
+        filtered = filtered.filter(p => new Date(p.createdAt) <= dateTo);
+      }
+    } catch (e) {
+      // Caches potential invalid date string errors
+      console.error("Invalid date filter:", e);
+    }
+    
+    return filtered;
+
+  }, [
+    patients, 
+    patientNameFilter, 
+    patientEmailFilter, 
+    patientDateFromFilter, 
+    patientDateToFilter
+  ]);
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen p-8">
@@ -139,7 +237,69 @@ export default function AdminDashboard() {
       </div>
     );
   }
+   // This new function will DELETE a pending doctor
+  const handleReject = async (doctorId) => {
+    // Add a confirmation step because this is a destructive action
+    if (!window.confirm("Are you sure you want to reject and permanently delete this doctor?")) {
+      return;
+    }
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Session expired. Please log in again.");
+      return;
+    }
+    setRejectingId(doctorId);
+    try {
+      // NOTE: This requires a new backend endpoint
+      await axios.delete(
+        `http://localhost:5001/api/admin/reject-doctor/${doctorId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Remove the doctor from the list in the UI
+      setDoctors(docs => docs.filter(doc => doc._id !== doctorId));
+
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to reject doctor."}`);
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
+  // This new function will UN-VERIFY (suspend) an already verified doctor
+  const handleSuspend = async (doctorId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert("Session expired. Please log in again.");
+      return;
+    }
+    setSuspendingId(doctorId);
+    try {
+      // NOTE: This also requires a new backend endpoint
+      const response = await axios.put(
+        `http://localhost:5001/api/admin/suspend-doctor/${doctorId}`,
+        {}, // No body needed
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const updatedDoctor = response.data.doctor;
+
+      // Update the doctor's status in the UI
+      setDoctors(docs =>
+        docs.map(doc => 
+          doc._id === doctorId 
+            ? { ...doc, isVerified: updatedDoctor.isVerified } // This will now be false
+            : doc
+        )
+      );
+
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to suspend doctor."}`);
+    } finally {
+      setSuspendingId(null);
+    }
+  };
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
@@ -206,25 +366,81 @@ export default function AdminDashboard() {
       <main className="p-4 sm:p-6 lg:p-8">
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
-
-          {/* Doctors Table */}
+{/* Doctors Table */}
           <Card className="mb-8 shadow-sm">
             <CardHeader>
+              {/* This part is the same */}
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                   <CardTitle className="flex items-center text-2xl"><Stethoscope className="w-6 h-6 mr-3 text-blue-700" />Doctors</CardTitle>
                   <CardDescription>A list of all registered doctors and their verification status.</CardDescription>
                 </div>
-                <div className="w-full sm:w-auto sm:min-w-[200px]">
+              </div>
+
+              {/* --- This is the new filter section --- */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
+                
+                {/* Name Filter */}
+                <div className="space-y-1">
+                  <Label htmlFor="nameFilter" className="text-xs font-medium">Name</Label>
+                  <Input 
+                    id="nameFilter" 
+                    placeholder="Search by name..." 
+                    value={nameFilter}
+                    onChange={e => setNameFilter(e.target.value)} 
+                  />
+                </div>
+
+                {/* Email Filter */}
+                <div className="space-y-1">
+                  <Label htmlFor="emailFilter" className="text-xs font-medium">Email</Label>
+                  <Input 
+                    id="emailFilter" 
+                    placeholder="Search by email..." 
+                    value={emailFilter}
+                    onChange={e => setEmailFilter(e.target.value)} 
+                  />
+                </div>
+
+                {/* License Filter */}
+                <div className="space-y-1">
+                  <Label htmlFor="licenseFilter" className="text-xs font-medium">License</Label>
+                  <Input 
+                    id="licenseFilter" 
+                    placeholder="Search by license..." 
+                    value={licenseFilter}
+                    onChange={e => setLicenseFilter(e.target.value)} 
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <div className="space-y-1">
+                  <Label htmlFor="statusFilter" className="text-xs font-medium">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger id="statusFilter"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Specialization Filter (Moved) */}
+                <div className="space-y-1">
+                  <Label htmlFor="specFilter" className="text-xs font-medium">Specialization</Label>
                   <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
-                    <SelectTrigger><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
+                    <SelectTrigger id="specFilter"><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Specializations</SelectItem>
                       {uniqueSpecializations.map(spec => (<SelectItem key={spec} value={spec}>{spec}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
+
               </div>
+              {/* --- End of new filter section --- */}
+              
             </CardHeader>
             <CardContent>
               <Table>
@@ -250,18 +466,43 @@ export default function AdminDashboard() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-center">
-                          {!doctor.isVerified && (
-                            <Button 
-                              size="sm" 
-                              className="bg-green-600 hover:bg-green-700" 
-                              onClick={() => handleVerify(doctor._id)} 
-                              disabled={verifyingId === doctor._id}
-                            >
-                              {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                            </Button>
-                          )}
-                        </TableCell>
+                       <TableCell className="text-center">
+                    {doctor.isVerified ? (
+                      // --- Case 1: Doctor is ALREADY VERIFIED ---
+                      // Show a "Suspend" button
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700"
+                        onClick={() => handleSuspend(doctor._id)}
+                        disabled={suspendingId === doctor._id}
+                      >
+                        {suspendingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
+                      </Button>
+                    ) : (
+                      // --- Case 2: Doctor is PENDING ---
+                      // Show "Verify" and "Reject" buttons side-by-side
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={() => handleVerify(doctor._id)}
+                          disabled={verifyingId === doctor._id || rejectingId === doctor._id}
+                        >
+                          {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="bg-red-600 hover:bg-red-700"
+                          onClick={() => handleReject(doctor._id)}
+                          disabled={rejectingId === doctor._id || verifyingId === doctor._id}
+                        >
+                          {rejectingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject'}
+                        </Button>
+                      </div>
+                    )}
+                  </TableCell>
                       </TableRow>
                     ))
                   ) : (
@@ -273,25 +514,86 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Patients Table */}
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center text-2xl"><Users className="w-6 h-6 mr-3 text-purple-700" />Patients</CardTitle>
-              <CardDescription>A list of all registered patients.</CardDescription>
-            </CardHeader>
+          {/* Patients Table */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            {/* Title and Description */}
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+              <div>
+                <CardTitle className="flex items-center text-2xl"><Users className="w-6 h-6 mr-3 text-purple-700" />Patients</CardTitle>
+                <CardDescription>A list of all registered patients.</CardDescription>
+              </div>
+            </div>
+
+            {/* --- New Patient Filter Section --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t">
+              
+              {/* Patient Name Filter */}
+              <div className="space-y-1">
+                <Label htmlFor="patientNameFilter" className="text-xs font-medium">Name</Label>
+                <Input 
+                  id="patientNameFilter" 
+                  placeholder="Search by name..." 
+                  value={patientNameFilter}
+                  onChange={e => setPatientNameFilter(e.target.value)} 
+                />
+              </div>
+
+              {/* Patient Email Filter */}
+              <div className="space-y-1">
+                <Label htmlFor="patientEmailFilter" className="text-xs font-medium">Email</Label>
+                <Input 
+                  id="patientEmailFilter" 
+                  placeholder="Search by email..." 
+                  value={patientEmailFilter}
+                  onChange={e => setPatientEmailFilter(e.target.value)} 
+                />
+              </div>
+
+              {/* Joined Date (From) Filter */}
+              <div className="space-y-1">
+                <Label htmlFor="dateFromFilter" className="text-xs font-medium">Joined From</Label>
+                <Input 
+                  id="dateFromFilter" 
+                  type="date"
+                  value={patientDateFromFilter}
+                  onChange={e => setPatientDateFromFilter(e.target.value)}
+                  className="text-gray-700" // Add class to make date text visible
+                />
+              </div>
+
+              {/* Joined Date (To) Filter */}
+              <div className="space-y-1">
+                <Label htmlFor="dateToFilter" className="text-xs font-medium">Joined To</Label>
+                <Input 
+                  id="dateToFilter" 
+                  type="date"
+                  value={patientDateToFilter}
+                  onChange={e => setPatientDateToFilter(e.target.value)}
+                  className="text-gray-700" // Add class to make date text visible
+                />
+              </div>
+            </div>
+            {/* --- End of new filter section --- */}
+            
+          </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {patients.length > 0 ? (
-                    patients.map((patient) => (
-                    <TableRow key={patient._id}>
-                      <TableCell className="font-medium">{patient.fullName}</TableCell>
-                      <TableCell>{patient.email}</TableCell>
-                      <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
-                    </TableRow>
-                  ))
+                  {filteredPatients.length > 0 ? (
+                    filteredPatients.map((patient) => ( // <-- Use filteredPatients
+                      <TableRow key={patient._id}>
+                        <TableCell className="font-medium">{patient.fullName}</TableCell>
+                        <TableCell>{patient.email}</TableCell>
+                        <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))
                   ) : (
-                     <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">No patients found.</TableCell></TableRow>
+                     <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">
+                      {/* Show a different message if filters are active */}
+                      {patients.length > 0 ? "No patients match the current filters." : "No patients found."}
+                     </TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
