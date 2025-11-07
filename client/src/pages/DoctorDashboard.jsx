@@ -96,6 +96,8 @@ export default function DoctorDashboard() {
     const secondaryColor = '#2E8B57';
     
     const [doctor, setDoctor] = useState(null);
+    const [aiSummaries, setAiSummaries] = useState({});
+    const [loadingSummaries, setLoadingSummaries] = useState({});
     const [appointments, setAppointments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
@@ -136,6 +138,43 @@ export default function DoctorDashboard() {
         };
         fetchData();
     }, []);
+
+    const fetchAISummary = async (appointmentId) => {
+        setLoadingSummaries(prev => ({ ...prev, [appointmentId]: true }));
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `http://localhost:5001/api/summary/appointment/${appointmentId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (response.data.success) {
+                setAiSummaries(prev => ({
+                    ...prev,
+                    [appointmentId]: response.data.summary
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching AI summary:', error);
+            setAiSummaries(prev => ({
+                ...prev,
+                [appointmentId]: 'Unable to generate AI summary at this time.'
+            }));
+        } finally {
+            setLoadingSummaries(prev => ({ ...prev, [appointmentId]: false }));
+        }
+    };
+
+    // ✅ NEW: Auto-fetch summaries when appointments load
+    useEffect(() => {
+        if (appointments.length > 0) {
+            const upcomingAppts = appointments.filter(apt => apt.status === 'upcoming');
+            upcomingAppts.forEach(apt => {
+                fetchAISummary(apt._id);
+            });
+        }
+    }, [appointments]);
 
     // --- Data Computations (Moved to top level) ---
     const urgencyToValue = (urgency) => {
@@ -193,8 +232,13 @@ export default function DoctorDashboard() {
         }
     };
 
-    // --- Helper functions to build AI summary from appointment data ---
     const generateAISummary = (apt) => {
+        // ✅ UPDATED: Use AI-generated summary if available
+        if (aiSummaries[apt._id]) {
+            return aiSummaries[apt._id];
+        }
+        
+        // Fallback to generated summary from form data
         let summary = `Patient is scheduled for a consultation regarding: ${apt.primaryReason || 'Not specified'}. `;
         let symptoms = [...(apt.symptomsList || [])];
         if (apt.symptomsOther) {
@@ -205,6 +249,7 @@ export default function DoctorDashboard() {
         }
         return summary;
     };
+
 
     const generateRiskFactors = (apt) => {
         let factors = [];
