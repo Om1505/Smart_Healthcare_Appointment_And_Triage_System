@@ -119,7 +119,11 @@ router.get('/doctor', authMiddleware, async (req, res) => {
     const appointments = await Appointment.find({ doctor: req.user.userId })
       .populate('patient', 'fullName email') // Get patient details
       .sort({ date: 1 });
-    res.json(appointments);
+    
+    // Filter out appointments where patient is null (deleted patient references)
+    const validAppointments = appointments.filter(appointment => appointment.patient);
+    
+    res.json(validAppointments);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');

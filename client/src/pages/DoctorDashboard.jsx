@@ -199,6 +199,18 @@ export default function DoctorDashboard() {
     [appointments]);
     // --- End of Computations ---
 
+    // Function to get time-based greeting
+    const getTimeBasedGreeting = () => {
+        const currentHour = new Date().getHours();
+        
+        if (currentHour >= 5 && currentHour < 12) {
+            return "Good morning";
+        } else if (currentHour >= 12 && currentHour < 17) {
+            return "Good afternoon";
+        } else {
+            return "Good evening";
+        }
+    };
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -294,8 +306,8 @@ export default function DoctorDashboard() {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                            <Stethoscope className="h-8 w-8" style={{ color: primaryColor }} />
-                            <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
+                            <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
+                            <span className="text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-4">
                             <Link to="/doctor/schedule"><Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900"><Calendar className="h-4 w-4 mr-2" />Schedule</Button></Link>
@@ -308,7 +320,7 @@ export default function DoctorDashboard() {
 
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Good morning, Dr. {doctor.fullName.split(' ').pop()}!</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!</h1>
                     <p className="text-gray-600">You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} in your queue for today.</p>
                 </div>
 

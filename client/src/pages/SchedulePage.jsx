@@ -11,14 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Plus, Edit, Trash2, Stethoscope, User, ArrowLeft, LogOut, CalendarDays, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-  DialogClose,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogTrigger,
+    DialogClose,
 } from "@/components/ui/dialog";
 
 const daysOfWeek = [
@@ -41,13 +41,13 @@ export default function DoctorSchedulePage() {
     // State for managing working hours locally before saving
     const [workingHours, setWorkingHours] = useState(null);
     const [blockedTimes, setBlockedTimes] = useState([]);
-  const [newBlock, setNewBlock] = useState({
-    reason: "",
-    date: new Date().toISOString().split('T')[0], 
-    startTime: "12:00",
-    endTime: "13:00",
-  });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newBlock, setNewBlock] = useState({
+        reason: "",
+        date: new Date().toISOString().split('T')[0],
+        startTime: "12:00",
+        endTime: "13:00",
+    });
+    const [isModalOpen, setIsModalOpen] = useState(false);
     useEffect(() => {
         const fetchData = async () => {
             const token = localStorage.getItem('token');
@@ -58,14 +58,14 @@ export default function DoctorSchedulePage() {
             try {
                 const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
                 const [profileRes, appointmentsRes, scheduleRes] = await Promise.all([
-          axios.get('http://localhost:5001/api/users/profile', authHeaders),
-          axios.get('http://localhost:5001/api/appointments/doctor', authHeaders),
-          axios.get('http://localhost:5001/api/schedule/working-hours', authHeaders) 
-        ]);
-                
+                    axios.get('http://localhost:5001/api/users/profile', authHeaders),
+                    axios.get('http://localhost:5001/api/appointments/doctor', authHeaders),
+                    axios.get('http://localhost:5001/api/schedule/working-hours', authHeaders)
+                ]);
+
                 setDoctor(profileRes.data);
                 setAppointments(appointmentsRes.data);
-                
+
                 // Set dummy schedule data for now
                 setWorkingHours(scheduleRes.data);
                 setBlockedTimes(profileRes.data.blockedTimes || []);
@@ -93,17 +93,17 @@ export default function DoctorSchedulePage() {
 
     const handleSaveChanges = async () => {
         try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5001/api/schedule/working-hours',
-        { workingHours },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert('Working hours updated successfully!');
-    } catch (err) {
-      console.error("Error saving working hours:", err);
-      alert('Failed to update working hours.');
-    }
-  };
+            const token = localStorage.getItem('token');
+            await axios.post('http://localhost:5001/api/schedule/working-hours',
+                { workingHours },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert('Working hours updated successfully!');
+        } catch (err) {
+            console.error("Error saving working hours:", err);
+            alert('Failed to update working hours.');
+        }
+    };
 
     const getStatusBadge = (status) => {
         switch (status?.toLowerCase()) {
@@ -119,50 +119,53 @@ export default function DoctorSchedulePage() {
     };
 
     const handleBlockInputChange = (field, value) => {
-    setNewBlock(prev => ({ ...prev, [field]: value }));
-  };
+        setNewBlock(prev => ({ ...prev, [field]: value }));
+    };
 
-  const handleAddBlock = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const response = await axios.post(
-        'http://localhost:5001/api/schedule/blocked-times',
-        newBlock,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setBlockedTimes(prev => [...prev, response.data]);
-      setIsModalOpen(false); 
-      setNewBlock({ 
-        reason: "",
-        date: new Date().toISOString().split('T')[0],
-        startTime: "12:00",
-        endTime: "13:00",
-      });
-    } catch (err) {
-      console.error("Error adding block:", err);
-      alert(err.response?.data?.message || 'Failed to add block.');
-    }
-  };
+    const handleAddBlock = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const response = await axios.post(
+                'http://localhost:5001/api/schedule/blocked-times',
+                newBlock,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setBlockedTimes(prev => [...prev, response.data]);
+            setIsModalOpen(false);
+            setNewBlock({
+                reason: "",
+                date: new Date().toISOString().split('T')[0],
+                startTime: "12:00",
+                endTime: "13:00",
+            });
+        } catch (err) {
+            console.error("Error adding block:", err);
+            alert(err.response?.data?.message || 'Failed to add block.');
+        }
+    };
 
-  const handleDeleteBlock = async (blockId) => {
-    if (!window.confirm("Are you sure you want to delete this block?")) return;
-    
-    const token = localStorage.getItem('token');
-    try {
-      await axios.delete(
-        `http://localhost:5001/api/schedule/blocked-times/${blockId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setBlockedTimes(prev => prev.filter(block => block._id !== blockId));
-    } catch (err) {
-      console.error("Error deleting block:", err);
-      alert(err.response?.data?.message || 'Failed to delete block.');
-    }
-  };
+    const handleDeleteBlock = async (blockId) => {
+        if (!window.confirm("Are you sure you want to delete this block?")) return;
+
+        const token = localStorage.getItem('token');
+        try {
+            await axios.delete(
+                `http://localhost:5001/api/schedule/blocked-times/${blockId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setBlockedTimes(prev => prev.filter(block => block._id !== blockId));
+        } catch (err) {
+            console.error("Error deleting block:", err);
+            alert(err.response?.data?.message || 'Failed to delete block.');
+        }
+    };
 
     const groupAppointmentsByDate = (appointments) => {
         const grouped = {};
-        appointments.forEach(appointment => {
+        // Filter out appointments with null patients first
+        const validAppointments = appointments.filter(appointment => appointment.patient);
+
+        validAppointments.forEach(appointment => {
             const date = new Date(appointment.date).toDateString();
             if (!grouped[date]) {
                 grouped[date] = [];
@@ -183,16 +186,16 @@ export default function DoctorSchedulePage() {
         } else if (date.toDateString() === tomorrow.toDateString()) {
             return "Tomorrow";
         } else {
-            return date.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'short', 
-                day: 'numeric' 
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric'
             });
         }
     };
 
-     if (isLoading || !workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
-  if (error) return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
+    if (isLoading || !workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
+    if (error) return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
 
     return (
         <div className="min-h-screen bg-emerald-50 text-gray-800">
@@ -200,8 +203,8 @@ export default function DoctorSchedulePage() {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                            <Stethoscope className="h-8 w-8 text-teal-600" />
-                            <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
+                            <img src="/Logo.svg" className="h-25 w-30" alt="Logo" />
+                            <span className="text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-4">
                             <Link to="/doctor/dashboard">
@@ -261,7 +264,7 @@ export default function DoctorSchedulePage() {
                                         <Clock className="h-4 w-4 text-gray-500" />
                                     </div>
                                     <div className="text-2xl font-bold text-blue-600">
-                                        {appointments.filter(apt => 
+                                        {appointments.filter(apt =>
                                             new Date(apt.date).toDateString() === new Date().toDateString()
                                         ).length}
                                     </div>
@@ -274,7 +277,7 @@ export default function DoctorSchedulePage() {
                                         <CalendarDays className="h-4 w-4 text-gray-500" />
                                     </div>
                                     <div className="text-2xl font-bold text-green-600">
-                                        {appointments.filter(apt => 
+                                        {appointments.filter(apt =>
                                             new Date(apt.date) > new Date()
                                         ).length}
                                     </div>
@@ -293,61 +296,66 @@ export default function DoctorSchedulePage() {
                                         {Object.entries(groupAppointmentsByDate(appointments))
                                             .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
                                             .map(([date, dateAppointments]) => (
-                                            <div key={date} className="space-y-3">
-                                                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                                                    {formatDate(date)}
-                                                    <span className="text-sm font-normal text-gray-500 ml-2">
-                                                        ({dateAppointments.length} appointment{dateAppointments.length !== 1 ? 's' : ''})
-                                                    </span>
-                                                </h3>
-                                                <div className="space-y-3">
-                                                    {dateAppointments
-                                                        .sort((a, b) => a.time.localeCompare(b.time))
-                                                        .map((appointment) => (
-                                                        <div key={appointment._id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-emerald-50 transition-colors">
-                                                            <Avatar>
-                                                                <AvatarImage src="/placeholder.svg" />
-                                                                <AvatarFallback className="bg-teal-100 text-teal-800">
-                                                                    {appointment.patient.fullName.split(" ").map((n) => n[0]).join("")}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center justify-between mb-2">
-                                                                    <h4 className="font-semibold text-gray-900">{appointment.patient.fullName}</h4>
-                                                                    <div className="flex items-center space-x-2">
-                                                                        {getStatusBadge(appointment.status)}
-                                                                        <Badge variant="outline" className="text-xs">
-                                                                            {appointment.time}
-                                                                        </Badge>
+                                                <div key={date} className="space-y-3">
+                                                    <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">
+                                                        {formatDate(date)}
+                                                        <span className="text-sm font-normal text-gray-500 ml-2">
+                                                            ({dateAppointments.length} appointment{dateAppointments.length !== 1 ? 's' : ''})
+                                                        </span>
+                                                    </h3>
+                                                    <div className="space-y-3">
+                                                        {dateAppointments
+                                                            .sort((a, b) => a.time.localeCompare(b.time))
+                                                            .map((appointment) => (
+                                                                <div key={appointment._id} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg hover:bg-emerald-50 transition-colors">
+                                                                    <Avatar>
+                                                                        <AvatarImage src="/placeholder.svg" />
+                                                                        <AvatarFallback className="bg-teal-100 text-teal-800">
+                                                                            {appointment.patient?.fullName ?
+                                                                                appointment.patient.fullName.split(" ").map((n) => n[0]).join("") :
+                                                                                "??"
+                                                                            }
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center justify-between mb-2">
+                                                                            <h4 className="font-semibold text-gray-900">{appointment.patient?.fullName || "Unknown Patient"}</h4>
+                                                                            <div className="flex items-center space-x-2">
+                                                                                {getStatusBadge(appointment.status)}
+                                                                                <Badge variant="outline" className="text-xs">
+                                                                                    {appointment.time}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                        <p className="text-sm text-gray-600 mb-1">
+                                                                            <span className="font-medium">Reason:</span> {appointment.reasonForVisit || appointment.primaryReason || "No reason specified"}
+                                                                        </p>
+                                                                        {appointment.symptoms && (
+                                                                            <p className="text-sm text-gray-600 mb-2">
+                                                                                <span className="font-medium">Symptoms:</span> {appointment.symptoms}
+                                                                            </p>
+                                                                        )}
+                                                                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                                                            <span>Patient ID: {appointment.patient?._id || "Unknown"}</span>
+                                                                            <span>•</span>
+                                                                            <span>Contact: {appointment.patient?.email || "No email"}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex flex-col space-y-2 min-w-[140px]">
+                                                                        {appointment.status === 'upcoming' && (
+                                                                            <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700 w-full">
+                                                                                Start Consultation
+                                                                            </Button>
+                                                                        )}
+                                                                        <Button variant="outline" size="sm" className="w-full">
+                                                                            View Details
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
-                                                                <p className="text-sm text-gray-600 mb-1">
-                                                                    <span className="font-medium">Reason:</span> {appointment.reasonForVisit}
-                                                                </p>
-                                                                {appointment.symptoms && (
-                                                                    <p className="text-sm text-gray-600 mb-2">
-                                                                        <span className="font-medium">Symptoms:</span> {appointment.symptoms}
-                                                                    </p>
-                                                                )}
-                                                                <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                                                    <span>Patient ID: {appointment.patient._id}</span>
-                                                                    <span>•</span>
-                                                                    <span>Contact: {appointment.patient.email}</span>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-col space-y-2">
-                                                                <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700">
-                                                                    Start Consultation
-                                                                </Button>
-                                                                <Button variant="outline" size="sm">
-                                                                    View Details
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
+                                                            ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 ) : (
                                     <div className="text-center py-12">
@@ -402,77 +410,77 @@ export default function DoctorSchedulePage() {
 
                             <Card className="bg-white">
                                 <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Blocked Times</CardTitle>
-                    <CardDescription>Block specific time slots</CardDescription>
-                  </div>
-                  <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Block
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Block</DialogTitle>
-                        <DialogDescription>
-                          Block off a time slot on a specific date.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="reason" className="text-right">Reason</Label>
-                          <Input id="reason" value={newBlock.reason} onChange={(e) => handleBlockInputChange('reason', e.target.value)} className="col-span-3" placeholder="e.g., Lunch, Meeting" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="date" className="text-right">Date</Label>
-                          <Input id="date" type="date" value={newBlock.date} onChange={(e) => handleBlockInputChange('date', e.target.value)} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="startTime" className="text-right">Start Time</Label>
-                          <Input id="startTime" type="time" value={newBlock.startTime} onChange={(e) => handleBlockInputChange('startTime', e.target.value)} className="col-span-3" />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="endTime" className="text-right">End Time</Label>
-                          <Input id="endTime" type="time" value={newBlock.endTime} onChange={(e) => handleBlockInputChange('endTime', e.target.value)} className="col-span-3" />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={handleAddBlock}>Save Block</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {blockedTimes.map((block) => (
-                    <div key={block._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <div className="font-medium">{block.reason}</div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(block.date).toLocaleDateString()} • {block.startTime} - {block.endTime}
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="icon" className="h-8 w-8" disabled><Edit className="h-4 w-4" /></Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700" onClick={() => handleDeleteBlock(block._id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {blockedTimes.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No blocked times added.</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <CardTitle>Blocked Times</CardTitle>
+                                            <CardDescription>Block specific time slots</CardDescription>
+                                        </div>
+                                        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700">
+                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    Add Block
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Add New Block</DialogTitle>
+                                                    <DialogDescription>
+                                                        Block off a time slot on a specific date.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="grid gap-4 py-4">
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="reason" className="text-right">Reason</Label>
+                                                        <Input id="reason" value={newBlock.reason} onChange={(e) => handleBlockInputChange('reason', e.target.value)} className="col-span-3" placeholder="e.g., Lunch, Meeting" />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="date" className="text-right">Date</Label>
+                                                        <Input id="date" type="date" value={newBlock.date} onChange={(e) => handleBlockInputChange('date', e.target.value)} className="col-span-3" />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="startTime" className="text-right">Start Time</Label>
+                                                        <Input id="startTime" type="time" value={newBlock.startTime} onChange={(e) => handleBlockInputChange('startTime', e.target.value)} className="col-span-3" />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="endTime" className="text-right">End Time</Label>
+                                                        <Input id="endTime" type="time" value={newBlock.endTime} onChange={(e) => handleBlockInputChange('endTime', e.target.value)} className="col-span-3" />
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <DialogClose asChild>
+                                                        <Button variant="outline">Cancel</Button>
+                                                    </DialogClose>
+                                                    <Button onClick={handleAddBlock}>Save Block</Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {blockedTimes.map((block) => (
+                                            <div key={block._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                                <div>
+                                                    <div className="font-medium">{block.reason}</div>
+                                                    <div className="text-sm text-gray-500">
+                                                        {new Date(block.date).toLocaleDateString()} • {block.startTime} - {block.endTime}
+                                                    </div>
+                                                </div>
+                                                <div className="flex space-x-2">
+                                                    <Button variant="outline" size="icon" className="h-8 w-8" disabled><Edit className="h-4 w-4" /></Button>
+                                                    <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700" onClick={() => handleDeleteBlock(block._id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {blockedTimes.length === 0 && (
+                                            <p className="text-sm text-gray-500 text-center py-4">No blocked times added.</p>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     </TabsContent>
                 </Tabs>
