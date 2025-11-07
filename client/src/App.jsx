@@ -12,6 +12,7 @@ import DoctorProfilePage from './pages/DoctorProfilePage';
 import AuthCallback from './pages/AuthCallback';
 import CompleteProfilePage from './pages/CompleteProfilePage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminDoctorProfilePage from './pages/AdminDoctorProfilePage';
 import AppointmentsPage from './pages/Appointment'; 
 import AdminAppointmentsPage from './pages/AdminAppointmentsPage'; 
 import DoctorEarningsPage from './pages/EarningPage';
@@ -35,6 +36,7 @@ function App() {
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/appointments" element={<AdminAppointmentsPage />} /> 
+      <Route path="/admin/doctor-profile/:id" element={<AdminDoctorProfilePage />} />
 
       {/* Doctor Routes */}
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />

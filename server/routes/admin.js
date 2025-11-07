@@ -112,6 +112,37 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
     res.status(500).send('Server Error');
   }
 });
+
+// ... existing imports
+
+router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // 1. Try to find the user in the Doctor collection first
+    let user = await Doctor.findById(userId).select('-password');
+
+    // 2. If not found in Doctors, try the Patient collection
+    if (!user) {
+      user = await Patient.findById(userId).select('-password');
+    }
+
+    // 3. If still not found, return a 404 error
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // 4. Return the found user
+    res.json(user);
+
+  } catch (error) {
+    console.error('Error fetching user details for admin:', error);
+    res.status(500).json({ message: 'Server error while fetching user details' });
+  }
+});
+
+// ... rest of the file
+
 router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const { userType, id } = req.params;

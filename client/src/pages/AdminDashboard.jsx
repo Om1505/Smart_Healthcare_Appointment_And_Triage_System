@@ -449,7 +449,14 @@ export default function AdminDashboard() {
                   {filteredDoctors.length > 0 ? (
                     filteredDoctors.map((doctor) => (
                       <TableRow key={doctor._id}>
-                        <TableCell className="font-medium">{doctor.fullName}</TableCell>
+                        <TableCell className="font-medium">
+                          <button 
+                            onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
+                            className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
+                          >
+                            {doctor.fullName}
+                          </button>
+                        </TableCell>
                         <TableCell>{doctor.email}</TableCell>
                         <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
                         <TableCell>{doctor.licenseNumber}</TableCell>
