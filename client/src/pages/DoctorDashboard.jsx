@@ -5,38 +5,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-    Calendar, Clock, Users, DollarSign, AlertTriangle, CheckCircle, 
-    Stethoscope, User, Settings, Brain, LogOut, Loader2, ShieldAlert 
+import {
+    Calendar, Clock, Users, IndianRupee, AlertTriangle, CheckCircle, User, Settings, Brain, LogOut, Loader2, ShieldAlert
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // --- Verification Pending Component ---
 const VerificationPending = ({ doctorName, onLogout }) => (
-  <div className="min-h-screen flex items-center justify-center bg-emerald-50 p-4">
-    <Card className="w-full max-w-md shadow-lg">
-      <CardHeader className="text-center">
-        <ShieldAlert className="w-16 h-16 mx-auto text-yellow-500" />
-        <CardTitle className="text-2xl font-bold text-gray-900 mt-4">Verification Pending</CardTitle>
-        <CardDescription className="text-gray-600">
-          Welcome, {doctorName}!
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="text-center space-y-4">
-        <p className="text-gray-700">
-          Your profile has been submitted and is currently under review by our admin team.
-          You will receive an email once your profile is verified.
-        </p>
-        <p className="text-gray-600 text-sm">
-          Patients will not be able to find your profile or book appointments until you are verified.
-        </p>
-        <Button onClick={onLogout} variant="outline" className="w-full">
-          <LogOut className="w-4 h-4 mr-2" />
-          Logout
-        </Button>
-      </CardContent>
-    </Card>
-  </div>
+    <div className="min-h-screen flex items-center justify-center bg-emerald-50 p-4">
+        <Card className="w-full max-w-md shadow-lg">
+            <CardHeader className="text-center">
+                <ShieldAlert className="w-16 h-16 mx-auto text-yellow-500" />
+                <CardTitle className="text-2xl font-bold text-gray-900 mt-4">Verification Pending</CardTitle>
+                <CardDescription className="text-gray-600">
+                    Welcome, {doctorName}!
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+                <p className="text-gray-700">
+                    Your profile has been submitted and is currently under review by our admin team.
+                    You will receive an email once your profile is verified.
+                </p>
+                <p className="text-gray-600 text-sm">
+                    Patients will not be able to find your profile or book appointments until you are verified.
+                </p>
+                <Button onClick={onLogout} variant="outline" className="w-full">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                </Button>
+            </CardContent>
+        </Card>
+    </div>
 );
 
 // --- AI Urgency Helpers (Updated for AI Model) ---
@@ -94,7 +93,7 @@ const AITriageCard = ({ patientName, urgency, aiSummary, riskFactors }) => (
 export default function DoctorDashboard() {
     const primaryColor = '#0F5257';
     const secondaryColor = '#2E8B57';
-    
+
     const [doctor, setDoctor] = useState(null);
     const [aiSummaries, setAiSummaries] = useState({});
     const [loadingSummaries, setLoadingSummaries] = useState({});
@@ -118,14 +117,14 @@ export default function DoctorDashboard() {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
-                
+
                 if (profileRes.data.userType !== 'doctor') {
                     setError('Access denied. Not a doctor account.');
                     localStorage.removeItem('token');
                     window.location.href = '/login';
                     return;
                 }
-                
+
                 setDoctor(profileRes.data);
                 setAppointments(appointmentsRes.data);
             } catch (err) {
@@ -141,7 +140,7 @@ export default function DoctorDashboard() {
 
     const fetchAISummary = async (appointmentId) => {
         setLoadingSummaries(prev => ({ ...prev, [appointmentId]: true }));
-        
+
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
@@ -191,18 +190,18 @@ export default function DoctorDashboard() {
             .filter(apt => apt.status === 'upcoming')
             .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
     }, [appointments]);
-    
+
     const highPriorityCount = useMemo(() => sortedUpcomingAppointments.filter(apt => apt.urgency === 'High').length, [sortedUpcomingAppointments]);
-    
-    const completedAppointmentsToday = useMemo(() => 
+
+    const completedAppointmentsToday = useMemo(() =>
         appointments.filter(apt => apt.status === 'completed' && new Date(apt.date).toDateString() === new Date().toDateString()),
-    [appointments]);
+        [appointments]);
     // --- End of Computations ---
 
     // Function to get time-based greeting
     const getTimeBasedGreeting = () => {
         const currentHour = new Date().getHours();
-        
+
         if (currentHour >= 5 && currentHour < 12) {
             return "Good morning";
         } else if (currentHour >= 12 && currentHour < 17) {
@@ -249,7 +248,7 @@ export default function DoctorDashboard() {
         if (aiSummaries[apt._id]) {
             return aiSummaries[apt._id];
         }
-        
+
         // Fallback to generated summary from form data
         let summary = `Patient is scheduled for a consultation regarding: ${apt.primaryReason || 'Not specified'}. `;
         let symptoms = [...(apt.symptomsList || [])];
@@ -286,14 +285,14 @@ export default function DoctorDashboard() {
             <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
         </div>
     );
-    
+
     if (error) return (
         <div className="flex items-center justify-center h-screen text-red-600">{error}</div>
     );
-    
+
     if (!doctor) return (
         <div className="flex items-center justify-center h-screen">Loading doctor data...</div>
-    ); 
+    );
 
     // --- Admin Verification Check ---
     if (!doctor.isVerified) {
@@ -338,7 +337,7 @@ export default function DoctorDashboard() {
                             <CardContent>
                                 <Tabs defaultValue="queue" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 bg-emerald-100"><TabsTrigger value="queue">Appointment Queue</TabsTrigger><TabsTrigger value="analysis">Patient Details</TabsTrigger></TabsList>
-                                    
+
                                     <TabsContent value="queue" className="space-y-4 mt-4">
                                         {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
                                             <div key={appointment._id} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-emerald-50">
@@ -354,8 +353,8 @@ export default function DoctorDashboard() {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col space-y-2">
-                                                    <Button 
-                                                        size="sm" 
+                                                    <Button
+                                                        size="sm"
                                                         className="bg-teal-600 text-white hover:bg-teal-700 w-full"
                                                         onClick={() => handleStartConsultation(appointment._id)}
                                                     >
@@ -368,12 +367,12 @@ export default function DoctorDashboard() {
 
                                     <TabsContent value="analysis" className="space-y-4 mt-4">
                                         {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
-                                            <AITriageCard 
-                                                key={appointment._id} 
-                                                patientName={appointment.patientNameForVisit || 'N/A'} 
+                                            <AITriageCard
+                                                key={appointment._id}
+                                                patientName={appointment.patientNameForVisit || 'N/A'}
                                                 urgency={appointment.urgency}
-                                                aiSummary={generateAISummary(appointment)} 
-                                                riskFactors={generateRiskFactors(appointment)} 
+                                                aiSummary={generateAISummary(appointment)}
+                                                riskFactors={generateRiskFactors(appointment)}
                                             />
                                         )) : <p className="text-center text-gray-500 py-8">No patient details available.</p>}
                                     </TabsContent>
@@ -387,7 +386,7 @@ export default function DoctorDashboard() {
                             <CardContent className="space-y-3">
                                 <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full justify-start"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Button></Link>
                                 <Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button>
-                                <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><DollarSign className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
+                                <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><IndianRupee className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
                             </CardContent>
                         </Card>
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, ArrowRight, ArrowLeft, AlertTriangle, Loader2 } from "lucide-react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -294,10 +294,12 @@ export default function BookAppointmentPage() {
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
-        
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-                <span className="text-xl font-bold text-gray-900">IntelliConsult</span>
+                <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                    <img src="/Logo.svg" className="h-25 w-30" alt="Logo" />
+                    <span className="text-3xl font-bold">IntelliConsult</span>
+                </Link>
                 <Button variant="outline" onClick={() => navigate('/patient/dashboard')}>Dashboard</Button>
             </div>
         </div>
@@ -332,22 +334,29 @@ export default function BookAppointmentPage() {
             <div className="text-center p-4">Loading available slots...</div>
           ) : availableSlots.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
-              {availableSlots.map((slot, index) => (
-                <Button 
-                  key={index} 
-                  variant={selectedSlot.date === slot.date && selectedSlot.time === slot.time ? "default" : "outline"} 
-                  className="h-auto p-4 justify-start bg-emerald-50" 
-                  onClick={() => setSelectedSlot(slot)}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-4 w-4" />
-                    <div>
-                      <div className="font-medium">{new Date(slot.date).toDateString()}</div>
-                      <div className="text-sm opacity-70">{slot.time}</div>
+              {availableSlots.map((slot, index) => {
+                const isSelected = selectedSlot.date === slot.date && selectedSlot.time === slot.time;
+                return (
+                  <Button 
+                    key={index} 
+                    variant={isSelected ? "default" : "outline"} 
+                    className={`h-auto p-4 justify-start ${
+                      isSelected 
+                        ? "bg-teal-600 text-white hover:bg-teal-700 border-teal-600" 
+                        : "bg-emerald-50 hover:bg-emerald-100"
+                    }`}
+                    onClick={() => setSelectedSlot(slot)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Calendar className="h-4 w-4" />
+                      <div>
+                        <div className="font-medium">{new Date(slot.date).toDateString()}</div>
+                        <div className={`text-sm ${isSelected ? "text-teal-100" : "opacity-70"}`}>{slot.time}</div>
+                      </div>
                     </div>
-                  </div>
-                </Button>
-              ))}
+                  </Button>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center p-4">No available slots found for this doctor.</div>

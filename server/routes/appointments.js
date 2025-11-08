@@ -273,6 +273,20 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 router.post('/create-payment-order', authMiddleware, async (req, res) => {
   try {
     const { doctorId, amount, currency = 'INR' } = req.body;
+    
+    console.log('Payment order request body:', req.body);
+    console.log('Doctor ID:', doctorId);
+    console.log('Amount:', amount);
+    console.log('Currency:', currency);
+
+    // Validate required fields
+    if (!doctorId) {
+      return res.status(400).json({ message: 'Doctor ID is required.' });
+    }
+    
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Valid amount is required.' });
+    }
 
     // Validate doctor exists
     const doctor = await Doctor.findById(doctorId);
@@ -282,11 +296,13 @@ router.post('/create-payment-order', authMiddleware, async (req, res) => {
 
     // Create Razorpay order
     const options = {
-      amount: amount, // amount in paisa
+      amount: parseInt(amount), // Ensure amount is an integer in paisa
       currency: currency,
       receipt: `order_${Date.now()}`,
       payment_capture: 1
     };
+    
+    console.log('Razorpay order options:', options);
 
     const order = await razorpay.orders.create(options);
 

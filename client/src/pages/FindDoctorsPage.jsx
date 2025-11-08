@@ -66,10 +66,10 @@ export default function FindDoctorsPage() {
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-                <div className="flex items-center space-x-2">
-                    <Stethoscope className="h-8 w-8" style={{ color: primaryColor }} />
-                    <Link to="/" className="text-xl font-bold text-gray-900">IntelliConsult</Link>
-                </div>
+                <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                    <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
+                    <span className="text-3xl font-bold">IntelliConsult</span>
+                </Link>
                 <div className="flex items-center space-x-4">
                     <Link to="/patient/dashboard">
                         <Button variant="outline" size="sm">Dashboard</Button>

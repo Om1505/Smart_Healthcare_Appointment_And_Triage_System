@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, TrendingUp, Calendar, Download, Stethoscope, User, ArrowLeft, LogOut } from "lucide-react";
+import { TrendingUp, Calendar, Download, User, ArrowLeft, LogOut, IndianRupee } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function DoctorEarningsPage() {
@@ -142,10 +142,10 @@ export default function DoctorEarningsPage() {
                 </div>
 
                 <div className="grid md:grid-cols-4 gap-6 mb-8">
-                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">Today</CardTitle><DollarSign className="h-4 w-4 text-teal-600" /></div><div className="text-2xl font-bold text-teal-600">${earningsData.today.toLocaleString()}</div></CardHeader></Card>
-                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">This Week</CardTitle><TrendingUp className="h-4 w-4 text-green-600" /></div><div className="text-2xl font-bold text-green-600">${earningsData.thisWeek.toLocaleString()}</div></CardHeader></Card>
-                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">This Month</CardTitle><Calendar className="h-4 w-4 text-blue-600" /></div><div className="text-2xl font-bold text-blue-600">${earningsData.thisMonth.toLocaleString()}</div></CardHeader></Card>
-                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">Total Earnings</CardTitle><DollarSign className="h-4 w-4 text-gray-500" /></div><div className="text-2xl font-bold">${earningsData.totalEarnings.toLocaleString()}</div></CardHeader></Card>
+                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">Today</CardTitle><IndianRupee className="h-4 w-4 text-teal-600" /></div><div className="text-2xl font-bold text-teal-600">₹{earningsData.today.toLocaleString()}</div></CardHeader></Card>
+                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">This Week</CardTitle><TrendingUp className="h-4 w-4 text-green-600" /></div><div className="text-2xl font-bold text-green-600">₹{earningsData.thisWeek.toLocaleString()}</div></CardHeader></Card>
+                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">This Month</CardTitle><Calendar className="h-4 w-4 text-blue-600" /></div><div className="text-2xl font-bold text-blue-600">₹{earningsData.thisMonth.toLocaleString()}</div></CardHeader></Card>
+                    <Card className="bg-white"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium">Total Earnings</CardTitle><IndianRupee className="h-4 w-4 text-gray-500" /></div><div className="text-2xl font-bold">₹{earningsData.totalEarnings.toLocaleString()}</div></CardHeader></Card>
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8">
@@ -176,7 +176,7 @@ export default function DoctorEarningsPage() {
                                                 <div><h3 className="font-semibold">{tx.patientName}</h3><p className="text-sm text-gray-500">{new Date(tx.date).toLocaleDateString()} • {tx.time}</p></div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="font-semibold">${tx.amount?.toFixed(2) ?? '0.00'}</div>
+                                                <div className="font-semibold">₹{tx.amount?.toFixed(2) ?? '0.00'}</div>
                                                 <Badge variant={tx.status === "completed" ? "default" : "secondary"}>
                                                     {tx.status === 'upcoming' ? 'Upcoming' : 'Completed'}
                                                 </Badge>
@@ -195,7 +195,7 @@ export default function DoctorEarningsPage() {
                                 {earningsData.monthlyBreakdown.map((month, index) => (
                                     <div key={index} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
                                         <div><div className="font-medium">{month.month}</div><div className="text-sm text-gray-500">{month.appointments} appointments</div></div>
-                                        <div className="text-right"><div className="font-semibold">${month.earnings.toLocaleString()}</div></div>
+                                        <div className="text-right"><div className="font-semibold">₹{month.earnings.toLocaleString()}</div></div>
                                     </div>
                                 ))}
                             </div>
