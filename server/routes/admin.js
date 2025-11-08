@@ -7,21 +7,65 @@ const Doctor = require('../models/Doctor');
 const Admin = require('../models/Admin');
 const Appointment = require('../models/Appointment');
 const sendEmail = require('../utils/email_utils');
+
 router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
-    const patients = await Patient.find().select('-password');
-    const doctors = await Doctor.find().select('-password');
+    const { 
+      name, email, license, status, specialization,
+      patientName, patientEmail, patientDateFrom, patientDateTo
+    } = req.query;
+
+    let doctorQuery = {};
+    
+    if (name) {
+      doctorQuery.fullName = { $regex: '^' + name, $options: 'i' };
+    }
+    if (email) {
+      doctorQuery.email = { $regex: '^' + email, $options: 'i' };
+    }
+    if (license) {
+      doctorQuery.licenseNumber = { $regex: '^'+license, $options: 'i' };
+    }
+    if (specialization && specialization !== 'all') {
+      doctorQuery.specialization = specialization;
+    }
+    if (status && status !== 'all') {
+      doctorQuery.isVerified = (status === 'verified');
+    }
+
+    let patientQuery = {};
+    
+    if (patientName) {
+      patientQuery.fullName = { $regex: '^' + patientName, $options: 'i' };
+    }
+    if (patientEmail) {
+      patientQuery.email = { $regex: '^' + patientEmail, $options: 'i' };
+    }
+    if (patientDateFrom) {
+      patientQuery.createdAt = { ...patientQuery.createdAt, $gte: new Date(patientDateFrom) };
+    }
+    if (patientDateTo) {
+      patientQuery.createdAt = { ...patientQuery.createdAt, $lte: new Date(patientDateTo + 'T23:59:59') };
+    }
+
+    const [patients, doctors] = await Promise.all([
+      Patient.find(patientQuery).select('-password').sort({ createdAt: -1 }),
+      Doctor.find(doctorQuery).select('-password').sort({ createdAt: -1 })
+    ]);
+
     res.json({ patients, doctors });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 });
+
 router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const appointments = await Appointment.find()
       .populate('patient', 'fullName email')
-      .populate('doctor', 'fullName email specialization');
+      .populate('doctor', 'fullName email specialization')
+      .sort({ date: -1 });
 
     res.json(appointments);
   } catch (err) {
@@ -29,6 +73,7 @@ router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) 
     res.status(500).send('Server Error');
   }
 });
+
 router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id);
@@ -38,57 +83,30 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
     }
 
     doctor.isVerified = true;
-
     await doctor.save();
 
-    // Send verification email to the doctor
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
           <div style="text-align: center; margin-bottom: 30px;">
             <h1 style="color: #0891b2; margin: 0; font-size: 28px;">🎉 Verification Complete!</h1>
           </div>
-          
           <div style="margin-bottom: 25px;">
             <h2 style="color: #333; margin-bottom: 15px;">Dear Dr. ${doctor.fullName},</h2>
             <p style="color: #666; line-height: 1.6; font-size: 16px;">
               Congratulations! Your verification has been successfully completed by our admin team.
             </p>
           </div>
-          
           <div style="background-color: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #0891b2; margin: 25px 0;">
             <p style="color: #0369a1; font-weight: 600; margin: 0; font-size: 16px;">
               🚀 You can now start your consultancy journey with IntelliConsult!
             </p>
           </div>
-          
-          <div style="margin: 25px 0;">
-            <p style="color: #666; line-height: 1.6;">
-              As a verified doctor, you can now:
-            </p>
-            <ul style="color: #666; line-height: 1.8; padding-left: 20px;">
-              <li>Accept patient appointments</li>
-              <li>Manage your schedule</li>
-              <li>Conduct video consultations</li>
-              <li>Update your profile and specialization</li>
-            </ul>
-          </div>
-          
           <div style="text-align: center; margin: 30px 0;">
             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" 
                style="background-color: #0891b2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
               Login to Your Dashboard
             </a>
-          </div>
-          
-          <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-            <p style="color: #9ca3af; font-size: 14px; margin: 0;">
-              Thank you for choosing IntelliConsult to serve your patients.
-            </p>
-            <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
-              Best regards,<br>
-              <strong>IntelliConsult Admin Team</strong>
-            </p>
           </div>
         </div>
       </div>
@@ -102,7 +120,6 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
       });
     } catch (emailError) {
       console.error('Error sending verification email:', emailError);
-      // Continue with the response even if email fails
     }
 
     res.json({ message: 'Doctor verified successfully', doctor });
@@ -113,13 +130,138 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
   }
 });
 
+router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+      const doctor = await Doctor.findById(req.params.id);
+  
+      if (!doctor) {
+        return res.status(404).json({ message: 'Doctor not found' });
+      }
+  
+      doctor.isVerified = false;
+      await doctor.save();
+      
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff1f2;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 5px solid #e11d48;">
+            <h1 style="color: #e11d48; margin-top: 0;">Account Suspended</h1>
+            <p style="color: #333; font-size: 16px; margin-bottom: 15px;">Dear Dr. ${doctor.fullName},</p>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+              Your IntelliConsult account has been temporarily suspended by our administrative team. 
+              Your profile is no longer visible to patients, and you cannot accept new appointments at this time.
+            </p>
+            <p style="color: #666; line-height: 1.6;">
+              If you believe this is an error, or to discuss reinstating your account, please contact our support team immediately.
+            </p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
+                Best regards,<br>
+                <strong>IntelliConsult Admin Team</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+  
+      try {
+          await sendEmail({
+              email: doctor.email,
+              subject: '⚠️ IntelliConsult Account Suspended',
+              html: emailHtml,
+          });
+      } catch (emailError) {
+          console.error("Failed to send suspension email:", emailError);
+      }
+      
+      res.json({ message: 'Doctor suspended successfully', doctor });
+    
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
 
+router.delete('/reject-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+        const doctor = await Doctor.findById(req.params.id);
+
+        if (!doctor) {
+            return res.status(404).json({ message: 'Doctor not found' });
+        }
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h1 style="color: #333; margin-top: 0; margin-bottom: 20px;">Application Status Update</h1>
+                <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 15px;">Dear Dr. ${doctor.fullName},</p>
+                <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+                  Thank you for your interest in joining IntelliConsult. After carefully reviewing your profile, 
+                  we are unable to approve your application at this time.
+                </p>
+                <p style="color: #666; line-height: 1.6;">
+                  Your account information has been removed from our system. You are welcome to re-apply in the future if your qualifications change.
+                </p>
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                  <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
+                    Best regards,<br>
+                    <strong>IntelliConsult Admin Team</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+        `;
+
+        try {
+            await sendEmail({
+                email: doctor.email,
+                subject: 'IntelliConsult Application Status',
+                html: emailHtml,
+            });
+        } catch (emailError) {
+            console.error("Failed to send rejection email:", emailError);
+        }
+
+        await Doctor.findByIdAndDelete(req.params.id);
+        
+        res.json({ message: 'Doctor rejected and removed successfully' });
+
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+      const { userType, id } = req.params;
+      let Model;
+  
+      if (userType === 'patient') {
+        Model = Patient;
+      } else if (userType === 'doctor') {
+        Model = Doctor;
+      } else {
+        return res.status(400).json({ message: 'Invalid user type' });
+      }
+  
+      const user = await Model.findById(id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      await Model.findByIdAndDelete(id);
+  
+      res.json({ message: `${userType} deleted successfully` });
+  
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+});
 router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const userId = req.params.id;
-
     let user = await Doctor.findById(userId).select('-password');
-
     if (!user) {
       user = await Patient.findById(userId).select('-password');
     }
@@ -128,6 +270,7 @@ router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    
     res.json(user);
 
   } catch (error) {
@@ -136,33 +279,4 @@ router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   }
 });
 
-
-router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
-  try {
-    const { userType, id } = req.params;
-    let Model;
-
-    if (userType === 'patient') {
-      Model = Patient;
-    } else if (userType === 'doctor') {
-      Model = Doctor;
-    } else {
-      return res.status(400).json({ message: 'Invalid user type' });
-    }
-
-    const user = await Model.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    await Model.findByIdAndDelete(id);
-
-    res.json({ message: `${userType} deleted successfully` });
-
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
 module.exports = router;
-
