@@ -5,8 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
-import { Input } from "@/components/ui/input"; // <-- Add this
-import { Label } from "@/components/ui/label"; // <-- Add this
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate, Link } from 'react-router-dom';
+
 function useOutsideClick(ref, handler) {
   useEffect(() => {
     function handleClickOutside(event) {
@@ -28,104 +29,180 @@ function useOutsideClick(ref, handler) {
     };
   }, [ref, handler]);
 }
+
 export default function AdminDashboard() {
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [verifyingId, setVerifyingId] = useState(null);
-  const [rejectingId, setRejectingId] = useState(null); // <-- Add This
-  const [suspendingId, setSuspendingId] = useState(null); // <-- Add This
+  const [rejectingId, setRejectingId] = useState(null);
+  const [suspendingId, setSuspendingId] = useState(null);
+  
+  // --- Filter States ---
   const [specializationFilter, setSpecializationFilter] = useState('all');
   const [nameFilter, setNameFilter] = useState('');
   const [emailFilter, setEmailFilter] = useState('');
   const [licenseFilter, setLicenseFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  
+  const [patientNameFilter, setPatientNameFilter] = useState('');
+  const [patientEmailFilter, setPatientEmailFilter] = useState('');
+  const [patientDateFromFilter, setPatientDateFromFilter] = useState('');
+  const [patientDateToFilter, setPatientDateToFilter] = useState('');
+
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [adminProfile, setAdminProfile] = useState(null);
-  const [patientNameFilter, setPatientNameFilter] = useState('');
-  const [patientEmailFilter, setPatientEmailFilter] = useState('');
-  const [patientDateFromFilter, setPatientDateFromFilter] = useState(''); // Will store 'YYYY-MM-DD'
-  const [patientDateToFilter, setPatientDateToFilter] = useState('');
+  
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   
   useOutsideClick(dropdownRef, () => setIsProfileOpen(false));
+
+ 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAdminProfile = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
-        setError("Authorization token not found. Please log in.");
-        setLoading(false);
         navigate('/login');
         return;
       }
-
       try {
-        
-        const [usersResponse, profileResponse] = await Promise.all([
-          // Request for all doctors and patients for the tables
-          axios.get('http://localhost:5001/api/admin/users', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          }),
-          
-          axios.get('http://localhost:5001/api/users/profile', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-        ]);
-
-        
-        if (profileResponse.data.userType !== 'admin') {
-            setError("Access Denied. You are not an admin.");
-            localStorage.removeItem('token');
-            navigate('/login');
+        const response = await axios.get('http://localhost:5001/api/users/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.userType !== 'admin') {
+           setError("Access Denied. You are not an admin.");
+           localStorage.removeItem('token');
+           navigate('/login');
         } else {
-            setDoctors(usersResponse.data.doctors);
-            setPatients(usersResponse.data.patients);
-            setAdminProfile(profileResponse.data);
+           setAdminProfile(response.data);
         }
+      } catch (err) {
+         setError("Failed to fetch admin profile.");
+         console.error("Failed to fetch admin profile", err);
+      }
+    };
+    fetchAdminProfile();
+  }, [navigate]);
+
+
+  useEffect(() => {
+    
+    if (!adminProfile) {
+
+      if (!loading) setLoading(false);
+      return;
+    }
+
+    const fetchUsers = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setLoading(true);
+      try {
+        // Construct query parameters
+        const params = new URLSearchParams();
+        if (nameFilter) params.append('name', nameFilter);
+        if (emailFilter) params.append('email', emailFilter);
+        if (licenseFilter) params.append('license', licenseFilter);
+        if (specializationFilter !== 'all') params.append('specialization', specializationFilter);
+        if (statusFilter !== 'all') params.append('status', statusFilter);
+        if (patientNameFilter) params.append('patientName', patientNameFilter);
+        if (patientEmailFilter) params.append('patientEmail', patientEmailFilter);
+        if (patientDateFromFilter) params.append('patientDateFrom', patientDateFromFilter);
+        if (patientDateToFilter) params.append('patientDateTo', patientDateToFilter);
+
+        const response = await axios.get(`http://localhost:5001/api/admin/users?${params.toString()}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setDoctors(response.data.doctors);
+        setPatients(response.data.patients);
+        setError(null);
 
       } catch (err) {
-        const errorMessage = err.response?.data?.message || "An error occurred while fetching data.";
-        setError(errorMessage);
+        console.error("Error fetching users:", err);
+        setError("Failed to load user data.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [navigate]);
+    const timeoutId = setTimeout(() => {
+        fetchUsers();
+    }, 300); 
+
+    return () => clearTimeout(timeoutId); 
+
+  }, [
+    adminProfile,
+    nameFilter, 
+    emailFilter, 
+    licenseFilter, 
+    specializationFilter, 
+    statusFilter,
+    patientNameFilter, 
+    patientEmailFilter,
+    patientDateFromFilter,
+    patientDateToFilter
+  ]);
 
   const handleVerify = async (doctorId) => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      return;
-    }
+    if (!token) return;
     setVerifyingId(doctorId);
     try {
-      // Call the correct admin verification route
       const response = await axios.put(
         `http://localhost:5001/api/admin/verify-doctor/${doctorId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      const updatedDoctor = response.data.doctor;
-
-      setDoctors(docs =>
-        docs.map(doc => 
-          doc._id === doctorId 
-            ? { ...doc, isVerified: updatedDoctor.isVerified } 
-            : doc
-        )
-      );
-
+      // Update local state to reflect change immediately
+      setDoctors(docs => docs.map(doc => doc._id === doctorId ? { ...doc, isVerified: true } : doc));
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || "Failed to verify doctor."}`);
     } finally {
       setVerifyingId(null);
+    }
+  };
+
+  const handleReject = async (doctorId) => {
+    if (!window.confirm("Are you sure you want to reject and permanently delete this doctor?")) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setRejectingId(doctorId);
+    try {
+      await axios.delete(
+        `http://localhost:5001/api/admin/reject-doctor/${doctorId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDoctors(docs => docs.filter(doc => doc._id !== doctorId));
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to reject doctor."}`);
+    } finally {
+      setRejectingId(null);
+    }
+  };
+
+  const handleSuspend = async (doctorId) => {
+    if (!window.confirm("Are you sure you want to suspend this doctor? Their profile will be hidden from patients.")) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setSuspendingId(doctorId);
+    try {
+      await axios.put(
+        `http://localhost:5001/api/admin/suspend-doctor/${doctorId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDoctors(docs => docs.map(doc => doc._id === doctorId ? { ...doc, isVerified: false } : doc));
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to suspend doctor."}`);
+    } finally {
+      setSuspendingId(null);
     }
   };
 
@@ -135,101 +212,13 @@ export default function AdminDashboard() {
   };
 
   const uniqueSpecializations = useMemo(() => {
+  
     const specs = new Set(doctors.map(doc => doc.specialization).filter(Boolean));
     return Array.from(specs);
   }, [doctors]);
 
-  const filteredDoctors = useMemo(() => {
-    // Start with the full list
-    let filtered = doctors;
 
-    // 1. Filter by Specialization
-    if (specializationFilter !== 'all') {
-      filtered = filtered.filter(doc => doc.specialization === specializationFilter);
-    }
-
-    // 2. Filter by Status
-    if (statusFilter !== 'all') {
-      const isVerified = statusFilter === 'verified';
-      filtered = filtered.filter(doc => doc.isVerified === isVerified);
-    }
-
-    // 3. Filter by Name (case-insensitive)
-    if (nameFilter) {
-      filtered = filtered.filter(doc =>
-        doc.fullName.toLowerCase().includes(nameFilter.toLowerCase())
-      );
-    }
-
-    // 4. Filter by Email (case-insensitive)
-    if (emailFilter) {
-      filtered = filtered.filter(doc =>
-        doc.email.toLowerCase().includes(emailFilter.toLowerCase())
-      );
-    }
-
-    // 5. Filter by License Number
-    if (licenseFilter) {
-      filtered = filtered.filter(doc =>
-        doc.licenseNumber?.toLowerCase().includes(licenseFilter.toLowerCase())
-      );
-    }
-
-    return filtered;
-    
-  }, [
-    doctors, 
-    specializationFilter, 
-    statusFilter, 
-    nameFilter, 
-    emailFilter, 
-    licenseFilter
-  ]); // <-- Make sure to add all new filters to the dependency array
-  const filteredPatients = useMemo(() => {
-    let filtered = patients;
-
-    // 1. Filter by Name (case-insensitive)
-    if (patientNameFilter) {
-      filtered = filtered.filter(p =>
-        p.fullName.toLowerCase().includes(patientNameFilter.toLowerCase())
-      );
-    }
-
-    // 2. Filter by Email (case-insensitive)
-    if (patientEmailFilter) {
-      filtered = filtered.filter(p =>
-        p.email.toLowerCase().includes(patientEmailFilter.toLowerCase())
-      );
-    }
-
-    // 3. Filter by Date Range
-    try {
-      // Create Date objects at midnight (for 'from') and just before midnight (for 'to')
-      // This ensures the full "from" and "to" days are included in the range.
-      const dateFrom = patientDateFromFilter ? new Date(patientDateFromFilter + 'T00:00:00') : null;
-      const dateTo = patientDateToFilter ? new Date(patientDateToFilter + 'T23:59:59') : null;
-
-      if (dateFrom) {
-        filtered = filtered.filter(p => new Date(p.createdAt) >= dateFrom);
-      }
-      if (dateTo) {
-        filtered = filtered.filter(p => new Date(p.createdAt) <= dateTo);
-      }
-    } catch (e) {
-      // Caches potential invalid date string errors
-      console.error("Invalid date filter:", e);
-    }
-    
-    return filtered;
-
-  }, [
-    patients, 
-    patientNameFilter, 
-    patientEmailFilter, 
-    patientDateFromFilter, 
-    patientDateToFilter
-  ]);
-  if (loading) {
+  if (!adminProfile && loading) {
     return (
       <div className="flex items-center justify-center min-h-screen p-8">
         <Loader2 className="w-12 h-12 animate-spin text-cyan-600" />
@@ -237,69 +226,7 @@ export default function AdminDashboard() {
       </div>
     );
   }
-   // This new function will DELETE a pending doctor
-  const handleReject = async (doctorId) => {
-    // Add a confirmation step because this is a destructive action
-    if (!window.confirm("Are you sure you want to reject and permanently delete this doctor?")) {
-      return;
-    }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      return;
-    }
-    setRejectingId(doctorId);
-    try {
-      // NOTE: This requires a new backend endpoint
-      await axios.delete(
-        `http://localhost:5001/api/admin/reject-doctor/${doctorId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      // Remove the doctor from the list in the UI
-      setDoctors(docs => docs.filter(doc => doc._id !== doctorId));
-
-    } catch (err) {
-      alert(`Error: ${err.response?.data?.message || "Failed to reject doctor."}`);
-    } finally {
-      setRejectingId(null);
-    }
-  };
-
-  // This new function will UN-VERIFY (suspend) an already verified doctor
-  const handleSuspend = async (doctorId) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      return;
-    }
-    setSuspendingId(doctorId);
-    try {
-      // NOTE: This also requires a new backend endpoint
-      const response = await axios.put(
-        `http://localhost:5001/api/admin/suspend-doctor/${doctorId}`,
-        {}, // No body needed
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      const updatedDoctor = response.data.doctor;
-
-      // Update the doctor's status in the UI
-      setDoctors(docs =>
-        docs.map(doc => 
-          doc._id === doctorId 
-            ? { ...doc, isVerified: updatedDoctor.isVerified } // This will now be false
-            : doc
-        )
-      );
-
-    } catch (err) {
-      alert(`Error: ${err.response?.data?.message || "Failed to suspend doctor."}`);
-    } finally {
-      setSuspendingId(null);
-    }
-  };
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8">
@@ -366,10 +293,10 @@ export default function AdminDashboard() {
       <main className="p-4 sm:p-6 lg:p-8">
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
-{/* Doctors Table */}
+
+          {/* Doctors Table */}
           <Card className="mb-8 shadow-sm">
             <CardHeader>
-              {/* This part is the same */}
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div>
                   <CardTitle className="flex items-center text-2xl"><Stethoscope className="w-6 h-6 mr-3 text-blue-700" />Doctors</CardTitle>
@@ -377,43 +304,20 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* --- This is the new filter section --- */}
+              {/* --- Server-Side Filters --- */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
-                
-                {/* Name Filter */}
                 <div className="space-y-1">
                   <Label htmlFor="nameFilter" className="text-xs font-medium">Name</Label>
-                  <Input 
-                    id="nameFilter" 
-                    placeholder="Search by name..." 
-                    value={nameFilter}
-                    onChange={e => setNameFilter(e.target.value)} 
-                  />
+                  <Input id="nameFilter" placeholder="Search by name..." value={nameFilter} onChange={e => setNameFilter(e.target.value)} />
                 </div>
-
-                {/* Email Filter */}
                 <div className="space-y-1">
                   <Label htmlFor="emailFilter" className="text-xs font-medium">Email</Label>
-                  <Input 
-                    id="emailFilter" 
-                    placeholder="Search by email..." 
-                    value={emailFilter}
-                    onChange={e => setEmailFilter(e.target.value)} 
-                  />
+                  <Input id="emailFilter" placeholder="Search by email..." value={emailFilter} onChange={e => setEmailFilter(e.target.value)} />
                 </div>
-
-                {/* License Filter */}
                 <div className="space-y-1">
                   <Label htmlFor="licenseFilter" className="text-xs font-medium">License</Label>
-                  <Input 
-                    id="licenseFilter" 
-                    placeholder="Search by license..." 
-                    value={licenseFilter}
-                    onChange={e => setLicenseFilter(e.target.value)} 
-                  />
+                  <Input id="licenseFilter" placeholder="Search by license..." value={licenseFilter} onChange={e => setLicenseFilter(e.target.value)} />
                 </div>
-
-                {/* Status Filter */}
                 <div className="space-y-1">
                   <Label htmlFor="statusFilter" className="text-xs font-medium">Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -425,8 +329,6 @@ export default function AdminDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Specialization Filter (Moved) */}
                 <div className="space-y-1">
                   <Label htmlFor="specFilter" className="text-xs font-medium">Specialization</Label>
                   <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
@@ -437,83 +339,64 @@ export default function AdminDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-
               </div>
-              {/* --- End of new filter section --- */}
+              {/* --------------------------- */}
               
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Action</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {filteredDoctors.length > 0 ? (
-                    filteredDoctors.map((doctor) => (
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!loading && doctors.length > 0 ? (
+                    doctors.map((doctor) => (
                       <TableRow key={doctor._id}>
-                        <TableCell className="font-medium">
-                          <button 
-                            onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
-                            className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
-                          >
-                            {doctor.fullName}
-                          </button>
-                        </TableCell>
+                        
+<TableCell className="font-medium">
+  <button 
+    // Change the onClick to navigate to the new route
+    onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
+    className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
+  >
+    {doctor.fullName}
+  </button>
+</TableCell>
                         <TableCell>{doctor.email}</TableCell>
                         <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
                         <TableCell>{doctor.licenseNumber}</TableCell>
                         <TableCell className="text-center">
                           {doctor.isVerified ? (
-                            <Badge className="bg-green-100 text-green-800">
-                              <ShieldCheck className="w-4 h-4 mr-1" />
-                              Verified
-                            </Badge>
+                            <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Verified</Badge>
                           ) : (
-                            <Badge variant="destructive" className="bg-yellow-100 text-yellow-800">
-                              <ShieldAlert className="w-4 h-4 mr-1" />
-                              Pending
-                            </Badge>
+                            <Badge variant="destructive" className="bg-yellow-100 text-yellow-800"><ShieldAlert className="w-4 h-4 mr-1" />Pending</Badge>
                           )}
                         </TableCell>
-                       <TableCell className="text-center">
-                    {doctor.isVerified ? (
-                      // --- Case 1: Doctor is ALREADY VERIFIED ---
-                      // Show a "Suspend" button
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-700"
-                        onClick={() => handleSuspend(doctor._id)}
-                        disabled={suspendingId === doctor._id}
-                      >
-                        {suspendingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
-                      </Button>
-                    ) : (
-                      // --- Case 2: Doctor is PENDING ---
-                      // Show "Verify" and "Reject" buttons side-by-side
-                      <div className="flex justify-center gap-2">
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700"
-                          onClick={() => handleVerify(doctor._id)}
-                          disabled={verifyingId === doctor._id || rejectingId === doctor._id}
-                        >
-                          {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="bg-red-600 hover:bg-red-700"
-                          onClick={() => handleReject(doctor._id)}
-                          disabled={rejectingId === doctor._id || verifyingId === doctor._id}
-                        >
-                          {rejectingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject'}
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
+                        <TableCell className="text-center">
+                          {doctor.isVerified ? (
+                            <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleSuspend(doctor._id)} disabled={suspendingId === doctor._id}>
+                              {suspendingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
+                            </Button>
+                          ) : (
+                            <div className="flex justify-center gap-2">
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(doctor._id)} disabled={verifyingId === doctor._id || rejectingId === doctor._id}>
+                                {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                              </Button>
+                              <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleReject(doctor._id)} disabled={rejectingId === doctor._id || verifyingId === doctor._id}>
+                                {rejectingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject'}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors found.</TableCell></TableRow>
+                    !loading && <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -521,75 +404,50 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Patients Table */}
-          {/* Patients Table */}
-        <Card className="shadow-sm">
-          <CardHeader>
-            {/* Title and Description */}
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-              <div>
-                <CardTitle className="flex items-center text-2xl"><Users className="w-6 h-6 mr-3 text-purple-700" />Patients</CardTitle>
-                <CardDescription>A list of all registered patients.</CardDescription>
-              </div>
-            </div>
-
-            {/* --- New Patient Filter Section --- */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t">
-              
-              {/* Patient Name Filter */}
-              <div className="space-y-1">
-                <Label htmlFor="patientNameFilter" className="text-xs font-medium">Name</Label>
-                <Input 
-                  id="patientNameFilter" 
-                  placeholder="Search by name..." 
-                  value={patientNameFilter}
-                  onChange={e => setPatientNameFilter(e.target.value)} 
-                />
+          <Card className="shadow-sm">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <CardTitle className="flex items-center text-2xl"><Users className="w-6 h-6 mr-3 text-purple-700" />Patients</CardTitle>
+                  <CardDescription>A list of all registered patients.</CardDescription>
+                </div>
               </div>
 
-              {/* Patient Email Filter */}
-              <div className="space-y-1">
-                <Label htmlFor="patientEmailFilter" className="text-xs font-medium">Email</Label>
-                <Input 
-                  id="patientEmailFilter" 
-                  placeholder="Search by email..." 
-                  value={patientEmailFilter}
-                  onChange={e => setPatientEmailFilter(e.target.value)} 
-                />
+              {/* --- Server-Side Patient Filters --- */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 mt-4 border-t">
+                <div className="space-y-1">
+                  <Label htmlFor="patientNameFilter" className="text-xs font-medium">Name</Label>
+                  <Input id="patientNameFilter" placeholder="Search by name..." value={patientNameFilter} onChange={e => setPatientNameFilter(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="patientEmailFilter" className="text-xs font-medium">Email</Label>
+                  <Input id="patientEmailFilter" placeholder="Search by email..." value={patientEmailFilter} onChange={e => setPatientEmailFilter(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="dateFromFilter" className="text-xs font-medium">Joined From</Label>
+                  <Input id="dateFromFilter" type="date" value={patientDateFromFilter} onChange={e => setPatientDateFromFilter(e.target.value)} className="text-gray-700" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="dateToFilter" className="text-xs font-medium">Joined To</Label>
+                  <Input id="dateToFilter" type="date" value={patientDateToFilter} onChange={e => setPatientDateToFilter(e.target.value)} className="text-gray-700" />
+                </div>
               </div>
+              {/* ----------------------------------- */}
 
-              {/* Joined Date (From) Filter */}
-              <div className="space-y-1">
-                <Label htmlFor="dateFromFilter" className="text-xs font-medium">Joined From</Label>
-                <Input 
-                  id="dateFromFilter" 
-                  type="date"
-                  value={patientDateFromFilter}
-                  onChange={e => setPatientDateFromFilter(e.target.value)}
-                  className="text-gray-700" // Add class to make date text visible
-                />
-              </div>
-
-              {/* Joined Date (To) Filter */}
-              <div className="space-y-1">
-                <Label htmlFor="dateToFilter" className="text-xs font-medium">Joined To</Label>
-                <Input 
-                  id="dateToFilter" 
-                  type="date"
-                  value={patientDateToFilter}
-                  onChange={e => setPatientDateToFilter(e.target.value)}
-                  className="text-gray-700" // Add class to make date text visible
-                />
-              </div>
-            </div>
-            {/* --- End of new filter section --- */}
-            
-          </CardHeader>
+            </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {filteredPatients.length > 0 ? (
-                    filteredPatients.map((patient) => ( // <-- Use filteredPatients
+                  {loading && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!loading && patients.length > 0 ? (
+                    patients.map((patient) => (
                       <TableRow key={patient._id}>
                         <TableCell className="font-medium">{patient.fullName}</TableCell>
                         <TableCell>{patient.email}</TableCell>
@@ -597,10 +455,7 @@ export default function AdminDashboard() {
                       </TableRow>
                     ))
                   ) : (
-                     <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">
-                      {/* Show a different message if filters are active */}
-                      {patients.length > 0 ? "No patients match the current filters." : "No patients found."}
-                     </TableCell></TableRow>
+                    !loading && <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -609,7 +464,7 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* Profile Modal */}
+      {/* Profile Modal (kept the same) */}
       {showProfileModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-96">
@@ -633,9 +488,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end pt-4 border-t">
-                <Button variant="outline" onClick={() => setShowProfileModal(false)}>Close</Button>
-              </div>
+            </div>
+            <div className="flex justify-end pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowProfileModal(false)}>Close</Button>
             </div>
           </div>
         </div>
@@ -643,4 +498,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
