@@ -130,5 +130,46 @@ router.put('/complete-profile', authMiddleware, async (req, res) => {
   }
 });
 
+// Update profile endpoint for doctors/patients to update their full profile information
+router.put('/update-profile', authMiddleware, async (req, res) => {
+  try {
+    const { userId, userType } = req.user;
+    const updateData = req.body;
+
+    const Model = models[userType];
+    if (!Model) {
+      return res.status(400).json({ message: 'Invalid user type in token.' });
+    }
+
+    // Remove any fields that shouldn't be updated via this endpoint
+    delete updateData.password;
+    delete updateData.userType;
+    delete updateData._id;
+    delete updateData.isVerified;
+
+    const updatedUser = await Model.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile updated successfully!',
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    if (err.name === 'ValidationError') {
+      let messages = Object.values(err.errors).map(val => val.message);
+      return res.status(400).json({ message: messages.join(', ') });
+    }
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 module.exports = router;
 

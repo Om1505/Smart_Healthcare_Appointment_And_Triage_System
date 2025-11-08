@@ -385,7 +385,7 @@ export default function DoctorDashboard() {
                             <CardHeader><CardTitle className="text-gray-900">Quick Actions</CardTitle></CardHeader>
                             <CardContent className="space-y-3">
                                 <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full justify-start"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Button></Link>
-                                <Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button>
+                                <Link to="/doctor/update-profile" className="w-full"><Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button></Link>
                                 <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><IndianRupee className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
                             </CardContent>
                         </Card>
