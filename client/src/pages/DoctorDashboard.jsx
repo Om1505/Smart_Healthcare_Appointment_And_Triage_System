@@ -38,39 +38,55 @@ const VerificationPending = ({ doctorName, onLogout }) => (
     </div>
 );
 
-// --- AI Urgency Helpers (Updated for AI Model) ---
-const getUrgencyClasses = (urgency) => {
-    switch (urgency) {
-        case 'High':
-            return "bg-red-100 text-red-800 border-red-200 hover:bg-red-100";
-        case 'Medium':
-            return "bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100";
-        case 'Low':
+// --- AI Urgency Helpers ---
+const getPriorityClasses = (priority) => {
+    switch (priority) {
+        case 'RED':
+        case 'P1':
+            return "bg-red-100 text-red-800 border-red-300 font-bold";
+        case 'YELLOW':
+        case 'P2':
+            return "bg-yellow-100 text-yellow-900 border-yellow-300 font-semibold";
+        case 'GREEN':
+        case 'P3':
+            return "bg-green-100 text-green-800 border-green-300";
+        case 'BLACK':
+        case 'P4':
+            return "bg-gray-200 text-gray-700 border-gray-300";
         default:
-            return "bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100";
+            return "bg-gray-100 text-gray-700 border-gray-200";
     }
 };
 
-const getUrgencyLabel = (urgency) => {
-    switch (urgency) {
-        case 'High':
-            return "High Priority";
-        case 'Medium':
-            return "Medium Priority";
-        case 'Low':
+const getPriorityLabel = (priority, label) => {
+    if (label) return label;
+    
+    switch (priority) {
+        case 'RED':
+        case 'P1':
+            return "🔴 Immediate (P1)";
+        case 'YELLOW':
+        case 'P2':
+            return "🟡 Urgent (P2)";
+        case 'GREEN':
+        case 'P3':
+            return "🟢 Minor (P3)";
+        case 'BLACK':
+        case 'P4':
+            return "⚫ Non-Urgent (P4)";
         default:
-            return "Low Priority";
+            return "Pending Triage";
     }
 };
 
-// --- AI Triage Card (Updated for AI Model) ---
+// --- AI Triage Card---
 const AITriageCard = ({ patientName, urgency, aiSummary, riskFactors }) => (
     <Card className="mb-4 bg-white shadow-md">
         <CardHeader>
             <CardTitle className="flex justify-between items-center">
                 <span>{patientName}</span>
-                <Badge className={getUrgencyClasses(urgency)}>
-                    {getUrgencyLabel(urgency)}
+                <Badge className={getPriorityClasses(urgency)}>
+                    {getPriorityLabel(urgency, null)}
                 </Badge>
             </CardTitle>
         </CardHeader>
@@ -100,6 +116,8 @@ export default function DoctorDashboard() {
     const [appointments, setAppointments] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [triageResults, setTriageResults] = useState({});
+    const [loadingTriage, setLoadingTriage] = useState({});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -165,15 +183,39 @@ export default function DoctorDashboard() {
         }
     };
 
-    // ✅ NEW: Auto-fetch summaries when appointments load
-    useEffect(() => {
-        if (appointments.length > 0) {
-            const upcomingAppts = appointments.filter(apt => apt.status === 'upcoming');
-            upcomingAppts.forEach(apt => {
-                fetchAISummary(apt._id);
-            });
+    const fetchAITriage = async (appointmentId) => {
+    setLoadingTriage(prev => ({ ...prev, [appointmentId]: true }));
+    
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+            `http://localhost:5001/api/triage/appointment/${appointmentId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (response.data.success) {
+            setTriageResults(prev => ({
+                ...prev,
+                [appointmentId]: response.data.triage
+            }));
         }
-    }, [appointments]);
+    } catch (error) {
+        console.error('Error fetching triage:', error);
+    } finally {
+        setLoadingTriage(prev => ({ ...prev, [appointmentId]: false }));
+    }
+};
+
+
+useEffect(() => {
+    if (appointments.length > 0) {
+        const upcomingAppts = appointments.filter(apt => apt.status === 'upcoming');
+        upcomingAppts.forEach(apt => {
+            fetchAISummary(apt._id);
+            fetchAITriage(apt._id);
+        });
+    }
+}, [appointments]);
 
     // --- Data Computations (Moved to top level) ---
     const urgencyToValue = (urgency) => {
@@ -337,15 +379,23 @@ export default function DoctorDashboard() {
                             <CardContent>
                                 <Tabs defaultValue="queue" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 bg-emerald-100"><TabsTrigger value="queue">Appointment Queue</TabsTrigger><TabsTrigger value="analysis">Patient Details</TabsTrigger></TabsList>
-
-                                    <TabsContent value="queue" className="space-y-4 mt-4">
-                                        {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
+                                        <TabsContent value="queue" className="space-y-4 mt-4">
+                                          {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
                                             <div key={appointment._id} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-emerald-50">
                                                 <Avatar><AvatarImage src="/placeholder.svg" /><AvatarFallback>{appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}</AvatarFallback></Avatar>
                                                 <div className="flex-1">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <h3 className="font-semibold text-gray-900">{appointment.patientNameForVisit || 'N/A'}</h3>
-                                                        <Badge variant="outline" className={getUrgencyClasses(appointment.urgency)}>{getUrgencyLabel(appointment.urgency)}</Badge>
+                                                        {loadingTriage[appointment._id] ? (
+                                                            <Badge variant="outline" className="animate-pulse">
+                                                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                Triaging...
+                                                            </Badge>
+                                                                ) : (
+                                                            <Badge variant="outline" className={getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')}>
+                                                            {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
+                                                            </Badge>
+                                                            )}
                                                     </div>
                                                     <p className="text-sm text-gray-600 mb-2 font-medium">Reason: {appointment.primaryReason || 'Not specified'}</p>
                                                     <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -365,16 +415,22 @@ export default function DoctorDashboard() {
                                         )) : <p className="text-center text-gray-500 py-8">You have no scheduled appointments.</p>}
                                     </TabsContent>
 
-                                    <TabsContent value="analysis" className="space-y-4 mt-4">
-                                        {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
-                                            <AITriageCard
-                                                key={appointment._id}
-                                                patientName={appointment.patientNameForVisit || 'N/A'}
-                                                urgency={appointment.urgency}
-                                                aiSummary={generateAISummary(appointment)}
-                                                riskFactors={generateRiskFactors(appointment)}
-                                            />
-                                        )) : <p className="text-center text-gray-500 py-8">No patient details available.</p>}
+                                    <TabsContent value="analysis" className="space-y-4 mt-4">{sortedUpcomingAppointments.map((appointment) => {
+    const triage = triageResults[appointment._id];
+    const priority = triage?.priority || appointment.triagePriority || 'GREEN';
+    
+    return (
+        <AITriageCard 
+            key={appointment._id} 
+            patientName={appointment.patientNameForVisit || 'N/A'} 
+            urgency={priority}
+            aiSummary={generateAISummary(appointment)} 
+            riskFactors={generateRiskFactors(appointment)}
+            isLoading={loadingSummaries[appointment._id]}
+        />
+    );
+})}
+
                                     </TabsContent>
                                 </Tabs>
                             </CardContent>
