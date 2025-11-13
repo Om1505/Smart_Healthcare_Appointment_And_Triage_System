@@ -286,7 +286,6 @@ useEffect(() => {
     };
 
     const generateAISummary = (apt) => {
-        // ✅ UPDATED: Use AI-generated summary if available
         if (aiSummaries[apt._id]) {
             return aiSummaries[apt._id];
         }
