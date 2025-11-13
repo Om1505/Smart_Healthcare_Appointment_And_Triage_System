@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Plus, Edit, Trash2, Stethoscope, User, ArrowLeft, LogOut, CalendarDays, Settings } from "lucide-react";
+import { Calendar, Clock, Plus, Edit, Trash2, User, ArrowLeft, LogOut, CalendarDays, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
     Dialog,
@@ -48,6 +48,9 @@ export default function DoctorSchedulePage() {
         endTime: "13:00",
     });
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [isPatientDetailsOpen, setIsPatientDetailsOpen] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             const token = localStorage.getItem('token');
@@ -108,13 +111,13 @@ export default function DoctorSchedulePage() {
     const getStatusBadge = (status) => {
         switch (status?.toLowerCase()) {
             case 'upcoming':
-                return <Badge className="bg-green-100 text-green-800 border-green-200">Upcoming</Badge>;
+                return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Upcoming</Badge>;
             case 'completed':
-                return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Completed</Badge>;
+                return <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">Completed</Badge>;
             case 'cancelled':
-                return <Badge className="bg-red-100 text-red-800 border-red-200">Cancelled</Badge>;
+                return <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">Cancelled</Badge>;
             default:
-                return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Unknown</Badge>;
+                return <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">Unknown</Badge>;
         }
     };
 
@@ -192,6 +195,11 @@ export default function DoctorSchedulePage() {
                 day: 'numeric'
             });
         }
+    };
+
+    const handleViewDetails = (appointment) => {
+        setSelectedAppointment(appointment);
+        setIsPatientDetailsOpen(true);
     };
 
     if (isLoading || !workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
@@ -336,8 +344,6 @@ export default function DoctorSchedulePage() {
                                                                             </p>
                                                                         )}
                                                                         <div className="flex items-center space-x-4 text-xs text-gray-500">
-                                                                            <span>Patient ID: {appointment.patient?._id || "Unknown"}</span>
-                                                                            <span>•</span>
                                                                             <span>Contact: {appointment.patient?.email || "No email"}</span>
                                                                         </div>
                                                                     </div>
@@ -347,7 +353,7 @@ export default function DoctorSchedulePage() {
                                                                                 Start Consultation
                                                                             </Button>
                                                                         )}
-                                                                        <Button variant="outline" size="sm" className="w-full">
+                                                                        <Button variant="outline" size="sm" className="w-full" onClick={() => handleViewDetails(appointment)}>
                                                                             View Details
                                                                         </Button>
                                                                     </div>
@@ -485,6 +491,240 @@ export default function DoctorSchedulePage() {
                     </TabsContent>
                 </Tabs>
             </div>
+
+            {/* Patient Details Modal */}
+            <Dialog open={isPatientDetailsOpen} onOpenChange={setIsPatientDetailsOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center space-x-2">
+                            <User className="h-5 w-5" />
+                            <span>Patient Details</span>
+                        </DialogTitle>
+                        <DialogDescription>
+                            Complete information about the patient and appointment
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedAppointment && (
+                        <div className="space-y-6">
+                            {/* Patient Information */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Patient Information</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Full Name</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.patientNameForVisit || selectedAppointment.patient?.fullName || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Email</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.email || selectedAppointment.patient?.email || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Phone Number</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.phoneNumber || selectedAppointment.patient?.phoneNumber || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Date of Birth</Label>
+                                        <p className="text-sm text-gray-900">
+                                            {selectedAppointment.birthDate
+                                                ? new Date(selectedAppointment.birthDate).toLocaleDateString()
+                                                : selectedAppointment.patient?.dateOfBirth
+                                                    ? new Date(selectedAppointment.patient.dateOfBirth).toLocaleDateString()
+                                                    : 'N/A'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Sex</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.sex || selectedAppointment.patient?.gender || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Primary Language</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.primaryLanguage || 'N/A'}</p>
+                                    </div>
+                                </div>
+                                {selectedAppointment.patient?.address && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Address</Label>
+                                        <p className="text-sm text-gray-900">{selectedAppointment.patient.address}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Appointment Information */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Appointment Details</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Date & Time</Label>
+                                        <p className="text-sm text-gray-900">
+                                            {new Date(selectedAppointment.date).toLocaleDateString()} at {selectedAppointment.time}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Status</Label>
+                                        <div className="mt-1">
+                                            {getStatusBadge(selectedAppointment.status)}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Consultation Fee</Label>
+                                        <p className="text-sm text-gray-900">₹{selectedAppointment.consultationFee || 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Medical Information */}
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Medical Information</h3>
+
+                                <div>
+                                    <Label className="text-sm font-medium text-gray-700">Primary Reason for Visit</Label>
+                                    <p className="text-sm text-gray-900 mt-1">
+                                        {selectedAppointment.primaryReason || selectedAppointment.reasonForVisit || 'Not specified'}
+                                    </p>
+                                </div>
+
+                                {selectedAppointment.symptomsList && selectedAppointment.symptomsList.length > 0 && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Symptoms</Label>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {selectedAppointment.symptomsList.map((symptom, index) => (
+                                                <Badge key={index} variant="outline" className="text-xs">
+                                                    {symptom}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.symptomsOther && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Other Symptoms</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.symptomsOther}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.symptomsBegin && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">When Symptoms Began</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.symptomsBegin}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.severeSymptomsCheck && selectedAppointment.severeSymptomsCheck.length > 0 && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Severe Symptoms (Last 7 Days)</Label>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {selectedAppointment.severeSymptomsCheck.map((symptom, index) => (
+                                                <Badge key={index} variant="outline" className="text-xs bg-red-50 text-red-800 border-red-200">
+                                                    {symptom}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.preExistingConditions && selectedAppointment.preExistingConditions.length > 0 && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Pre-existing Conditions</Label>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {selectedAppointment.preExistingConditions.map((condition, index) => (
+                                                <Badge key={index} variant="outline" className="text-xs bg-yellow-50 text-yellow-800 border-yellow-200">
+                                                    {condition}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.preExistingConditionsOther && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Other Pre-existing Conditions</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.preExistingConditionsOther}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.familyHistory && selectedAppointment.familyHistory.length > 0 && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Family History</Label>
+                                        <div className="flex flex-wrap gap-2 mt-1">
+                                            {selectedAppointment.familyHistory.map((history, index) => (
+                                                <Badge key={index} variant="outline" className="text-xs bg-blue-50 text-blue-800 border-blue-200">
+                                                    {history}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.familyHistoryOther && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Other Family History</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.familyHistoryOther}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.pastSurgeries && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Past Surgeries & Hospitalizations</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.pastSurgeries}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.allergies && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Allergies</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.allergies}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.medications && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Current Medications & Supplements</Label>
+                                        <p className="text-sm text-gray-900 mt-1">{selectedAppointment.medications}</p>
+                                    </div>
+                                )}
+
+                                {selectedAppointment.urgency && (
+                                    <div>
+                                        <Label className="text-sm font-medium text-gray-700">Urgency Level</Label>
+                                        <div className="mt-1">
+                                            <Badge className={
+                                                selectedAppointment.urgency === 'High' ? 'bg-red-100 text-red-800 border-red-200' :
+                                                    selectedAppointment.urgency === 'Medium' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
+                                                        'bg-gray-100 text-gray-800 border-gray-200'
+                                            }>
+                                                {selectedAppointment.urgency} Priority
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Additional Notes */}
+                            {selectedAppointment.additionalNotes && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Additional Notes</h3>
+                                    <div className="bg-gray-50 p-3 rounded-lg">
+                                        <p className="text-sm text-gray-900">{selectedAppointment.additionalNotes}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsPatientDetailsOpen(false)}>
+                            Close
+                        </Button>
+                        {selectedAppointment?.status === 'upcoming' && (
+                            <Button className="bg-teal-600 text-white hover:bg-teal-700">
+                                Start Consultation
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
