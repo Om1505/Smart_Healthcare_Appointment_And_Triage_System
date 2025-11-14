@@ -319,7 +319,9 @@ export default function DoctorSchedulePage() {
                                                                     <Avatar>
                                                                         <AvatarImage src="/placeholder.svg" />
                                                                         <AvatarFallback className="bg-teal-100 text-teal-800">
-                                                                            {appointment.patient?.fullName ?
+                                                                            {appointment.patientNameForVisit ?
+                                                                                appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") :
+                                                                                appointment.patient?.fullName ?
                                                                                 appointment.patient.fullName.split(" ").map((n) => n[0]).join("") :
                                                                                 "??"
                                                                             }
@@ -327,7 +329,7 @@ export default function DoctorSchedulePage() {
                                                                     </Avatar>
                                                                     <div className="flex-1">
                                                                         <div className="flex items-center justify-between mb-2">
-                                                                            <h4 className="font-semibold text-gray-900">{appointment.patient?.fullName || "Unknown Patient"}</h4>
+                                                                            <h4 className="font-semibold text-gray-900">{appointment.patientNameForVisit || appointment.patient?.fullName || "Unknown Patient"}</h4>
                                                                             <div className="flex items-center space-x-2">
                                                                                 {getStatusBadge(appointment.status)}
                                                                                 <Badge variant="outline" className="text-xs">
@@ -568,7 +570,7 @@ export default function DoctorSchedulePage() {
                                     </div>
                                     <div>
                                         <Label className="text-sm font-medium text-gray-700">Consultation Fee</Label>
-                                        <p className="text-sm text-gray-900">₹{selectedAppointment.consultationFee || 'N/A'}</p>
+                                        <p className="text-sm text-gray-900">₹{selectedAppointment.consultationFeeAtBooking || 'N/A'}</p>
                                     </div>
                                 </div>
                             </div>
