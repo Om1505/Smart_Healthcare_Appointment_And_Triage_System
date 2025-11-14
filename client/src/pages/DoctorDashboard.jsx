@@ -233,7 +233,12 @@ useEffect(() => {
             .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
     }, [appointments]);
 
-    const highPriorityCount = useMemo(() => sortedUpcomingAppointments.filter(apt => apt.urgency === 'High').length, [sortedUpcomingAppointments]);
+   const highPriorityCount = useMemo(() => {
+        return sortedUpcomingAppointments.filter(apt => {
+            const priority = triageResults[apt._id]?.priority || apt.triagePriority;
+            return priority === 'RED' || priority === 'P1';
+        }).length;
+    }, [sortedUpcomingAppointments, triageResults]);
 
     const completedAppointmentsToday = useMemo(() =>
         appointments.filter(apt => apt.status === 'completed' && new Date(apt.date).toDateString() === new Date().toDateString()),
@@ -366,11 +371,10 @@ useEffect(() => {
 
                 <div className="grid md:grid-cols-4 gap-6 mb-8">
                     <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">Upcoming Today</CardTitle><Calendar className="h-4 w-4 text-gray-500" /></div><div className="text-2xl font-bold">{sortedUpcomingAppointments.length}</div></CardHeader></Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">High Priority</CardTitle><AlertTriangle className="h-4 w-4 text-orange-500" /></div><div className="text-2xl font-bold text-orange-600">{highPriorityCount}</div></CardHeader></Card>
+                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">High Urgency</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></div><div className="text-2xl font-bold text-red-600">{highPriorityCount}</div></CardHeader></Card>
                     <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">AI Analyzed</CardTitle><Brain className="h-4 w-4" style={{ color: primaryColor }} /></div><div className="text-2xl font-bold" style={{ color: primaryColor }}>{sortedUpcomingAppointments.length}</div></CardHeader></Card>
                     <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">Completed Today</CardTitle><CheckCircle className="h-4 w-4" style={{ color: secondaryColor }} /></div><div className="text-2xl font-bold" style={{ color: secondaryColor }}>{completedAppointmentsToday.length}</div></CardHeader></Card>
                 </div>
-
                 <div className="grid lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2">
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">

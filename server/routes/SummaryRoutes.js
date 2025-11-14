@@ -9,33 +9,70 @@ const groq = new Groq({
 });
 
 const formatAppointmentData = (appointment) => {
-  const symptoms = appointment.symptoms || [];
-  const otherSymptoms = appointment.otherSymptoms || '';
-  const symptomText = symptoms.join(', ') + (otherSymptoms ? ` + ${otherSymptoms}` : '');
-  
-  const severeSymptoms = appointment.severeSymptoms || [];
-  const severeText = severeSymptoms.length > 0 ? severeSymptoms.join(', ') : 'None';
-  
+  // symptoms
+  const symptomsList = appointment.symptomsList || [];
+  const symptomsOther = appointment.symptomsOther || '';
+  const allSymptoms = [...symptomsList];
+  if (symptomsOther) {
+    allSymptoms.push(symptomsOther);
+  }
+
+  // severe symptoms
+  const severeSymptoms = appointment.severeSymptomCheck || [];
+
+  // pre-existing conditions
   const conditions = appointment.preExistingConditions || [];
-  const conditionsText = conditions.length > 0 ? conditions.join(', ') : 'None';
-  
+  const conditionsOther = appointment.preExistingConditionsOther || '';
+  const allConditions = [...conditions];
+  if (conditionsOther) {
+    allConditions.push(conditionsOther);
+  }
+
+  // family history
   const familyHistory = appointment.familyHistory || [];
-  const familyText = familyHistory.length > 0 ? familyHistory.join(', ') : 'None';
-  
+  const familyHistoryOther = appointment.familyHistoryOther || '';
+  const allFamilyHistory = [...familyHistory];
+  if (familyHistoryOther) {
+    allFamilyHistory.push(familyHistoryOther);
+  }
+
   return `
-    Name: ${appointment.patientName || appointment.patientNameForVisit || 'N/A'}
-    Age: ${appointment.age || 'N/A'}
-    Sex: ${appointment.sex || 'N/A'}
-    Primary Reason: ${appointment.primaryReason || appointment.reasonForVisit || 'N/A'}
-    Symptoms: ${symptomText || 'None reported'}
-    Onset: ${appointment.symptomOnset || 'N/A'}
-    Severe Symptoms: ${severeText}
-    Pre-existing Conditions: ${conditionsText}
-    Past Surgeries: ${appointment.pastSurgeries || 'None'}
-    Family History: ${familyText}
-    Current Medications: ${appointment.currentMedications || 'None'}
-    Allergies: ${appointment.allergies || 'None'}
-  `;
+PATIENT CONSULTATION SUMMARY REQUEST:
+
+PATIENT BASIC DETAILS:
+- Name: ${appointment.patientNameForVisit || 'Not provided'}
+- Age: ${appointment.age || 'Not provided'}
+- Sex: ${appointment.sex || 'Not provided'}
+
+CHIEF COMPLAINT:
+${appointment.primaryReason || 'Not specified'}
+
+CURRENT SYMPTOMS:
+${allSymptoms.length > 0 ? allSymptoms.map(s => `- ${s}`).join('\n') : '- None reported'}
+
+SYMPTOM BEGINNING:
+${appointment.symptomsBegin || 'Not specified'}
+
+SEVERE SYMPTOMS :
+${severeSymptoms.length > 0 ? severeSymptoms.map(s => `- ${s}`).join('\n') : '- None reported'}
+
+MEDICAL HISTORY:
+
+Pre-existing Conditions:
+${allConditions.length > 0 ? allConditions.map(c => `- ${c}`).join('\n') : '- None'}
+
+Past Surgeries/Hospitalizations:
+${appointment.pastSurgeries || 'None'}
+
+Family Medical History:
+${allFamilyHistory.length > 0 ? allFamilyHistory.map(h => `- ${h}`).join('\n') : '- None'}
+
+Current Medications:
+${appointment.medications || 'None'}
+
+Allergies:
+${appointment.allergies || 'None'}
+`;
 };
 
 const generateAISummary = async (formData) => {

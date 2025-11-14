@@ -12,38 +12,36 @@ const ESI_KNOWLEDGE_BASE = `
 EMERGENCY SEVERITY INDEX (ESI) TRIAGE SYSTEM:
 
 RED (P1) - IMMEDIATE/LIFE THREATENING:
+- Immediate life-saving intervention (e.g., unresponsive, severe bleeding).
 - Cardiac arrest, respiratory arrest
-- Severe respiratory distress, SPO2 < 80
-- Unresponsive or altered mental status (GCS < 8)
+- Severe respiratory distress
+- Unresponsive or altered mental status
 - Severe hemorrhage, shock
 - Chest pain with cardiac symptoms
 - Stroke symptoms (FAST positive)
 - Severe trauma with unstable vitals
 - Seizures (active/continuous)
-- Heart rate >130 or <40, Blood pressure >180/110 or <90/60
 
 YELLOW (P2) - URGENT/NON-LIFE THREATENING:
-- Moderate to severe pain (7-10/10)
-- High fever with concerning symptoms (>103°F)
-- Moderate respiratory distress, SPO2: 80-89
+- High risk (e.g., confusion, severe pain, high fever in infant).
+- High fever with concerning symptoms
+- Moderate respiratory distress
 - Disoriented, severe pain, signs of stroke
 - Suspected fractures with deformity
 - Vomiting blood, severe dehydration
 - Chest pain (stable vitals)
-- Heart rate: 121-130 or <40, Blood pressure: 80-89 systolic
-- GCS: 9-13
+
 
 GREEN (P3) - MINOR/OBSERVATION:
+- Multiple resources needed (stable but requires tests/treatment)
 - Minor injuries, lacerations
 - Low-grade fever without red flags
-- Mild to moderate pain (4-6/10)
-- Stable vital signs, SPO2: 90-94
+- Stable vital sign
 - Chronic conditions without acute exacerbation
 - Minor infections
-- Heart rate: 111-120 or 40-49, Blood pressure: 90-120 systolic
-- GCS: 14
 
 BLACK (P4) - NON-URGENT:
+- One resource (e.g., simple laceration)
 - Prescription refills
 - Routine check-ups
 - No immediate medical concerns
@@ -85,7 +83,7 @@ ${allSymptoms.length > 0 ? '- ' + allSymptoms.join('\n- ') : 'None reported'}
 SYMPTOM ONSET:
 ${appointment.symptomsBegin || 'Unknown'}
 
-SEVERE SYMPTOMS (Last 7 days) - RED FLAGS:
+SEVERE SYMPTOMS - RED FLAGS:
 ${severeSymptoms.length > 0 ? '- ' + severeSymptoms.join('\n- ') : 'None reported'}
 ${severeSymptoms.includes('Severe chest pain or pressure') ? 'CRITICAL: Severe chest pain reported' : ''}
 ${severeSymptoms.includes('Sudden difficulty breathing or shortness of breath') ? 'CRITICAL: Respiratory distress reported' : ''}
@@ -119,15 +117,13 @@ Sex: ${appointment.sex || 'Unknown'}
 
 `;
 };
-// EMERGENCY DISCLAIMER:
-//  ${appointment.emergencyDisclaimerAcknowledged ? 'Patient acknowledged this is not for emergencies' : 'Emergency disclaimer not acknowledged'}
 
 const performAITriage = async (patientData) => {
   const prompt = `${ESI_KNOWLEDGE_BASE}
 
 ${patientData}
 
-Based on the ESI triage system and acting as a doctor, analyze the patient and provide triage classification.
+Thinking yourself as a nurse or a medical practitioner using the ESI system, analyze the patient and provide triage classification.
 Respond in this exact JSON format:
 {
   "priority": "RED/YELLOW/GREEN/BLACK",
@@ -178,7 +174,6 @@ router.get('/appointment/:appointmentId', protect, async (req, res) => {
     appointment.triagePriority = triageResult.priority;
     appointment.triagePriorityLevel = triageResult.priorityLevel;
     appointment.triageLabel = triageResult.label;
-    // appointment.triagePerformedAt = new Date();
     
     await appointment.save();
 
