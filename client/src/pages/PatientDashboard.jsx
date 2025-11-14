@@ -65,12 +65,10 @@ export default function PatientDashboard() {
 
     const token = localStorage.getItem('token');
     try {
-      // Call the new backend endpoint
+      
       await axios.put(`http://localhost:5001/api/appointments/${appointmentId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      // Update the state locally to reflect the change immediately
       setAppointments(prevAppointments =>
         prevAppointments.map(apt =>
           apt._id === appointmentId ? { ...apt, status: 'cancelled' } : apt
@@ -81,21 +79,20 @@ export default function PatientDashboard() {
       alert(err.response?.data?.message || "Failed to cancel appointment.");
     }
   };
-
-
-  // Render loading state while data is being fetched
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading your dashboard...</div>;
   }
-
-  // Render error message if fetching fails
   if (error) {
     return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
   }
-
-  // Filter the fetched appointments into upcoming and past
-  const upcomingAppointments = appointments.filter((apt) => new Date(apt.date) >= new Date() && apt.status === 'upcoming');
-  const pastAppointments = appointments.filter((apt) => new Date(apt.date) < new Date() || apt.status === 'completed' || apt.status === 'cancelled');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingAppointments = appointments.filter((apt) => 
+    new Date(apt.date) >= today && apt.status === 'upcoming'
+  );
+  const pastAppointments = appointments.filter((apt) => 
+    new Date(apt.date) < today || apt.status === 'completed' || apt.status === 'cancelled'
+  );
 
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">

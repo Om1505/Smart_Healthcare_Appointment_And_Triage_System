@@ -35,20 +35,17 @@ const familyHistoryOptions = [
   "Heart Disease", "Stroke", "Diabetes", "High Blood Pressure", "Cancer"
 ];
 
-
-
 export default function BookAppointmentPage() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
   
-   const [availableSlots, setAvailableSlots] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [selectedSlot, setSelectedSlot] = useState({ date: "", time: "" });
   
   const [appointmentDetails, setAppointmentDetails] = useState({
-   
     patientNameForVisit: "", 
     phoneNumber: "",
     email: "",
@@ -74,7 +71,8 @@ export default function BookAppointmentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); 
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -88,9 +86,7 @@ export default function BookAppointmentPage() {
         setSlotsLoading(true); 
         const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
         
-      
         const [doctorResponse, profileResponse] = await Promise.all([
-          
           axios.get(`http://localhost:5001/api/doctors/${doctorId}`),
           axios.get('http://localhost:5001/api/users/profile', authHeaders),
         ]);
@@ -99,10 +95,8 @@ export default function BookAppointmentPage() {
 
         setAppointmentDetails(prev => ({ 
           ...prev, 
-          
           patientNameForVisit: profileResponse.data.fullName,
           email: profileResponse.data.email,
-          
         }));
         setIsLoading(false); 
         
@@ -110,7 +104,14 @@ export default function BookAppointmentPage() {
           `http://localhost:5001/api/appointments/available-slots/${doctorId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setAvailableSlots(slotsResponse.data);
+
+        const now = new Date();
+        const futureSlots = slotsResponse.data.filter(slot => {
+          const slotDateTime = new Date(`${slot.date} ${slot.time}`);
+          return slotDateTime > now;
+        });
+        setAvailableSlots(futureSlots);
+
       } catch (err) {
         console.error("Error fetching data:", err);
         setError("Failed to fetch page details. The doctor may not exist or the server is down.");
@@ -123,17 +124,46 @@ export default function BookAppointmentPage() {
   }, [doctorId, navigate]);
 
   const handleDetailsChange = (field, value) => {
-    setAppointmentDetails((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: null }));
+    }
+    
+    if (field === "phoneNumber") {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      if (numericValue.length > 10) return;
+      
+      setAppointmentDetails((prev) => ({ ...prev, [field]: numericValue }));
+      
+      if (numericValue.length > 0 && numericValue.length < 10) {
+        setFormErrors(prev => ({ ...prev, [field]: "Phone number must be 10 digits." }));
+      }
+    } else if (field === "birthDate") {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); 
+      
+      if (selectedDate > today) {
+        setFormErrors(prev => ({ ...prev, [field]: "Date of birth cannot be in the future." }));
+      }
+      setAppointmentDetails((prev) => ({ ...prev, [field]: value }));
+    
+    } else {
+      setAppointmentDetails((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
-  const handleChecklistChange = (field, value, checked) => {
+  const handleChecklistChange = (field, value, isChecked) => {
     setAppointmentDetails((prev) => {
       const list = prev[field] || [];
-      if (checked) {
-       
-        return { ...prev, [field]: [...list, value] };
+
+      if (isChecked) {
+        if (value === "None of the above") {
+          return { ...prev, [field]: ["None of the above"] };
+        } else {
+          const newList = list.filter(item => item !== "None of the above");
+          return { ...prev, [field]: [...newList, value] };
+        }
       } else {
-        
         return { ...prev, [field]: list.filter((item) => item !== value) };
       }
     });
@@ -150,22 +180,19 @@ export default function BookAppointmentPage() {
       alert("You must consent to AI processing to continue.");
       return;
     }
-    if (isLoading) return <div className="text-center p-8">Loading doctor details...</div>;
+
     setIsBooking(true);
-    
     
     const bookingData = {
       doctorId,
       date: selectedSlot.date,
       time: selectedSlot.time,
       ...appointmentDetails,
-      
       symptoms: [...appointmentDetails.symptomsList, appointmentDetails.symptomsOther].filter(Boolean),
       preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
       familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
     };
     
-   
     delete bookingData.symptomsList;
     delete bookingData.symptomsOther;
     delete bookingData.preExistingConditionsOther;
@@ -184,6 +211,10 @@ export default function BookAppointmentPage() {
   };
 
   const handlePayment = async () => {
+    if (Object.values(formErrors).some(err => err)) {
+      alert("Please fix the errors on the form before proceeding.");
+      return;
+    }
     if (!doctor || !selectedSlot.date) {
       alert("Please complete all booking details first.");
       return;
@@ -198,10 +229,9 @@ export default function BookAppointmentPage() {
     setIsPaymentProcessing(true);
 
     try {
-      // Create order on backend
       const orderResponse = await axios.post('http://localhost:5001/api/appointments/create-payment-order', {
         doctorId,
-        amount: doctor.consultationFee * 100, // Convert to paisa
+        amount: doctor.consultationFee * 100,
         currency: 'INR'
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -209,7 +239,6 @@ export default function BookAppointmentPage() {
 
       const { orderId, amount, currency } = orderResponse.data;
 
-      // Razorpay options
       const options = {
         key: 'rzp_test_Raq438yqSnyOM4', 
         amount: amount,
@@ -219,7 +248,6 @@ export default function BookAppointmentPage() {
         order_id: orderId,
         handler: async function (response) {
           try {
-            // Verify payment on backend
             const verifyResponse = await axios.post('http://localhost:5001/api/appointments/verify-payment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -267,7 +295,6 @@ export default function BookAppointmentPage() {
     }
   };
 
-  // Load Razorpay script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -275,7 +302,6 @@ export default function BookAppointmentPage() {
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script when component unmounts
       const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
       if (existingScript) {
         document.body.removeChild(existingScript);
@@ -290,6 +316,20 @@ export default function BookAppointmentPage() {
   );
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
   if (!doctor) return null;
+
+  const isStep2Valid = 
+    appointmentDetails.patientNameForVisit &&
+    appointmentDetails.phoneNumber &&
+    appointmentDetails.email &&
+    appointmentDetails.birthDate &&
+    appointmentDetails.sex &&
+    appointmentDetails.primaryLanguage &&
+    appointmentDetails.primaryReason &&
+    appointmentDetails.symptomsBegin &&
+    appointmentDetails.severeSymptomsCheck.length > 0 &&
+    appointmentDetails.consentToAI &&
+    appointmentDetails.emergencyDisclaimerAcknowledged &&
+    !Object.values(formErrors).some(err => err);
 
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
@@ -306,7 +346,7 @@ export default function BookAppointmentPage() {
       </nav>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-       
+        
         <div className="flex items-center justify-center mb-8">
           <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>1</div>
           <div className={`w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}`}></div>
@@ -328,47 +368,50 @@ export default function BookAppointmentPage() {
 
           {step === 1 && (
             <Card className="bg-white border-gray-200">
-        <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
-        <CardContent>
-          {slotsLoading ? (
-            <div className="text-center p-4">Loading available slots...</div>
-          ) : availableSlots.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-4">
-              {availableSlots.map((slot, index) => {
-                const isSelected = selectedSlot.date === slot.date && selectedSlot.time === slot.time;
-                return (
-                  <Button 
-                    key={index} 
-                    variant={isSelected ? "default" : "outline"} 
-                    className={`h-auto p-4 justify-start ${
-                      isSelected 
-                        ? "bg-teal-600 text-white hover:bg-teal-700 border-teal-600" 
-                        : "bg-emerald-50 hover:bg-emerald-100"
-                    }`}
-                    onClick={() => setSelectedSlot(slot)}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="h-4 w-4" />
-                      <div>
-                        <div className="font-medium">{new Date(slot.date).toDateString()}</div>
-                        <div className={`text-sm ${isSelected ? "text-teal-100" : "opacity-70"}`}>{slot.time}</div>
-                      </div>
-                    </div>
+              <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
+              <CardContent>
+                {slotsLoading ? (
+                  <div className="text-center p-4">Loading available slots...</div>
+                ) : availableSlots.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {availableSlots.map((slot, index) => {
+                      const isSelected = selectedSlot.date === slot.date && selectedSlot.time === slot.time;
+                      return (
+                        <Button 
+                          key={index} 
+                          variant={isSelected ? "default" : "outline"} 
+                          className={`h-auto p-4 justify-start ${
+                            isSelected 
+                              ? "bg-teal-600 text-white hover:bg-teal-700 border-teal-600" 
+                              : "bg-emerald-50 hover:bg-emerald-100"
+                          }`}
+                          onClick={() => setSelectedSlot(slot)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Calendar className="h-4 w-4" />
+                            <div>
+                              <div className="font-medium">{new Date(slot.date).toDateString()}</div>
+                              <div className={`text-sm ${isSelected ? "text-teal-100" : "opacity-70"}`}>{slot.time}</div>
+                            </div>
+                          </div>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center p-4 text-gray-600">
+                    <p>No available slots found for this doctor.</p>
+                    <p className="text-sm">This may be because all slots are booked or it is too late to book for today.</p>
+                  </div>
+                )}
+                <div className="flex justify-end mt-6">
+                  <Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>
+                    Next Step <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center p-4">No available slots found for this doctor.</div>
+                </div>
+              </CardContent>
+            </Card>
           )}
-          <div className="flex justify-end mt-6">
-            <Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>
-              Next Step <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )}
 
           {step === 2 && (
             <Card className="bg-white border-gray-200">
@@ -385,42 +428,68 @@ export default function BookAppointmentPage() {
                     If you are experiencing a medical emergency (such as severe chest pain, difficulty breathing, uncontrolled bleeding, or sudden weakness), please call your local emergency services or go to the nearest emergency room immediately.
                   </AlertDescription>
                   <div className="flex items-center space-x-2 mt-4">
-                    <Checkbox id="emergencyDisclaimer" onCheckedChange={(checked) => handleDetailsChange("emergencyDisclaimerAcknowledged", checked)} />
-                    <Label htmlFor="emergencyDisclaimer" className="font-normal">I have read and understand this warning.</Label>
+                    <Checkbox 
+                      id="emergencyDisclaimer" 
+                      checked={appointmentDetails.emergencyDisclaimerAcknowledged}
+                      onCheckedChange={(checked) => handleDetailsChange("emergencyDisclaimerAcknowledged", checked)} 
+                    />
+                    <Label htmlFor="emergencyDisclaimer" className="font-normal">I have read and understand this warning.*</Label>
                   </div>
                 </Alert>
 
-                {/* Patient Demographics */}
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Patient Information</h3>
                   <div className="space-y-2">
-                    {/* --- FIX: Changed htmlFor and id --- */}
-                    <Label htmlFor="patientNameForVisit">Patient's Full Name</Label>
-                    {/* --- FIX: Changed id, value, and onChange handler --- */}
+                    <Label htmlFor="patientNameForVisit">Patient's Full Name *</Label>
                     <Input 
                       id="patientNameForVisit" 
                       value={appointmentDetails.patientNameForVisit} 
-                      onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} 
+                      onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)}
+                      required
                     />
                   </div>
                    <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phoneNumber">Phone Number</Label>
-                      <Input id="phoneNumber" type="tel" value={appointmentDetails.phoneNumber} onChange={(e) => handleDetailsChange("phoneNumber", e.target.value)} />
+                      <Label htmlFor="phoneNumber">Phone Number *</Label>
+                      <Input 
+                        id="phoneNumber" 
+                        type="tel" 
+                        value={appointmentDetails.phoneNumber} 
+                        onChange={(e) => handleDetailsChange("phoneNumber", e.target.value)} 
+                        required
+                      />
+                      {formErrors.phoneNumber && <p className="text-xs text-red-600 mt-1">{formErrors.phoneNumber}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input id="email" type="email" value={appointmentDetails.email} onChange={(e) => handleDetailsChange("email", e.target.value)} />
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={appointmentDetails.email} 
+                        onChange={(e) => handleDetailsChange("email", e.target.value)} 
+                        required
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="birthDate">Birth Date</Label>
-                      <Input id="birthDate" type="date" value={appointmentDetails.birthDate} onChange={(e) => handleDetailsChange("birthDate", e.target.value)} />
+                      <Label htmlFor="birthDate">Birth Date *</Label>
+                      <Input 
+                        id="birthDate" 
+                        type="date" 
+                        value={appointmentDetails.birthDate} 
+                        onChange={(e) => handleDetailsChange("birthDate", e.target.value)} 
+                        required
+                      />
+                      {formErrors.birthDate && <p className="text-xs text-red-600 mt-1">{formErrors.birthDate}</p>}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="sex">Sex</Label>
-                      <Select value={appointmentDetails.sex} onValueChange={(value) => handleDetailsChange("sex", value)}>
+                      <Label htmlFor="sex">Sex *</Label>
+                      <Select 
+                        value={appointmentDetails.sex} 
+                        onValueChange={(value) => handleDetailsChange("sex", value)}
+                        required
+                      >
                         <SelectTrigger id="sex"><SelectValue placeholder="Select sex" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Male">Male</SelectItem>
@@ -432,17 +501,27 @@ export default function BookAppointmentPage() {
                     </div>
                   </div>
                    <div className="space-y-2">
-                    <Label htmlFor="primaryLanguage">Primary Language Spoken</Label>
-                    <Input id="primaryLanguage" value={appointmentDetails.primaryLanguage} onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} />
+                    <Label htmlFor="primaryLanguage">Primary Language Spoken *</Label>
+                    <Input 
+                      id="primaryLanguage" 
+                      value={appointmentDetails.primaryLanguage} 
+                      onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} 
+                      required
+                    />
                   </div>
                 </div>
 
-                {/* Triage Questions */}
                 <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Triage Questions</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="primaryReason">What is the primary reason for your visit?</Label>
-                    <Input id="primaryReason" placeholder="e.g., Annual checkup, sore throat..." value={appointmentDetails.primaryReason} onChange={(e) => handleDetailsChange("primaryReason", e.target.value)} />
+                    <Label htmlFor="primaryReason">What is the primary reason for your visit? *</Label>
+                    <Input 
+                      id="primaryReason" 
+                      placeholder="e.g., Annual checkup, sore throat..." 
+                      value={appointmentDetails.primaryReason} 
+                      onChange={(e) => handleDetailsChange("primaryReason", e.target.value)} 
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -450,7 +529,11 @@ export default function BookAppointmentPage() {
                     <div className="grid grid-cols-3 gap-2">
                       {commonSymptoms.map((symptom) => (
                         <div key={symptom} className="flex items-center space-x-2">
-                          <Checkbox id={symptom} onCheckedChange={(checked) => handleChecklistChange("symptomsList", symptom, checked)} />
+                          <Checkbox 
+                            id={symptom} 
+                            onCheckedChange={(checked) => handleChecklistChange("symptomsList", symptom, checked)} 
+                            checked={appointmentDetails.symptomsList.includes(symptom)}
+                          />
                           <Label htmlFor={symptom} className="font-normal">{symptom}</Label>
                         </div>
                       ))}
@@ -459,8 +542,13 @@ export default function BookAppointmentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>When did your main symptoms begin?</Label>
-                    <RadioGroup value={appointmentDetails.symptomsBegin} onValueChange={(value) => handleDetailsChange("symptomsBegin", value)} className="space-y-1">
+                    <Label>When did your main symptoms begin? *</Label>
+                    <RadioGroup 
+                      value={appointmentDetails.symptomsBegin} 
+                      onValueChange={(value) => handleDetailsChange("symptomsBegin", value)} 
+                      className="space-y-1"
+                      required
+                    >
                       <div className="flex items-center space-x-2"><RadioGroupItem value="Less than 24 hours ago" id="s1" /><Label htmlFor="s1" className="font-normal">Less than 24 hours ago</Label></div>
                       <div className="flex items-center space-x-2"><RadioGroupItem value="1-3 days ago" id="s2" /><Label htmlFor="s2" className="font-normal">1-3 days ago</Label></div>
                       <div className="flex items-center space-x-2"><RadioGroupItem value="4-7 days ago" id="s3" /><Label htmlFor="s3" className="font-normal">4-7 days ago</Label></div>
@@ -470,19 +558,28 @@ export default function BookAppointmentPage() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>Have you experienced any of the following severe symptoms in the last 7 days?</Label>
+                    <Label>Have you experienced any of the following severe symptoms in the last 7 days? *</Label>
                     {severeSymptoms.map((symptom) => (
                       <div key={symptom} className="flex items-center space-x-2">
-                        <Checkbox id={symptom} onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", symptom, checked)} />
+                        <Checkbox 
+                          id={symptom} 
+                          onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", symptom, checked)} 
+                          checked={appointmentDetails.severeSymptomsCheck.includes(symptom)}
+                        />
                         <Label htmlFor={symptom} className="font-normal">{symptom}</Label>
                       </div>
                     ))}
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="none-severe" onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", "None of the above", checked)} />
+                      <Checkbox 
+                        id="none-severe" 
+                        onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", "None of the above", checked)} 
+                        checked={appointmentDetails.severeSymptomsCheck.includes("None of the above")}
+                      />
                       <Label htmlFor="none-severe" className="font-normal">None of the above</Label>
                     </div>
                   </div>
                 </div>
+
                  <div className="space-y-4 p-4 border rounded-lg">
                   <h3 className="font-semibold text-lg">Medical History</h3>
                   <div className="space-y-2">
@@ -490,7 +587,11 @@ export default function BookAppointmentPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {preExistingConditions.map((condition) => (
                         <div key={condition} className="flex items-center space-x-2">
-                          <Checkbox id={condition} onCheckedChange={(checked) => handleChecklistChange("preExistingConditions", condition, checked)} />
+                          <Checkbox 
+                            id={condition} 
+                            onCheckedChange={(checked) => handleChecklistChange("preExistingConditions", condition, checked)} 
+                            checked={appointmentDetails.preExistingConditions.includes(condition)}
+                          />
                           <Label htmlFor={condition} className="font-normal">{condition}</Label>
                         </div>
                       ))}
@@ -508,12 +609,20 @@ export default function BookAppointmentPage() {
                     <div className="grid grid-cols-2 gap-2">
                       {familyHistoryOptions.map((condition) => (
                         <div key={condition} className="flex items-center space-x-2">
-                          <Checkbox id={condition+"-fam"} onCheckedChange={(checked) => handleChecklistChange("familyHistory", condition, checked)} />
+                          <Checkbox 
+                            id={condition+"-fam"} 
+                            onCheckedChange={(checked) => handleChecklistChange("familyHistory", condition, checked)} 
+                            checked={appointmentDetails.familyHistory.includes(condition)}
+                          />
                           <Label htmlFor={condition+"-fam"} className="font-normal">{condition}</Label>
                         </div>
                       ))}
                       <div className="flex items-center space-x-2">
-                        <Checkbox id="none-fam" onCheckedChange={(checked) => handleChecklistChange("familyHistory", "None of the above", checked)} />
+                        <Checkbox 
+                          id="none-fam" 
+                          onCheckedChange={(checked) => handleChecklistChange("familyHistory", "None of the above", checked)} 
+                          checked={appointmentDetails.familyHistory.includes("None of the above")}
+                        />
                         <Label htmlFor="none-fam" className="font-normal">None of the above</Label>
                       </div>
                     </div>
@@ -531,11 +640,14 @@ export default function BookAppointmentPage() {
                   </div>
                 </div>
 
-                {/* Consent */}
                 <div className="flex items-start space-x-3 p-4 border rounded-lg">
-                  <Checkbox id="consentToAI" checked={appointmentDetails.consentToAI} onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} />
+                  <Checkbox 
+                    id="consentToAI" 
+                    checked={appointmentDetails.consentToAI} 
+                    onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} 
+                  />
                   <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="consentToAI" className="font-semibold">Consent to AI Processing</Label>
+                    <Label htmlFor="consentToAI" className="font-semibold">Consent to AI Processing *</Label>
                     <p className="text-sm text-muted-foreground">
                       I confirm the information is accurate and consent to it being processed by an AI to create a medical summary for my doctor.
                     </p>
@@ -544,7 +656,25 @@ export default function BookAppointmentPage() {
 
                 <div className="flex justify-between mt-6">
                   <Button variant="outline" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <Button onClick={() => setStep(3)} disabled={!appointmentDetails.consentToAI || !appointmentDetails.primaryReason || !appointmentDetails.emergencyDisclaimerAcknowledged}>Review Booking <ArrowRight className="h-4 w-4 ml-2" /></Button>
+                  <Button 
+                    onClick={() => setStep(3)} 
+                    disabled={
+                      !appointmentDetails.consentToAI || 
+                      !appointmentDetails.primaryReason || 
+                      !appointmentDetails.emergencyDisclaimerAcknowledged ||
+                      !appointmentDetails.patientNameForVisit ||
+                      !appointmentDetails.phoneNumber ||
+                      !appointmentDetails.email ||
+                      !appointmentDetails.birthDate ||
+                      !appointmentDetails.sex ||
+                      !appointmentDetails.primaryLanguage ||
+                      !appointmentDetails.symptomsBegin ||
+                      appointmentDetails.severeSymptomsCheck.length === 0 ||
+                      Object.values(formErrors).some(err => err)
+                    }
+                  >
+                    Review Booking <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -585,5 +715,3 @@ export default function BookAppointmentPage() {
     </div>
   );
 }
-
-
