@@ -77,12 +77,14 @@ export default function AdminDashboard() {
            setError("Access Denied. You are not an admin.");
            localStorage.removeItem('token');
            navigate('/login');
+           setLoading(false);
         } else {
            setAdminProfile(response.data);
         }
       } catch (err) {
          setError("Failed to fetch admin profile.");
          console.error("Failed to fetch admin profile", err);
+         setLoading(false);
       }
     };
     fetchAdminProfile();
@@ -240,7 +242,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-emerald-50 text-gray-800">
+    <div className="min-h-screen bg-emerald-50 text-gray-800" >
       <header className="bg-white shadow-sm sticky top-0 z-10 border-b">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">

@@ -37,7 +37,7 @@ export default function AdminAppointmentsPage() {
         // --- New Logic: Filter and Sort Appointments ---
 
         // 1. Filter by status
-        const upcoming = allAppointments.filter(a => a.status === 'upcoming');
+        const upcoming = allAppointments.filter(a => a.status === 'upcoming' || a.status === 'rescheduled');
         const cancelled = allAppointments.filter(a => a.status === 'cancelled');
         const completed = allAppointments.filter(a => a.status === 'completed');
 
