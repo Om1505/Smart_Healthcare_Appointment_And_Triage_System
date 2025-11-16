@@ -21,6 +21,7 @@ import DoctorUpdateProfile from './pages/DoctorUpdateProfile';
 import VideoCallPage from './pages/VideoCallPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import PrescriptionPage from './pages/PrescriptionPage';
 
 function App() {
   return (
@@ -45,6 +46,7 @@ function App() {
       <Route path="/doctor/earnings" element={<DoctorEarningsPage />} />
       <Route path="/doctor/schedule" element={<DoctorSchedulePage />} />
       <Route path="/doctor/update-profile" element={<DoctorUpdateProfile />} />
+      <Route path="/doctor/prescription/:appointmentId" element={<PrescriptionPage />} />
 
       {/* Patient Routes */}
       <Route path="/patient/dashboard" element={<PatientDashboard />} />

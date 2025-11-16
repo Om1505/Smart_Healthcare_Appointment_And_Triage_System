@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Calendar, Clock, Users, IndianRupee, AlertTriangle, CheckCircle, User, Settings, Brain, LogOut, Loader2, ShieldAlert
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // --- Verification Pending Component ---
 const VerificationPending = ({ doctorName, onLogout }) => (
@@ -110,6 +110,7 @@ export default function DoctorDashboard() {
     const primaryColor = '#0F5257';
     const secondaryColor = '#2E8B57';
 
+    const navigate = useNavigate();
     const [doctor, setDoctor] = useState(null);
     const [aiSummaries, setAiSummaries] = useState({});
     const [loadingSummaries, setLoadingSummaries] = useState({});
@@ -263,7 +264,7 @@ useEffect(() => {
         window.location.href = '/login';
     };
 
-    const handleStartConsultation = async (appointmentId) => {
+    const handleCompleteConsultation = async (appointmentId) => {
         const token = localStorage.getItem('token');
         if (!token) {
             alert("Authentication error. Please log in again.");
@@ -282,7 +283,8 @@ useEffect(() => {
             );
 
             console.log("Appointment marked as completed:", response.data.appointment);
-            alert("Appointment marked as completed!");
+            alert("Appointment marked as completed! Redirecting to prescription form...");
+            navigate(`/doctor/prescription/${appointmentId}`);
 
         } catch (err) {
             console.error("Error completing appointment:", err.response || err);
@@ -409,7 +411,7 @@ useEffect(() => {
                                                     <Button
                                                         size="sm"
                                                         className="bg-teal-600 text-white hover:bg-teal-700 w-full"
-                                                        onClick={() => handleStartConsultation(appointment._id)}
+                                                        onClick={() => handleCompleteConsultation(appointment._id)}
                                                     >
                                                         Start Consultation
                                                     </Button>
