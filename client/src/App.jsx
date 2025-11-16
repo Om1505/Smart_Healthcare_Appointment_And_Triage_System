@@ -1,30 +1,32 @@
 import { Routes, Route } from 'react-router-dom';
 
-// Import all your page components
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import DoctorDashboard from './pages/DoctorDashboard';
-import PatientDashboard from './pages/PatientDashboard';
-import FindDoctorsPage from './pages/FindDoctorsPage';
-import BookAppointmentPage from './pages/BookAppointmentPage';
-import DoctorProfilePage from './pages/DoctorProfilePage';
-import AuthCallback from './pages/AuthCallback';
-import CompleteProfilePage from './pages/CompleteProfilePage';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminDoctorProfilePage from './pages/AdminDoctorProfilePage';
-import AppointmentsPage from './pages/Appointment'; 
-import AdminAppointmentsPage from './pages/AdminAppointmentsPage'; 
-import DoctorEarningsPage from './pages/EarningPage';
-import DoctorSchedulePage from './pages/SchedulePage';
-import DoctorUpdateProfile from './pages/DoctorUpdateProfile';
-import VideoCallPage from './pages/VideoCallPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import PrescriptionPage from './pages/PrescriptionPage';
+// Import all your page components using alias paths
+import LandingPage from '@/pages/LandingPage';
+import LoginPage from '@/pages/LoginPage';
+import SignupPage from '@/pages/SignupPage';
+import DoctorDashboard from '@/pages/DoctorDashboard';
+import PatientDashboard from '@/pages/PatientDashboard';
+import FindDoctorsPage from '@/pages/FindDoctorsPage';
+import BookAppointmentPage from '@/pages/BookAppointmentPage';
+import DoctorProfilePage from '@/pages/DoctorProfilePage';
+import AuthCallback from '@/pages/AuthCallback';
+import CompleteProfilePage from '@/pages/CompleteProfilePage';
+import AdminDashboard from '@/pages/AdminDashboard';
+import AdminDoctorProfilePage from '@/pages/AdminDoctorProfilePage';
+import AppointmentsPage from '@/pages/Appointment'; 
+import AdminAppointmentsPage from '@/pages/AdminAppointmentsPage'; 
+import DoctorEarningsPage from '@/pages/EarningPage';
+import DoctorSchedulePage from '@/pages/SchedulePage';
+import DoctorUpdateProfile from '@/pages/DoctorUpdateProfile';
+import VideoCallPage from '@/pages/VideoCallPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import PrescriptionPage from '@/pages/PrescriptionPage';
+import HelpCenterPage from '@/pages/HelpCenter';
 
 function App() {
   return (
+    
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
@@ -32,7 +34,8 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/complete-profile" element={<CompleteProfilePage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/help-center" element={<HelpCenterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       
       {/* Admin Routes */}

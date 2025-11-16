@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowRight, Shield, Clock, Users, Stethoscope, Brain, Video, LogOut } from "lucide-react";
-
 const ManualButton = ({ children, variant = 'default', size = 'default', className = '', ...props }) => {
   const baseClasses =
     "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105";
@@ -37,7 +36,7 @@ export default function LandingPage() {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState(null); // 'doctor' or 'patient'
-
+  
   useEffect(() => {
     const checkAuthStatus = async () => {
       const token = localStorage.getItem('token');
@@ -399,7 +398,7 @@ export default function LandingPage() {
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-700">
-                <li className="hover:text-gray-900 transition-colors" >Help Center</li>
+                <li><Link to="/help-center" className="hover:text-gray-900 transition-colors">Help Center</Link></li>
                 <li className="hover:text-gray-900 transition-colors">Contact Us</li>
                 <li><Link to="/login" className="hover:text-gray-900 transition-colors">Login</Link></li>
               </ul>
@@ -410,7 +409,7 @@ export default function LandingPage() {
   <p>&copy; {new Date().getFullYear()} IntelliConsult. All rights reserved.</p>
 </div>
 */} 
-
+        {/* Chatbot removed from landing page */}
         </div>
       </footer>
     </div>
