@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, Plus, Edit, Trash2, User, ArrowLeft, LogOut, CalendarDays, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Calendar, Clock, Plus, Edit, Trash2, User, ArrowLeft, LogOut, CalendarDays, Settings, Loader2, Pill, FileText } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import {
     Dialog,
     DialogContent,
@@ -31,6 +31,8 @@ const daysOfWeek = [
     { key: "sunday", label: "Sunday" },
 ];
 
+const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'http://localhost:5001';
+
 export default function DoctorSchedulePage() {
     const [scheduleData, setScheduleData] = useState(null);
     const [doctor, setDoctor] = useState(null);
@@ -50,6 +52,11 @@ export default function DoctorSchedulePage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isPatientDetailsOpen, setIsPatientDetailsOpen] = useState(false);
+    const [selectedPrescription, setSelectedPrescription] = useState(null);
+    const [isPrescriptionLoading, setIsPrescriptionLoading] = useState(false);
+    const [prescriptionError, setPrescriptionError] = useState('');
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -61,9 +68,9 @@ export default function DoctorSchedulePage() {
             try {
                 const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
                 const [profileRes, appointmentsRes, scheduleRes] = await Promise.all([
-                    axios.get('http://localhost:5001/api/users/profile', authHeaders),
-                    axios.get('http://localhost:5001/api/appointments/doctor', authHeaders),
-                    axios.get('http://localhost:5001/api/schedule/working-hours', authHeaders)
+                    axios.get(`${API_BASE_URL}/api/users/profile`, authHeaders),
+                    axios.get(`${API_BASE_URL}/api/appointments/doctor`, authHeaders),
+                    axios.get(`${API_BASE_URL}/api/schedule/working-hours`, authHeaders)
                 ]);
 
                 setDoctor(profileRes.data);
@@ -97,7 +104,7 @@ export default function DoctorSchedulePage() {
     const handleSaveChanges = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5001/api/schedule/working-hours',
+            await axios.post(`${API_BASE_URL}/api/schedule/working-hours`,
                 { workingHours },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -129,7 +136,7 @@ export default function DoctorSchedulePage() {
         const token = localStorage.getItem('token');
         try {
             const response = await axios.post(
-                'http://localhost:5001/api/schedule/blocked-times',
+                `${API_BASE_URL}/api/schedule/blocked-times`,
                 newBlock,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -153,7 +160,7 @@ export default function DoctorSchedulePage() {
         const token = localStorage.getItem('token');
         try {
             await axios.delete(
-                `http://localhost:5001/api/schedule/blocked-times/${blockId}`,
+                `${API_BASE_URL}/api/schedule/blocked-times/${blockId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             setBlockedTimes(prev => prev.filter(block => block._id !== blockId));
@@ -199,7 +206,68 @@ export default function DoctorSchedulePage() {
 
     const handleViewDetails = (appointment) => {
         setSelectedAppointment(appointment);
+        setSelectedPrescription(null);
+        setPrescriptionError('');
         setIsPatientDetailsOpen(true);
+        if (appointment?._id) {
+            fetchPrescriptionForAppointment(appointment._id);
+        }
+    };
+
+    const fetchPrescriptionForAppointment = async (appointmentId) => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        setIsPrescriptionLoading(true);
+        setPrescriptionError('');
+        try {
+            const response = await axios.get(
+                `${API_BASE_URL}/api/prescriptions/appointment/${appointmentId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (response.data.success) {
+                setSelectedPrescription(response.data.medicalRecord);
+            } else {
+                setSelectedPrescription(null);
+            }
+        } catch (err) {
+            if (err.response?.status === 404) {
+                setSelectedPrescription(null);
+            } else {
+                console.error('Error fetching prescription:', err);
+                setPrescriptionError(err.response?.data?.message || 'Failed to load prescription.');
+            }
+        } finally {
+            setIsPrescriptionLoading(false);
+        }
+    };
+
+    const handleCompleteConsultation = async (appointmentId) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Authentication error. Please log in again.");
+            navigate('/login');
+            return;
+        }
+
+        try {
+            const response = await axios.put(
+                `${API_BASE_URL}/api/appointments/${appointmentId}/complete`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            setAppointments(prevAppointments =>
+                prevAppointments.map(apt =>
+                    apt._id === appointmentId ? { ...apt, status: 'completed' } : apt
+                )
+            );
+
+            alert("Appointment marked as completed! Redirecting to prescription form...");
+            navigate(`/doctor/prescription/${appointmentId}`);
+        } catch (err) {
+            console.error("Error completing appointment:", err.response || err);
+            alert(err.response?.data?.message || "Failed to start consultation.");
+        }
     };
 
     if (isLoading || !workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
@@ -351,7 +419,11 @@ export default function DoctorSchedulePage() {
                                                                     </div>
                                                                     <div className="flex flex-col space-y-2 min-w-[140px]">
                                                                         {appointment.status === 'upcoming' && (
-                                                                            <Button size="sm" className="bg-teal-600 text-white hover:bg-teal-700 w-full">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                className="bg-teal-600 text-white hover:bg-teal-700 w-full"
+                                                                                onClick={() => handleCompleteConsultation(appointment._id)}
+                                                                            >
                                                                                 Start Consultation
                                                                             </Button>
                                                                         )}
@@ -712,6 +784,88 @@ export default function DoctorSchedulePage() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Prescription Summary */}
+                            {selectedAppointment.status === 'completed' && (
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2">Prescription Summary</h3>
+                                    {isPrescriptionLoading ? (
+                                        <div className="flex items-center text-sm text-gray-600 space-x-2">
+                                            <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+                                            <span>Loading prescription...</span>
+                                        </div>
+                                    ) : selectedPrescription ? (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <Label className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                                                    <FileText className="h-4 w-4 text-teal-600" />
+                                                    <span>Diagnosis</span>
+                                                </Label>
+                                                <p className="text-sm text-gray-900 mt-1">{selectedPrescription.diagnosis || 'Not specified'}</p>
+                                            </div>
+                                            {selectedPrescription.notes && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-gray-700">Consultation Notes</Label>
+                                                    <p className="text-sm text-gray-900 mt-1">{selectedPrescription.notes}</p>
+                                                </div>
+                                            )}
+                                            {selectedPrescription.prescription && selectedPrescription.prescription.length > 0 && (
+                                                <div className="space-y-3">
+                                                    <Label className="text-sm font-medium text-gray-700">Medications</Label>
+                                                    <div className="space-y-3">
+                                                        {selectedPrescription.prescription.map((item, index) => (
+                                                            <div key={`${item.medication}-${index}`} className="p-3 border border-gray-200 rounded-lg bg-emerald-50/50">
+                                                                <div className="flex items-center space-x-2 font-semibold text-gray-900">
+                                                                    <Pill className="h-4 w-4 text-teal-600" />
+                                                                    <span>{item.medication || `Medication ${index + 1}`}</span>
+                                                                </div>
+                                                                <p className="text-sm text-gray-700 mt-1">
+                                                                    <span className="font-medium">Dosage:</span> {item.dosage || 'N/A'}
+                                                                </p>
+                                                                <p className="text-sm text-gray-700">
+                                                                    <span className="font-medium">Instructions:</span> {item.instructions || 'N/A'}
+                                                                </p>
+                                                                {item.duration && (
+                                                                    <p className="text-sm text-gray-700">
+                                                                        <span className="font-medium">Duration:</span> {item.duration}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <Label className="text-sm font-medium text-gray-700">Follow-up Required</Label>
+                                                    <p className="text-sm text-gray-900 mt-1">
+                                                        {selectedPrescription.followUpRequired ? 'Yes' : 'No'}
+                                                    </p>
+                                                </div>
+                                                {selectedPrescription.followUpRequired && selectedPrescription.followUpDate && (
+                                                    <div>
+                                                        <Label className="text-sm font-medium text-gray-700">Follow-up Date</Label>
+                                                        <p className="text-sm text-gray-900 mt-1">
+                                                            {new Date(selectedPrescription.followUpDate).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {selectedPrescription.followUpNotes && (
+                                                <div>
+                                                    <Label className="text-sm font-medium text-gray-700">Follow-up Notes</Label>
+                                                    <p className="text-sm text-gray-900 mt-1">{selectedPrescription.followUpNotes}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-600">No prescription has been recorded for this appointment yet.</p>
+                                    )}
+                                    {prescriptionError && (
+                                        <p className="text-sm text-red-600">{prescriptionError}</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -720,7 +874,10 @@ export default function DoctorSchedulePage() {
                             Close
                         </Button>
                         {selectedAppointment?.status === 'upcoming' && (
-                            <Button className="bg-teal-600 text-white hover:bg-teal-700">
+                            <Button
+                                className="bg-teal-600 text-white hover:bg-teal-700"
+                                onClick={() => handleCompleteConsultation(selectedAppointment._id)}
+                            >
                                 Start Consultation
                             </Button>
                         )}
