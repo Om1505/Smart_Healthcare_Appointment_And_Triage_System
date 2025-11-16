@@ -88,7 +88,7 @@ export default function SignupPage() {
                   {/* Common Fields */}
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-gray-700">Full Name</Label>
-                    <Input id="fullName" name="fullName" type="text" placeholder="e.g., Jane Doe" value={formData.fullName} onChange={handleInputChange} required />
+                    <Input id="fullName" name="fullName" type="text" placeholder="e.g., Jane Doe" value={formData.fullName} onChange={handleInputChange} required minLength={2} maxLength={100}/>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700">Email</Label>
