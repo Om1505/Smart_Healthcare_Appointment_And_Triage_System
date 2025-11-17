@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Loader2, AlertCircle, Stethoscope, Users, Calendar, LogOut, User, Mail, ShieldCheck, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,7 +51,6 @@ export default function AdminDashboard() {
   const [patientDateFromFilter, setPatientDateFromFilter] = useState('');
   const [patientDateToFilter, setPatientDateToFilter] = useState('');
 
-
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [adminProfile, setAdminProfile] = useState(null);
@@ -61,7 +60,7 @@ export default function AdminDashboard() {
   
   useOutsideClick(dropdownRef, () => setIsProfileOpen(false));
 
- 
+  
   useEffect(() => {
     const fetchAdminProfile = async () => {
       const token = localStorage.getItem('token');
@@ -74,17 +73,17 @@ export default function AdminDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.userType !== 'admin') {
-           setError("Access Denied. You are not an admin.");
-           localStorage.removeItem('token');
-           navigate('/login');
-           setLoading(false);
+            setError("Access Denied. You are not an admin.");
+            localStorage.removeItem('token');
+            navigate('/login');
+            setLoading(false);
         } else {
-           setAdminProfile(response.data);
+            setAdminProfile(response.data);
         }
       } catch (err) {
-         setError("Failed to fetch admin profile.");
-         console.error("Failed to fetch admin profile", err);
-         setLoading(false);
+          setError("Failed to fetch admin profile.");
+          console.error("Failed to fetch admin profile", err);
+          setLoading(false);
       }
     };
     fetchAdminProfile();
@@ -93,9 +92,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     
+    // This is the fix: Only return, don't set state in a loop
     if (!adminProfile) {
-
-      if (!loading) setLoading(false);
       return;
     }
 
@@ -214,7 +212,6 @@ export default function AdminDashboard() {
   };
 
   const uniqueSpecializations = useMemo(() => {
-  
     const specs = new Set(doctors.map(doc => doc.specialization).filter(Boolean));
     return Array.from(specs);
   }, [doctors]);
@@ -359,16 +356,15 @@ export default function AdminDashboard() {
                   {!loading && doctors.length > 0 ? (
                     doctors.map((doctor) => (
                       <TableRow key={doctor._id}>
-                        
-<TableCell className="font-medium">
-  <button 
-    // Change the onClick to navigate to the new route
-    onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
-    className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
-  >
-    {doctor.fullName}
-  </button>
-</TableCell>
+                        <TableCell className="font-medium">
+                          <button 
+                            // Change the onClick to navigate to the new route
+                            onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
+                            className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
+                          >
+                            {doctor.fullName}
+                          </button>
+                        </TableCell>
                         <TableCell>{doctor.email}</TableCell>
                         <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
                         <TableCell>{doctor.licenseNumber}</TableCell>

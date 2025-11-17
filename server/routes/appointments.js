@@ -134,6 +134,7 @@ router.get('/doctor', authMiddleware, async (req, res) => {
 // @desc    Book a new appointment
 // @access  Private (Patient only)
 router.post('/book', authMiddleware, async (req, res) => {
+  console.log(req.body);
   // 1. Destructure ALL fields from the body
   const {
     doctorId, date, time, patientNameForVisit,

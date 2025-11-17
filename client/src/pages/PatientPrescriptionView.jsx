@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button.jsx";
 import { Label } from "@/components/ui/label.jsx";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
-import { Loader2, ArrowLeft, FileText, Pill, Calendar, Clock } from "lucide-react";
+import { Loader2, ArrowLeft, FileText, Pill, Calendar, Clock, FileDown } from "lucide-react";
+const API_BASE_URL = 'http://localhost:5001';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-export default function PatientPrescriptionView() {
+const PatientPrescriptionView = () => {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
   const [record, setRecord] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -46,6 +46,41 @@ export default function PatientPrescriptionView() {
     };
     fetchPrescription();
   }, [appointmentId, navigate]);
+
+  const handleDownloadPDF = async () => {
+    if (!record) return;
+
+    setIsDownloading(true);
+    setError('');
+    const token = localStorage.getItem('token');
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/prescriptions/${record._id}/pdf`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob',
+        }
+      );
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `prescription-${record._id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+    } catch (err) {
+      console.error("Error downloading PDF:", err);
+      setError("Failed to download PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -80,11 +115,21 @@ export default function PatientPrescriptionView() {
       <div className="container max-w-3xl mx-auto">
         <Card className="bg-white shadow-lg">
           <CardHeader className="border-b">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap justify-between items-center gap-2">
               <CardTitle className="text-2xl font-bold text-teal-700">Your Prescription</CardTitle>
-              <Button onClick={() => navigate('/patient/dashboard')} variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to Dashboard
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={handleDownloadPDF} disabled={isDownloading}>
+                  {isDownloading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <FileDown className="h-4 w-4 mr-2" />
+                  )}
+                  Download PDF
+                </Button>
+                <Button onClick={() => navigate('/patient/dashboard')} variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Back
+                </Button>
+              </div>
             </div>
             <CardDescription>
               Details from your consultation on {new Date(record.appointment.date).toLocaleDateString()}
@@ -92,12 +137,12 @@ export default function PatientPrescriptionView() {
           </CardHeader>
 
           <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-gray-50 rounded-lg">
               <div>
                 <Label className="text-sm">Doctor</Label>
                 <div className="flex items-center space-x-3 mt-2">
                   <Avatar>
-                    <AvatarImage src="/female-doctor.jpg" />
+                    <AvatarImage src="/female-doctor.jpg" alt={record.doctor.fullName} />
                     <AvatarFallback>Dr</AvatarFallback>
                   </Avatar>
                   <div>
@@ -133,8 +178,8 @@ export default function PatientPrescriptionView() {
                     <div key={index} className="p-4 border rounded-lg">
                       <p className="font-bold text-md">{med.medication}</p>
                       <p className="text-sm text-gray-600"><span className="font-medium">Dosage:</span> {med.dosage}</p>
+                      <p className="text-sm text-gray-600"><span className="font-medium">Frequency:</span> {med.frequency || 'N/A'}</p>
                       <p className="text-sm text-gray-600"><span className="font-medium">Instructions:</span> {med.instructions}</p>
-                      <p className="text-sm text-gray-600"><span className="font-medium">Duration:</span> {med.duration || 'N/A'}</p>
                     </div>
                   ))}
                 </div>
@@ -166,3 +211,5 @@ export default function PatientPrescriptionView() {
     </div>
   );
 }
+
+export default PatientPrescriptionView;

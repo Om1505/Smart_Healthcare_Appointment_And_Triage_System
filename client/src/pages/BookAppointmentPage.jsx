@@ -184,6 +184,7 @@ export default function BookAppointmentPage() {
     setIsBooking(true);
     
     const bookingData = {
+     
       doctorId,
       date: selectedSlot.date,
       time: selectedSlot.time,
@@ -192,6 +193,7 @@ export default function BookAppointmentPage() {
       preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
       familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
     };
+    
     
     delete bookingData.symptomsList;
     delete bookingData.symptomsOther;
