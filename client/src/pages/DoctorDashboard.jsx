@@ -5,10 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
-    Calendar, Clock, Users, IndianRupee, AlertTriangle, CheckCircle, User, Settings, Brain, LogOut, Loader2, ShieldAlert
+    Calendar, Clock, IndianRupee, AlertTriangle, CheckCircle, User, Brain, LogOut, Loader2, ShieldAlert
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { UserProfileModal } from '@/components/UserProfileModal';
 
 // --- Verification Pending Component ---
 const VerificationPending = ({ doctorName, onLogout }) => (
@@ -81,24 +83,28 @@ const getPriorityLabel = (priority, label) => {
 
 // --- AI Triage Card---
 const AITriageCard = ({ patientName, urgency, aiSummary, riskFactors }) => (
-    <Card className="mb-4 bg-white shadow-md">
-        <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-                <span>{patientName}</span>
-                <Badge className={getPriorityClasses(urgency)}>
+    <Card className="mb-3 sm:mb-4 bg-white shadow-md">
+        <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+                <span className="text-sm sm:text-base font-semibold truncate">{patientName}</span>
+                <Badge className={`${getPriorityClasses(urgency)} text-xs w-fit`}>
                     {getPriorityLabel(urgency, null)}
                 </Badge>
             </CardTitle>
         </CardHeader>
-        <CardContent>
-            <div className="space-y-2">
-                <h4 className="font-semibold">AI Summary:</h4>
-                <p className="text-sm text-gray-700">{aiSummary}</p>
-                <h4 className="font-semibold">Risk Factors:</h4>
-                <div className="flex flex-wrap gap-2">
-                    {riskFactors.map((factor, index) => (
-                        <Badge key={index} variant="outline">{factor}</Badge>
-                    ))}
+        <CardContent className="p-3 sm:p-6 pt-0">
+            <div className="space-y-2 sm:space-y-3">
+                <div>
+                    <h4 className="font-semibold text-sm sm:text-base">AI Summary:</h4>
+                    <p className="text-xs sm:text-sm text-gray-700 mt-1">{aiSummary}</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold text-sm sm:text-base">Risk Factors:</h4>
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mt-1">
+                        {riskFactors.map((factor, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">{factor}</Badge>
+                        ))}
+                    </div>
                 </div>
             </div>
         </CardContent>
@@ -119,6 +125,7 @@ export default function DoctorDashboard() {
     const [error, setError] = useState('');
     const [triageResults, setTriageResults] = useState({});
     const [loadingTriage, setLoadingTriage] = useState({});
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -234,6 +241,13 @@ useEffect(() => {
             .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
     }, [appointments]);
 
+    const upcomingAppointmentsToday = useMemo(() => {
+        return appointments.filter(apt => 
+            apt.status === 'upcoming' && 
+            new Date(apt.date).toDateString() === new Date().toDateString()
+        );
+    }, [appointments]);
+
    const highPriorityCount = useMemo(() => {
         return sortedUpcomingAppointments.filter(apt => {
             const priority = triageResults[apt._id]?.priority || apt.triagePriority;
@@ -262,6 +276,10 @@ useEffect(() => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         window.location.href = '/login';
+    };
+
+    const handleProfileUpdate = (updatedDoctor) => {
+        setDoctor(updatedDoctor);
     };
 
     const handleCompleteConsultation = async (appointmentId) => {
@@ -350,123 +368,274 @@ useEffect(() => {
     return (
         <div className="min-h-screen bg-emerald-50 text-gray-800">
             <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+                <div className="container mx-auto px-2 sm:px-4 lg:px-8">
+                    <div className="flex justify-between items-center h-14 sm:h-16">
+                        <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
                             <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
-                            <span className="text-3xl font-bold">IntelliConsult</span>
+                            <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
                         </Link>
-                        <div className="flex items-center space-x-4">
-                            <Link to="/doctor/schedule"><Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900"><Calendar className="h-4 w-4 mr-2" />Schedule</Button></Link>
-                            <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900"><LogOut className="h-4 w-4 mr-2" />Logout</Button>
-                            <Avatar><AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} /><AvatarFallback className="bg-teal-100 text-teal-800">{doctor.fullName.split(" ").map((n) => n[0]).join("")}</AvatarFallback></Avatar>
+                        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+                            <Link to="/doctor/schedule" className="hidden sm:block">
+                                <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900 text-xs sm:text-sm">
+                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                    <span className="hidden md:inline">Schedule</span>
+                                </Button>
+                            </Link>
+                            <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900 text-xs sm:text-sm hidden sm:flex">
+                                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                                <span className="hidden md:inline">Logout</span>
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 cursor-pointer">
+                                        <AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} />
+                                        <AvatarFallback className="bg-teal-100 text-teal-800 text-xs sm:text-sm">
+                                            {doctor.fullName.split(" ").map((n) => n[0]).join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={() => setIsProfileModalOpen(true)}>
+                                        <User className="h-4 w-4 mr-2" />
+                                        Profile
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/doctor/schedule" className="flex items-center w-full">
+                                            <Calendar className="h-4 w-4 mr-2" />
+                                            Schedule
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/doctor/update-profile" className="flex items-center w-full">
+                                            <User className="h-4 w-4 mr-2" />
+                                            Update Profile
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/doctor/earnings" className="flex items-center w-full">
+                                            <IndianRupee className="h-4 w-4 mr-2" />
+                                            Earnings
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={handleLogout} className="text-red-600">
+                                        <LogOut className="h-4 w-4 mr-2" />
+                                        Logout
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>
             </nav>
 
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!</h1>
-                    <p className="text-gray-600">You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} in your queue for today.</p>
+            <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!</h1>
+                    <p className="text-sm sm:text-base text-gray-600">You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} in your queue for today.</p>
                 </div>
 
-                <div className="grid md:grid-cols-4 gap-6 mb-8">
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">Upcoming Today</CardTitle><Calendar className="h-4 w-4 text-gray-500" /></div><div className="text-2xl font-bold">{sortedUpcomingAppointments.length}</div></CardHeader></Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">High Urgency</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></div><div className="text-2xl font-bold text-red-600">{highPriorityCount}</div></CardHeader></Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">AI Analyzed</CardTitle><Brain className="h-4 w-4" style={{ color: primaryColor }} /></div><div className="text-2xl font-bold" style={{ color: primaryColor }}>{sortedUpcomingAppointments.length}</div></CardHeader></Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"><CardHeader className="pb-3"><div className="flex items-center justify-between"><CardTitle className="text-sm font-medium text-gray-700">Completed Today</CardTitle><CheckCircle className="h-4 w-4" style={{ color: secondaryColor }} /></div><div className="text-2xl font-bold" style={{ color: secondaryColor }}>{completedAppointmentsToday.length}</div></CardHeader></Card>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
+                        <CardHeader className="pb-2 sm:pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Upcoming Today</CardTitle>
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                            </div>
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold">{upcomingAppointmentsToday.length}</div>
+                        </CardHeader>
+                    </Card>
+                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
+                        <CardHeader className="pb-2 sm:pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">High Urgency</CardTitle>
+                                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
+                            </div>
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">{highPriorityCount}</div>
+                        </CardHeader>
+                    </Card>
+                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
+                        <CardHeader className="pb-2 sm:pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">AI Analyzed</CardTitle>
+                                <Brain className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: primaryColor }} />
+                            </div>
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold" style={{ color: primaryColor }}>{sortedUpcomingAppointments.length}</div>
+                        </CardHeader>
+                    </Card>
+                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
+                        <CardHeader className="pb-2 sm:pb-3">
+                            <div className="flex items-center justify-between">
+                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Completed Today</CardTitle>
+                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: secondaryColor }} />
+                            </div>
+                            <div className="text-lg sm:text-xl lg:text-2xl font-bold" style={{ color: secondaryColor }}>{completedAppointmentsToday.length}</div>
+                        </CardHeader>
+                    </Card>
                 </div>
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                     <div className="lg:col-span-2">
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                            <CardHeader><CardTitle className="flex items-center text-gray-900"><Brain className="h-5 w-5 mr-2" style={{ color: primaryColor }} /> Triage Queue</CardTitle><CardDescription>Patients waiting for consultation, sorted by urgency.</CardDescription></CardHeader>
-                            <CardContent>
+                            <CardHeader>
+                                <CardTitle className="flex items-center text-gray-900 text-lg sm:text-xl">
+                                    <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} /> 
+                                    Triage Queue
+                                </CardTitle>
+                                <CardDescription className="text-sm">Patients waiting for consultation, sorted by urgency.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 sm:p-6">
                                 <Tabs defaultValue="queue" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 bg-emerald-100"><TabsTrigger value="queue">Appointment Queue</TabsTrigger><TabsTrigger value="analysis">Patient Details</TabsTrigger></TabsList>
-                                        <TabsContent value="queue" className="space-y-4 mt-4">
+                                    <TabsList className="grid w-full grid-cols-2 bg-emerald-100">
+                                        <TabsTrigger value="queue" className="text-xs sm:text-sm">Appointment Queue</TabsTrigger>
+                                        <TabsTrigger value="analysis" className="text-xs sm:text-sm">Patient Details</TabsTrigger>
+                                    </TabsList>
+                                        <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
                                           {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
-                                            <div key={appointment._id} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-emerald-50">
-                                                <Avatar><AvatarImage src="/placeholder.svg" /><AvatarFallback>{appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}</AvatarFallback></Avatar>
-                                                <div className="flex-1">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <h3 className="font-semibold text-gray-900">{appointment.patientNameForVisit || 'N/A'}</h3>
+                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
+                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                                                    <AvatarImage src="/placeholder.svg" />
+                                                    <AvatarFallback className="text-xs sm:text-sm">
+                                                        {appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
+                                                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                                            {appointment.patientNameForVisit || 'N/A'}
+                                                        </h3>
                                                         {loadingTriage[appointment._id] ? (
-                                                            <Badge variant="outline" className="animate-pulse">
+                                                            <Badge variant="outline" className="animate-pulse text-xs w-fit">
                                                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                                                 Triaging...
                                                             </Badge>
                                                                 ) : (
-                                                            <Badge variant="outline" className={getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')}>
+                                                            <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit`}>
                                                             {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
                                                             </Badge>
                                                             )}
                                                     </div>
-                                                    <p className="text-sm text-gray-600 mb-2 font-medium">Reason: {appointment.primaryReason || 'Not specified'}</p>
-                                                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                        <div className="flex items-center space-x-1"><Clock className="h-4 w-4" /><span>{appointment.time} on {new Date(appointment.date).toLocaleDateString()}</span></div>
+                                                    <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
+                                                        Reason: {appointment.primaryReason || 'Not specified'}
+                                                    </p>
+                                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600">
+                                                        <div className="flex items-center space-x-1">
+                                                            <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                                            <span className="truncate">{appointment.time} on {new Date(appointment.date).toLocaleDateString()}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex flex-col space-y-2">
+                                                <div className="flex flex-col space-y-2 w-full sm:w-auto">
                                                     <Button
                                                         size="sm"
-                                                        className="bg-teal-600 text-white hover:bg-teal-700 w-full"
+                                                        className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
                                                         onClick={() => handleCompleteConsultation(appointment._id)}
                                                     >
                                                         Start Consultation
                                                     </Button>
                                                 </div>
                                             </div>
-                                        )) : <p className="text-center text-gray-500 py-8">You have no scheduled appointments.</p>}
+                                        )) : <p className="text-center text-gray-500 py-8 text-sm sm:text-base">You have no scheduled appointments.</p>}
                                     </TabsContent>
 
-                                    <TabsContent value="analysis" className="space-y-4 mt-4">{sortedUpcomingAppointments.map((appointment) => {
-    const triage = triageResults[appointment._id];
-    const priority = triage?.priority || appointment.triagePriority || 'GREEN';
-    
-    return (
-        <AITriageCard 
-            key={appointment._id} 
-            patientName={appointment.patientNameForVisit || 'N/A'} 
-            urgency={priority}
-            aiSummary={generateAISummary(appointment)} 
-            riskFactors={generateRiskFactors(appointment)}
-            isLoading={loadingSummaries[appointment._id]}
-        />
-    );
-})}
-
+                                    <TabsContent value="analysis" className="space-y-3 sm:space-y-4 mt-4">
+                                        {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => {
+                                            const triage = triageResults[appointment._id];
+                                            const priority = triage?.priority || appointment.triagePriority || 'GREEN';
+                                            
+                                            return (
+                                                <AITriageCard 
+                                                    key={appointment._id} 
+                                                    patientName={appointment.patientNameForVisit || 'N/A'} 
+                                                    urgency={priority}
+                                                    aiSummary={generateAISummary(appointment)} 
+                                                    riskFactors={generateRiskFactors(appointment)}
+                                                    isLoading={loadingSummaries[appointment._id]}
+                                                />
+                                            );
+                                        }) : (
+                                            <p className="text-center text-gray-500 py-8 text-sm sm:text-base">
+                                                No patient analysis available.
+                                            </p>
+                                        )}
                                     </TabsContent>
                                 </Tabs>
                             </CardContent>
                         </Card>
                     </div>
-                    <div className="space-y-6">
+                    <div className="space-y-4 sm:space-y-6">
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                            <CardHeader><CardTitle className="text-gray-900">Quick Actions</CardTitle></CardHeader>
-                            <CardContent className="space-y-3">
-                                <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full justify-start"><Calendar className="h-4 w-4 mr-2" /> Manage Schedule</Button></Link>
-                                <Link to="/doctor/update-profile" className="w-full"><Button variant="outline" className="w-full justify-start"><User className="h-4 w-4 mr-2" /> Update Profile</Button></Link>
-                                <Link to="/doctor/earnings" className="w-full"><Button variant="outline" className="w-full justify-start"><IndianRupee className="h-4 w-4 mr-2" /> View Earnings</Button></Link>
+                            <CardHeader>
+                                <CardTitle className="text-gray-900 text-lg sm:text-xl">Quick Actions</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-6">
+                                <Link to="/doctor/schedule" className="w-full">
+                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
+                                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
+                                        Manage Schedule
+                                    </Button>
+                                </Link>
+                                <Link to="/doctor/update-profile" className="w-full">
+                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
+                                        <User className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
+                                        Update Profile
+                                    </Button>
+                                </Link>
+                                <Link to="/doctor/earnings" className="w-full">
+                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
+                                        <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
+                                        View Earnings
+                                    </Button>
+                                </Link>
+                                {/* Mobile-only schedule link */}
+                                <div className="sm:hidden pt-2 border-t">
+                                    <Link to="/doctor/schedule" className="w-full">
+                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs">
+                                            <Calendar className="h-3 w-3 mr-2" /> 
+                                            View Full Schedule
+                                        </Button>
+                                    </Link>
+                                </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                            <CardHeader><CardTitle className="text-gray-900">Today's Schedule</CardTitle><CardDescription>Your upcoming appointments</CardDescription></CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
+                            <CardHeader>
+                                <CardTitle className="text-gray-900 text-lg sm:text-xl">Today's Schedule</CardTitle>
+                                <CardDescription className="text-xs sm:text-sm">Your upcoming appointments</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 sm:p-6">
+                                <div className="space-y-2 sm:space-y-3">
                                     {sortedUpcomingAppointments.slice(0, 3).map(appointment => (
-                                        <div key={appointment._id} className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                                            <div><div className="font-medium text-gray-800">{appointment.patientNameForVisit || 'N/A'}</div><div className="text-sm text-gray-600">Consultation</div></div>
-                                            <div className="text-sm font-medium text-gray-800">{appointment.time}</div>
+                                        <div key={appointment._id} className="flex items-center justify-between p-2 sm:p-3 bg-emerald-50 rounded-lg">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-medium text-gray-800 text-sm sm:text-base truncate">
+                                                    {appointment.patientNameForVisit || 'N/A'}
+                                                </div>
+                                                <div className="text-xs sm:text-sm text-gray-600">Consultation</div>
+                                            </div>
+                                            <div className="text-xs sm:text-sm font-medium text-gray-800 flex-shrink-0 ml-2">
+                                                {appointment.time}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
-                                <Link to="/doctor/schedule" className="w-full"><Button variant="outline" className="w-full mt-4">View Full Schedule</Button></Link>
+                                <Link to="/doctor/schedule" className="w-full hidden sm:block">
+                                    <Button variant="outline" className="w-full mt-4 text-sm">View Full Schedule</Button>
+                                </Link>
                             </CardContent>
                         </Card>
                     </div>
                 </div>
             </div>
+
+            {/* Profile Modal */}
+            <UserProfileModal 
+                isOpen={isProfileModalOpen} 
+                onClose={() => setIsProfileModalOpen(false)} 
+                patient={doctor} 
+                onProfileUpdate={handleProfileUpdate} 
+            />
         </div>
     );
 }
