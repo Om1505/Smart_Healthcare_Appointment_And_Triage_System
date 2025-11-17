@@ -8,8 +8,7 @@ import { Calendar, Clock, Plus, Search, Stethoscope, LogOut } from "lucide-react
 import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UserProfileModal } from '@/components/UserProfileModal';
-import { Phone } from 'lucide-react'; // Import a call icon 
-import { Check } from 'lucide-react'; // Import Check icon
+import { FileText } from 'lucide-react';
 
 export default function PatientDashboard() {
   const primaryColor = '#0F5257';
@@ -234,6 +233,20 @@ export default function PatientDashboard() {
                       <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'}>
                           {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                         </Badge>
+                        {apt.status === 'completed' && (
+                          <>
+                            <Link to={`/patient/prescription/${apt._id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs w-full" // w-full for alignment
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                View Prescription
+                              </Button>
+                            </Link>
+                          </>
+                        )}
                     </div>
                   ))}
                 </div>

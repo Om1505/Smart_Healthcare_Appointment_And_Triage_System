@@ -23,6 +23,7 @@ import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import PrescriptionPage from '@/pages/PrescriptionPage';
 import HelpCenterPage from '@/pages/HelpCenter';
+import PatientPrescriptionView from './pages/PatientPrescriptionView.jsx';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
       <Route path="/patient/book/:doctorId" element={<BookAppointmentPage />} />
       <Route path="/appointments" element={<AppointmentsPage />} />
       <Route path="/call/:roomId" element={<VideoCallPage />} />
+      <Route path="/patient/prescription/:appointmentId" element={<PatientPrescriptionView />} />
       
     </Routes>
   );
