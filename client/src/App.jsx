@@ -24,6 +24,7 @@ import ResetPasswordPage from '@/pages/ResetPasswordPage';
 import PrescriptionPage from '@/pages/PrescriptionPage';
 import HelpCenterPage from '@/pages/HelpCenter';
 import PatientPrescriptionView from './pages/PatientPrescriptionView.jsx';
+import DoctorReviewsPage from './pages/DoctorReviewsPage';
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
       <Route path="/appointments" element={<AppointmentsPage />} />
       <Route path="/call/:roomId" element={<VideoCallPage />} />
       <Route path="/patient/prescription/:appointmentId" element={<PatientPrescriptionView />} />
+      <Route path="/doctor/:id/reviews" element={<DoctorReviewsPage />} />
       
     </Routes>
   );

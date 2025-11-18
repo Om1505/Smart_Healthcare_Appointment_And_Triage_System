@@ -302,7 +302,6 @@ useEffect(() => {
 
             console.log("Appointment marked as completed:", response.data.appointment);
             alert("Appointment marked as completed! Redirecting to prescription form...");
-            navigate(`/doctor/prescription/${appointmentId}`);
 
         } catch (err) {
             console.error("Error completing appointment:", err.response || err);
@@ -565,6 +564,14 @@ useEffect(() => {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col space-y-2 w-full sm:w-auto">
+                                                    <Link 
+                                                        to={`/call/${appointment._id}`} 
+                                                        state={{ 
+                                                            userName: doctor.fullName,
+                                                            userType: 'doctor',
+                                                            userid: appointment._id
+                                                        }}
+>
                                                     <Button
                                                         size="sm"
                                                         className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
@@ -572,6 +579,7 @@ useEffect(() => {
                                                     >
                                                         Start Consultation
                                                     </Button>
+                                                    </Link>
                                                 </div>
                                             </div>
                                         )) : <p className="text-center text-gray-500 py-8 text-sm sm:text-base">You have no scheduled appointments.</p>}

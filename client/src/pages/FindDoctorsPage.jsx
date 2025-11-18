@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Search, Filter, Star, Clock, Stethoscope, User, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// This static list is used for the filter dropdown
 const specialties = ["All Specialties", "Cardiology", "Dermatology", "Pediatrics", "Neurology", "Orthopedics"];
 
 export default function FindDoctorsPage() {
@@ -60,7 +59,18 @@ export default function FindDoctorsPage() {
     localStorage.removeItem('token');
     window.location.href = '/login';
   };
-
+const StarRating = ({ rating }) => {
+  return (
+    <div className="flex items-center space-x-0.5">
+      {[...Array(5)].map((_, index) => (
+        <Star
+          key={index}
+          className={`h-4 w-4 ${index < Math.round(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+        />
+      ))}
+    </div>
+  );
+};
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
@@ -137,7 +147,10 @@ export default function FindDoctorsPage() {
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border-t pt-4">
-                           <div className="flex items-center space-x-2 text-sm text-gray-600"><Star className="h-4 w-4 text-yellow-500 fill-current" /><span>4.9 (127 reviews)</span></div>
+                           <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <StarRating rating={doctor.averageRating} />
+                            <span>({doctor.reviewCount} reviews)</span>
+                          </div>
                            <div className="flex items-center space-x-2 text-sm text-gray-600"><Clock className="h-4 w-4" /><span>{doctor.experience} years experience</span></div>
                         </div>
                       </div>
@@ -149,6 +162,9 @@ export default function FindDoctorsPage() {
                         <Link to={`/doctor/${doctor._id}`}>
                         <Button variant="outline" className="w-full">View Profile</Button>
                       </Link>
+                      <Link to={`/doctor/${doctor._id}/reviews`}>
+                          <Button variant="outline" className="w-full">View Reviews</Button>
+                        </Link>
                       </div>
                     </div>
                   </CardContent>

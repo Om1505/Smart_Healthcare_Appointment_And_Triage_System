@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, Plus, Search, Stethoscope, LogOut } from "lucide-react";
+import { Calendar, Clock, Plus, Search, Stethoscope, LogOut, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { UserProfileModal } from '@/components/UserProfileModal';
+import { ReviewModal } from '@/components/ReviewModal.jsx';
 import { FileText } from 'lucide-react';
+import {  useLocation, useNavigate } from "react-router-dom";
 
 export default function PatientDashboard() {
   const primaryColor = '#0F5257';
@@ -19,6 +21,10 @@ export default function PatientDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isProfileModalOpen, setProfileModalOpen] = useState(false);
+  const [reviewModalAppointment, setReviewModalAppointment] = useState(null);
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,7 +56,20 @@ export default function PatientDashboard() {
     };
     fetchData();
   }, []);
+  useEffect(() => {
+    const aptToReview = location.state?.showReviewFor;
+    
+    if (aptToReview) {
+      // Find the appointment in our state (in case it's stale)
+      const freshAppointmentData = appointments.find(a => a._id === aptToReview._id);
 
+      // Open the modal with the appointment data
+      setReviewModalAppointment(freshAppointmentData || aptToReview);
+      
+      // Clear the state from the URL so it doesn't pop up again on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, appointments, navigate]);
   const handleLogout = () => {
     localStorage.removeItem('token');
     window.location.href = '/login';
@@ -178,7 +197,14 @@ export default function PatientDashboard() {
                           </div>
                         </div>
                         
-                      {/* <Link to={`/call/${apt._id}`} state={{ userName: patient.fullName }}>
+                      <Link 
+                          to={`/call/${apt._id}`} 
+                          state={{ 
+                            userName: patient.fullName,
+                            userType: 'patient', 
+                            appointment: apt 
+                          }}
+                        >
                             <Button
                               size="sm"
                               className="h-8 text-xs bg-green-600 text-white hover:bg-green-700"
@@ -186,9 +212,8 @@ export default function PatientDashboard() {
                               <Phone className="h-3 w-3 mr-1" />
                               Join Call
                             </Button>
-                          </Link> */}
+                          </Link>
 
-                        {/* New container for Badge and Button */}
                         <div className="flex flex-col items-end space-y-2">
                           <Badge className="bg-teal-100 text-teal-800">Upcoming</Badge>
                           <Button
@@ -230,24 +255,25 @@ export default function PatientDashboard() {
                           <div className="flex items-center space-x-1 text-sm text-gray-600"><Calendar className="h-4 w-4" /><span>{new Date(apt.date).toLocaleDateString()}</span></div>
                         </div>
                       </div>
-                      <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'}>
+                        <div className="flex flex-col items-end space-y-2">
+                        <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'}>
                           {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                         </Badge>
+                        
+                        {/* Show "Leave Review" button only if completed */}
                         {apt.status === 'completed' && (
-                          <>
-                            <Link to={`/patient/prescription/${apt._id}`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs w-full" // w-full for alignment
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                View Prescription
-                              </Button>
-                            </Link>
-                          </>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setReviewModalAppointment(apt)}
+                          >
+                            Leave Review
+                          </Button>
                         )}
+                      </div>
                     </div>
+                    
                   ))}
                 </div>
               ) : (
@@ -264,7 +290,12 @@ export default function PatientDashboard() {
         isOpen={isProfileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         patient={patient}
-        onProfileUpdate={setPatient} // Pass the setter function to update the state
+        onProfileUpdate={setPatient}
+      />
+      <ReviewModal
+        isOpen={!!reviewModalAppointment}
+        onClose={() => setReviewModalAppointment(null)}
+        appointment={reviewModalAppointment}
       />
     </div>
     
