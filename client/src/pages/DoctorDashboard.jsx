@@ -365,6 +365,48 @@ useEffect(() => {
         return <VerificationPending doctorName={doctor.fullName} onLogout={handleLogout} />;
     }
 
+    const heroActions = [
+        {
+            label: "Manage Schedule",
+            description: "Fine-tune your availability.",
+            icon: Calendar,
+            to: "/doctor/schedule"
+        },
+        {
+            label: "View Earnings",
+            description: "Monitor completed consultations.",
+            icon: IndianRupee,
+            to: "/doctor/earnings"
+        }
+    ];
+
+    const statHighlights = [
+        {
+            title: "Upcoming Today",
+            value: upcomingAppointmentsToday.length,
+            icon: Calendar,
+            accent: "bg-emerald-50 text-emerald-700"
+        },
+        {
+            title: "High Urgency",
+            value: highPriorityCount,
+            icon: AlertTriangle,
+            accent: "bg-red-50 text-red-600"
+        },
+        {
+            title: "AI Analyzed",
+            value: sortedUpcomingAppointments.length,
+            icon: Brain,
+            accent: "bg-cyan-50 text-cyan-600"
+        },
+        {
+            title: "Completed Today",
+            value: completedAppointmentsToday.length,
+            icon: CheckCircle,
+            accent: "bg-teal-50 text-teal-700"
+        }
+    ];
+
     return (
         <div className="min-h-screen bg-emerald-50 text-gray-800">
             <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
@@ -375,12 +417,6 @@ useEffect(() => {
                             <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
-                            <Link to="/doctor/schedule" className="hidden sm:block">
-                                <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900 text-xs sm:text-sm">
-                                    <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                                    <span className="hidden md:inline">Schedule</span>
-                                </Button>
-                            </Link>
                             <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900 text-xs sm:text-sm hidden sm:flex">
                                 <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                                 <span className="hidden md:inline">Logout</span>
@@ -432,48 +468,50 @@ useEffect(() => {
             </nav>
 
             <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
-                <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!</h1>
-                    <p className="text-sm sm:text-base text-gray-600">You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} in your queue for today.</p>
-                </div>
+                <div className="mb-6 sm:mb-8 space-y-4">
+                    <div className="rounded-3xl border border-emerald-100 bg-white shadow-sm px-4 py-3 sm:px-5 sm:py-4">
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex-1">
+                                <h1 className="text-2xl sm:text-[26px] font-bold text-gray-900">
+                                    {getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!
+                                </h1>
+                                <p className="text-sm sm:text-base text-gray-600 mt-1">
+                                    You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} waiting today.
+                                </p>
+                            </div>
+                            <div className="w-full lg:max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+                                {heroActions.map(({ label, description, icon: Icon, to }) => (
+                                    <Link key={label} to={to} className="group" aria-label={label}>
+                                        <div className="h-full rounded-2xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:bg-white group-hover:shadow-md">
+                                            <div className="flex items-center gap-3.5">
+                                                <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow">
+                                                    <Icon className="h-4 w-4" />
+                                                </span>
+                                                <div className="flex-1">
+                                                    <p className="text-sm sm:text-base font-semibold text-gray-900 leading-snug">{label}</p>
+                                                    <p className="text-xs text-gray-500 leading-tight mt-0.5">{description}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Upcoming Today</CardTitle>
-                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        {statHighlights.map(({ title, value, icon: Icon, accent }) => (
+                            <div key={title} className="rounded-2xl border border-emerald-50 bg-white shadow-sm p-4 sm:p-5 hover:-translate-y-1 transition-all duration-300">
+                                <div className="flex items-start justify-between">
+                                    <p className="text-sm font-medium text-gray-600">{title}</p>
+                                    <span className={`flex h-9 w-9 items-center justify-center rounded-full ${accent}`}>
+                                        <Icon className="h-4 w-4" />
+                                    </span>
+                                </div>
+                                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">{value}</p>
                             </div>
-                            <div className="text-lg sm:text-xl lg:text-2xl font-bold">{upcomingAppointmentsToday.length}</div>
-                        </CardHeader>
-                    </Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">High Urgency</CardTitle>
-                                <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
-                            </div>
-                            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-red-600">{highPriorityCount}</div>
-                        </CardHeader>
-                    </Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">AI Analyzed</CardTitle>
-                                <Brain className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: primaryColor }} />
-                            </div>
-                            <div className="text-lg sm:text-xl lg:text-2xl font-bold" style={{ color: primaryColor }}>{sortedUpcomingAppointments.length}</div>
-                        </CardHeader>
-                    </Card>
-                    <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                        <CardHeader className="pb-2 sm:pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="text-xs sm:text-sm font-medium text-gray-700">Completed Today</CardTitle>
-                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: secondaryColor }} />
-                            </div>
-                            <div className="text-lg sm:text-xl lg:text-2xl font-bold" style={{ color: secondaryColor }}>{completedAppointmentsToday.length}</div>
-                        </CardHeader>
-                    </Card>
+                        ))}
+                    </div>
                 </div>
                 <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                     <div className="lg:col-span-2">
@@ -566,63 +604,68 @@ useEffect(() => {
                     </div>
                     <div className="space-y-4 sm:space-y-6">
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                            <CardHeader>
-                                <CardTitle className="text-gray-900 text-lg sm:text-xl">Quick Actions</CardTitle>
+                            <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <CardTitle className="text-gray-900 text-lg sm:text-xl">Today's Schedule</CardTitle>
+                                        <CardDescription className="text-xs sm:text-sm">
+                                            The next few patients in your day, prioritized for you.
+                                        </CardDescription>
+                                    </div>
+                                    <Badge variant="outline" className="text-xs sm:text-sm px-3 py-1">
+                                        {upcomingAppointmentsToday.length} today
+                                    </Badge>
+                                </div>
                             </CardHeader>
-                            <CardContent className="space-y-2 sm:space-y-3 p-3 sm:p-6">
-                                <Link to="/doctor/schedule" className="w-full">
-                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
-                                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
-                                        Manage Schedule
-                                    </Button>
-                                </Link>
-                                <Link to="/doctor/update-profile" className="w-full">
-                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
-                                        <User className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
-                                        Update Profile
-                                    </Button>
-                                </Link>
-                                <Link to="/doctor/earnings" className="w-full">
-                                    <Button variant="outline" className="w-full justify-start text-xs sm:text-sm">
-                                        <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 mr-2" /> 
-                                        View Earnings
-                                    </Button>
-                                </Link>
-                                {/* Mobile-only schedule link */}
-                                <div className="sm:hidden pt-2 border-t">
+                            <CardContent className="p-3 sm:p-6 space-y-3">
+                                {upcomingAppointmentsToday.length > 0 ? (
+                                    upcomingAppointmentsToday.slice(0, 4).map((appointment) => {
+                                        const priority = triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN';
+                                        const label = triageResults[appointment._id]?.label || appointment.triageLabel;
+
+                                        return (
+                                            <div
+                                                key={appointment._id}
+                                                className="p-3 sm:p-4 border border-emerald-100 rounded-xl bg-emerald-50/60 hover:bg-emerald-50 transition"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                                            {appointment.patientNameForVisit || 'N/A'}
+                                                        </p>
+                                                        <p className="text-xs sm:text-sm text-gray-600 truncate">
+                                                            Reason: {appointment.primaryReason || 'Consultation'}
+                                                        </p>
+                                                    </div>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={`${getPriorityClasses(priority)} text-[10px] sm:text-xs`}
+                                                    >
+                                                        {getPriorityLabel(priority, label)}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center text-xs sm:text-sm text-gray-700 mt-2 space-x-2">
+                                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                                    <span>{appointment.time}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-center text-sm text-gray-500 py-6">
+                                        You're all caught up for today.
+                                    </p>
+                                )}
+                                <div className="flex flex-col sm:flex-row gap-2 mt-2">
                                     <Link to="/doctor/schedule" className="w-full">
-                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs">
-                                            <Calendar className="h-3 w-3 mr-2" /> 
-                                            View Full Schedule
+                                        <Button variant="outline" className="w-full text-sm">Open full schedule</Button>
+                                    </Link>
+                                    <Link to="/doctor/schedule" className="w-full sm:hidden">
+                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm">
+                                            Add new slot
                                         </Button>
                                     </Link>
                                 </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-                            <CardHeader>
-                                <CardTitle className="text-gray-900 text-lg sm:text-xl">Today's Schedule</CardTitle>
-                                <CardDescription className="text-xs sm:text-sm">Your upcoming appointments</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 sm:p-6">
-                                <div className="space-y-2 sm:space-y-3">
-                                    {sortedUpcomingAppointments.slice(0, 3).map(appointment => (
-                                        <div key={appointment._id} className="flex items-center justify-between p-2 sm:p-3 bg-emerald-50 rounded-lg">
-                                            <div className="min-w-0 flex-1">
-                                                <div className="font-medium text-gray-800 text-sm sm:text-base truncate">
-                                                    {appointment.patientNameForVisit || 'N/A'}
-                                                </div>
-                                                <div className="text-xs sm:text-sm text-gray-600">Consultation</div>
-                                            </div>
-                                            <div className="text-xs sm:text-sm font-medium text-gray-800 flex-shrink-0 ml-2">
-                                                {appointment.time}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Link to="/doctor/schedule" className="w-full hidden sm:block">
-                                    <Button variant="outline" className="w-full mt-4 text-sm">View Full Schedule</Button>
-                                </Link>
                             </CardContent>
                         </Card>
                     </div>
