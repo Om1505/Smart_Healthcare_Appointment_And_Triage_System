@@ -34,11 +34,10 @@ const doctorSchema = new mongoose.Schema({
         if (this.isNew || this.isModified('password')) {
           return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
         }
-        return true; // Skip validation if password is not modified
+        return true; 
       },
       message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
     }
-    // ----------------------
   },
   userType: { type: String, default: 'doctor' },
   specialization: { type: String, required: true },
@@ -50,6 +49,14 @@ const doctorSchema = new mongoose.Schema({
   licenseNumber: { type: String, required: true, unique: true, sparse: true },
   address: { type: String, required: true },
   consultationFee: { type: Number, required: true, min: [0] },
+  averageRating: {
+    type: Number,
+    default: 0,
+  },
+  reviewCount: {
+    type: Number,
+    default: 0,
+  },
   bio: { type: String },
   googleId: { type: String, unique: true, sparse: true },
   
