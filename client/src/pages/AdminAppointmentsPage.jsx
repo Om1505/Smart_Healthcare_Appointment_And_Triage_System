@@ -161,7 +161,8 @@ export default function AdminAppointmentsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto"> 
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patient</TableHead>
@@ -174,7 +175,8 @@ export default function AdminAppointmentsPage() {
                 <TableBody>
                   <AppointmentTableBody appointments={upcomingAppointments} />
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -190,7 +192,8 @@ export default function AdminAppointmentsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto"> 
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Patient</TableHead>
@@ -203,7 +206,8 @@ export default function AdminAppointmentsPage() {
                 <TableBody>
                   <AppointmentTableBody appointments={cancelledAppointments} />
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -220,7 +224,8 @@ export default function AdminAppointmentsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
+            <div className="overflow-x-auto"> 
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Patient</TableHead>
@@ -234,6 +239,7 @@ export default function AdminAppointmentsPage() {
                 <AppointmentTableBody appointments={completedAppointments} />
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
 

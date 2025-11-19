@@ -70,24 +70,24 @@ export default function AdminDoctorProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto mb-6">
+      <div className="max-w-4xl mx-auto mb-6 px-2 sm:px-0">
         <Link to="/admin/dashboard" className="inline-flex items-center text-cyan-700 hover:text-cyan-900 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Link>
       </div>
 
       <Card className="max-w-4xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden">
-        <CardHeader className="text-center p-8 bg-cyan-50/50 border-b">
-          <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-white shadow-md">
+        <CardHeader className="text-center p-6 md:p-8 bg-cyan-50/50 border-b">
+          <Avatar className="w-20 h-20 md:w-32 md:h-32 mx-auto mb-4 border-4 border-white shadow-md">
             {/* Assuming your backend might provide a profile picture URL, otherwise fallback */}
              <AvatarImage src={doctor.profilePicture || "/default-avatar.jpg"} alt={doctor.fullName} />
             <AvatarFallback className="text-4xl bg-cyan-200 text-cyan-800">
               {doctor.fullName.split(" ").map(n => n[0]).join("")}
             </AvatarFallback>
           </Avatar>
-          <CardTitle className="text-3xl font-bold text-gray-900">{doctor.fullName}</CardTitle>
+          <CardTitle className="text-2xl md:text-3xl font-bold text-gray-900">{doctor.fullName}</CardTitle>
           
-          <div className="flex justify-center items-center gap-3 mt-3">
+           <div className="flex justify-center items-center gap-3 mt-3">
              <Badge className="bg-teal-100 text-teal-800 text-md hover:bg-teal-200">
                 {doctor.specialization || 'General'}
              </Badge>
@@ -97,9 +97,9 @@ export default function AdminDoctorProfilePage() {
              </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-8">
+        <CardContent className="p-6 md:p-8">
             {/* Contact Info Section (Important for Admins) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 bg-slate-50 rounded-lg border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-3 md:p-4 bg-slate-50 rounded-lg border">
             <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-cyan-600" />
                 <div>
@@ -124,7 +124,7 @@ export default function AdminDoctorProfilePage() {
           </div>
 
           <div className="mb-8">
-            <h3 className="font-bold text-xl mb-3 text-gray-800 flex items-center">
+            <h3 className="font-bold text-lg md:text-xl mb-3 text-gray-800 flex items-center">
                 About Dr. {doctor.fullName.split(' ').slice(-1)}
             </h3>
             <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
@@ -132,7 +132,7 @@ export default function AdminDoctorProfilePage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 border-t pt-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 border-t pt-6 md:pt-8">
             <div className="flex items-start space-x-4">
               <Clock className="h-6 w-6 text-teal-600 mt-1 flex-shrink-0" />
               <div>

@@ -140,7 +140,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="userType">I am a</Label>
                 <Select value={userType} onValueChange={setUserType} required>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>

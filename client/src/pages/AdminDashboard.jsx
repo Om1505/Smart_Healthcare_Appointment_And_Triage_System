@@ -304,7 +304,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* --- Server-Side Filters --- */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
                 <div className="space-y-1">
                   <Label htmlFor="nameFilter" className="text-xs font-medium">Name</Label>
                   <Input id="nameFilter" placeholder="Search by name..." value={nameFilter} onChange={e => setNameFilter(e.target.value)} />
@@ -320,7 +320,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="statusFilter" className="text-xs font-medium">Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger id="statusFilter"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+                    <SelectTrigger id="statusFilter" className="w-full"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="verified">Verified</SelectItem>
@@ -331,7 +331,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="specFilter" className="text-xs font-medium">Specialization</Label>
                   <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
-                    <SelectTrigger id="specFilter"><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
+                    <SelectTrigger id="specFilter" className="w-full"><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Specializations</SelectItem>
                       {uniqueSpecializations.map(spec => (<SelectItem key={spec} value={spec}>{spec}</SelectItem>))}
@@ -343,7 +343,8 @@ export default function AdminDashboard() {
               
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Action</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {loading && (
@@ -397,7 +398,8 @@ export default function AdminDashboard() {
                     !loading && <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -434,7 +436,8 @@ export default function AdminDashboard() {
 
             </CardHeader>
             <CardContent>
-              <Table>
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {loading && (
@@ -456,7 +459,8 @@ export default function AdminDashboard() {
                     !loading && <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

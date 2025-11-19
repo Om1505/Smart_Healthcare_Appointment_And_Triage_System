@@ -112,7 +112,7 @@ export default function SignupPage() {
                       <div className="space-y-2">
                         <Label htmlFor="specialization" className="text-gray-700">Specialization</Label>
                         <Select value={formData.specialization} onValueChange={(value) => handleSelectChange('specialization', value)} required>
-                          <SelectTrigger><SelectValue placeholder="Select your specialty" /></SelectTrigger>
+                          <SelectTrigger className="w-full"><SelectValue placeholder="Select your specialty" /></SelectTrigger>
                           <SelectContent>
                             {specialties.map(specialty => (
                               <SelectItem key={specialty} value={specialty}>{specialty}</SelectItem>

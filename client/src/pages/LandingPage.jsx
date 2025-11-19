@@ -143,8 +143,8 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-2">
-            <img src="Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
-            <span className="text-3xl font-bold">IntelliConsult</span>
+            <img src="Logo.svg" className="h-8 w-auto sm:h-10" style={{ color: primaryColor }} alt="Logo" />
+            <span className="text-2xl sm:text-3xl font-bold">IntelliConsult</span>
           </div>
 
           {/* Navigation */}
@@ -230,7 +230,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.1s' }}> 
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.1s' }}> 
               <CardHeader>
                 <Brain className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">AI-Powered Triage</CardTitle>
@@ -239,7 +239,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.2s' }}> 
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.2s' }}> 
               <CardHeader>
                 <Video className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Secure Video Consultations</CardTitle>
@@ -248,7 +248,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.3s' }}>
               <CardHeader>
                 <Clock className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Smart Scheduling</CardTitle>
@@ -257,7 +257,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.4s' }}>
               <CardHeader>
                 <Shield className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Privacy & Security</CardTitle>
@@ -266,7 +266,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.5s' }}>
               <CardHeader>
                 <Users className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">For Patients & Doctors</CardTitle>
@@ -275,7 +275,7 @@ export default function LandingPage() {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Card className="group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
+            <Card className="p-4 sm:p-6 group border-gray-200 bg-emerald-50 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 animate-fadeInUp" style={{ animationDelay: '0.6s' }}>
               <CardHeader>
                 <Stethoscope className="h-12 w-12 mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold">Digital Prescriptions</CardTitle>
@@ -315,7 +315,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="relative animate-slideInRight" style={{ animationDelay: '0.2s' }}> 
-              <Card className="p-8 border-gray-200 bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"> 
+              <Card className="p-4 sm:p-8 border-gray-200 bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300"> 
                 <CardContent className="space-y-6">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"> 
@@ -371,8 +371,8 @@ export default function LandingPage() {
         <div className="container mx-auto">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <img src="Logo.svg" className="h-15 w-10" style={{ color: primaryColor }} />
+                <div className="flex items-center space-x-2 mb-4">
+                <img src="Logo.svg" className="h-8 w-auto" style={{ color: primaryColor }} />
                 <span className="text-lg font-bold">IntelliConsult</span>
               </div>
               <p className="text-gray-700">
