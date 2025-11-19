@@ -115,10 +115,10 @@ const PatientPrescriptionView = () => {
       <div className="container max-w-3xl mx-auto">
         <Card className="bg-white shadow-lg">
           <CardHeader className="border-b">
-            <div className="flex flex-wrap justify-between items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <CardTitle className="text-2xl font-bold text-teal-700">Your Prescription</CardTitle>
-              <div className="flex gap-2">
-                <Button onClick={handleDownloadPDF} disabled={isDownloading}>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Button onClick={handleDownloadPDF} disabled={isDownloading} className="w-full sm:w-auto">
                   {isDownloading ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
@@ -126,7 +126,7 @@ const PatientPrescriptionView = () => {
                   )}
                   Download PDF
                 </Button>
-                <Button onClick={() => navigate('/patient/dashboard')} variant="outline" size="sm">
+                <Button onClick={() => navigate('/patient/dashboard')} variant="outline" size="sm" className="w-full sm:w-auto">
                   <ArrowLeft className="h-4 w-4 mr-2" /> Back
                 </Button>
               </div>

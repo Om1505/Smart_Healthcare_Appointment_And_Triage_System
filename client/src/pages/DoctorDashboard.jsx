@@ -282,33 +282,6 @@ useEffect(() => {
         setDoctor(updatedDoctor);
     };
 
-    const handleCompleteConsultation = async (appointmentId) => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert("Authentication error. Please log in again.");
-            return;
-        }
-
-        try {
-            const response = await axios.put(`http://localhost:5001/api/appointments/${appointmentId}/complete`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            setAppointments(prevAppointments =>
-                prevAppointments.map(apt =>
-                    apt._id === appointmentId ? { ...apt, status: 'completed' } : apt
-                )
-            );
-
-            console.log("Appointment marked as completed:", response.data.appointment);
-            alert("Appointment marked as completed! Redirecting to prescription form...");
-
-        } catch (err) {
-            console.error("Error completing appointment:", err.response || err);
-            alert(err.response?.data?.message || "Failed to start consultation.");
-        }
-    };
-
     const generateAISummary = (apt) => {
         if (aiSummaries[apt._id]) {
             return aiSummaries[apt._id];
@@ -575,7 +548,6 @@ useEffect(() => {
                                                     <Button
                                                         size="sm"
                                                         className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
-                                                        onClick={() => handleCompleteConsultation(appointment._id)}
                                                     >
                                                         Start Consultation
                                                     </Button>

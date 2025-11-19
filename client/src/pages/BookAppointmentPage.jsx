@@ -184,7 +184,6 @@ export default function BookAppointmentPage() {
     setIsBooking(true);
     
     const bookingData = {
-     
       doctorId,
       date: selectedSlot.date,
       time: selectedSlot.time,
@@ -194,7 +193,7 @@ export default function BookAppointmentPage() {
       familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
     };
     
-    
+    // Clean up redundant fields before sending
     delete bookingData.symptomsList;
     delete bookingData.symptomsOther;
     delete bookingData.preExistingConditionsOther;
@@ -339,75 +338,90 @@ export default function BookAppointmentPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
                 <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                    <img src="/Logo.svg" className="h-25 w-30" alt="Logo" />
-                    <span className="text-3xl font-bold">IntelliConsult</span>
+                    <img src="/Logo.svg" className="h-8 w-auto" alt="Logo" />
+                    <span className="text-xl sm:text-2xl font-bold text-teal-900">IntelliConsult</span>
                 </Link>
-                <Button variant="outline" onClick={() => navigate('/patient/dashboard')}>Dashboard</Button>
+                <Button variant="outline" onClick={() => navigate('/patient/dashboard')} className="hidden sm:flex">Dashboard</Button>
             </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         
+        {/* Progress Steps */}
         <div className="flex items-center justify-center mb-8">
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>1</div>
-          <div className={`w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>2</div>
-          <div className={`w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}`}></div>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>3</div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm ${step >= 1 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>1</div>
+          <div className={`w-8 sm:w-12 h-0.5 ${step >= 2 ? "bg-teal-600" : "bg-gray-200"}`}></div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm ${step >= 2 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>2</div>
+          <div className={`w-8 sm:w-12 h-0.5 ${step >= 3 ? "bg-teal-600" : "bg-gray-200"}`}></div>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm ${step >= 3 ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"}`}>3</div>
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          <Card className="bg-white border-gray-200 mb-8">
-            <CardContent className="p-6 flex items-center space-x-4">
-              <Avatar className="w-16 h-16"><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
+        <div className="max-w-3xl mx-auto">
+          {/* Doctor Info Card */}
+          <Card className="bg-white border-gray-200 mb-6 sm:mb-8">
+            <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <Avatar className="w-16 h-16 sm:w-20 sm:h-20">
+                <AvatarImage src="/female-doctor.jpg" />
+                <AvatarFallback>Dr</AvatarFallback>
+              </Avatar>
               <div className="flex-1">
-                <h2 className="text-xl font-bold">{doctor.fullName}</h2>
-                <Badge className="bg-teal-100 text-teal-800 mb-2">{doctor.specialization}</Badge>
+                <h2 className="text-xl font-bold text-gray-900">{doctor.fullName}</h2>
+                <Badge className="bg-teal-100 text-teal-800 mb-2 mt-1 hover:bg-teal-200">{doctor.specialization}</Badge>
+                <p className="text-sm text-gray-500">Consultation Fee: ₹{doctor.consultationFee}</p>
               </div>
             </CardContent>
           </Card>
 
+          {/* Step 1: Select Time */}
           {step === 1 && (
             <Card className="bg-white border-gray-200">
-              <CardHeader><CardTitle>Select Appointment Time</CardTitle><CardDescription>Choose an available time slot.</CardDescription></CardHeader>
+              <CardHeader>
+                <CardTitle>Select Appointment Time</CardTitle>
+                <CardDescription>Choose an available time slot.</CardDescription>
+              </CardHeader>
               <CardContent>
                 {slotsLoading ? (
-                  <div className="text-center p-4">Loading available slots...</div>
+                  <div className="text-center p-8 flex flex-col items-center text-gray-500">
+                    <Loader2 className="h-8 w-8 animate-spin mb-2 text-teal-600" />
+                    Loading slots...
+                  </div>
                 ) : availableSlots.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {availableSlots.map((slot, index) => {
                       const isSelected = selectedSlot.date === slot.date && selectedSlot.time === slot.time;
                       return (
                         <Button 
                           key={index} 
                           variant={isSelected ? "default" : "outline"} 
-                          className={`h-auto p-4 justify-start ${
+                          className={`h-auto p-4 justify-start flex items-center space-x-3 border ${
                             isSelected 
-                              ? "bg-teal-600 text-white hover:bg-teal-700 border-teal-600" 
-                              : "bg-emerald-50 hover:bg-emerald-100"
+                              ? "bg-teal-600 text-white border-teal-600 hover:bg-teal-700" 
+                              : "bg-white hover:bg-emerald-50 text-gray-700 border-gray-200"
                           }`}
                           onClick={() => setSelectedSlot(slot)}
                         >
-                          <div className="flex items-center space-x-3">
-                            <Calendar className="h-4 w-4" />
-                            <div>
-                              <div className="font-medium">{new Date(slot.date).toDateString()}</div>
-                              <div className={`text-sm ${isSelected ? "text-teal-100" : "opacity-70"}`}>{slot.time}</div>
-                            </div>
+                          <Calendar className={`h-5 w-5 ${isSelected ? "text-white" : "text-teal-600"}`} />
+                          <div className="text-left">
+                            <div className="font-medium">{new Date(slot.date).toDateString()}</div>
+                            <div className={`text-sm ${isSelected ? "text-teal-100" : "text-gray-500"}`}>{slot.time}</div>
                           </div>
                         </Button>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="text-center p-4 text-gray-600">
-                    <p>No available slots found for this doctor.</p>
-                    <p className="text-sm">This may be because all slots are booked or it is too late to book for today.</p>
+                  <div className="text-center p-8 border rounded-lg bg-gray-50">
+                    <p className="text-gray-600 font-medium">No available slots found.</p>
+                    <p className="text-sm text-gray-500 mt-1">Please try a different date or check back later.</p>
                   </div>
                 )}
                 <div className="flex justify-end mt-6">
-                  <Button onClick={() => setStep(2)} disabled={!selectedSlot.date}>
+                  <Button 
+                    onClick={() => setStep(2)} 
+                    disabled={!selectedSlot.date}
+                    className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto"
+                  >
                     Next Step <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
@@ -415,6 +429,7 @@ export default function BookAppointmentPage() {
             </Card>
           )}
 
+          {/* Step 2: Details Form */}
           {step === 2 && (
             <Card className="bg-white border-gray-200">
               <CardHeader>
@@ -423,34 +438,36 @@ export default function BookAppointmentPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="border-red-200 bg-red-50">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Medical Emergency Disclaimer</AlertTitle>
-                  <AlertDescription>
-                    If you are experiencing a medical emergency (such as severe chest pain, difficulty breathing, uncontrolled bleeding, or sudden weakness), please call your local emergency services or go to the nearest emergency room immediately.
+                  <AlertTitle className="text-red-800">Medical Emergency Disclaimer</AlertTitle>
+                  <AlertDescription className="text-red-700 mt-2">
+                    If you are experiencing a medical emergency (such as severe chest pain, difficulty breathing, uncontrolled bleeding, or sudden weakness), <strong>please call emergency services immediately.</strong>
                   </AlertDescription>
-                  <div className="flex items-center space-x-2 mt-4">
+                  <div className="flex items-start space-x-2 mt-4 pt-4 border-t border-red-200">
                     <Checkbox 
                       id="emergencyDisclaimer" 
                       checked={appointmentDetails.emergencyDisclaimerAcknowledged}
                       onCheckedChange={(checked) => handleDetailsChange("emergencyDisclaimerAcknowledged", checked)} 
                     />
-                    <Label htmlFor="emergencyDisclaimer" className="font-normal">I have read and understand this warning.*</Label>
+                    <Label htmlFor="emergencyDisclaimer" className="font-medium text-red-900 cursor-pointer leading-snug">
+                      I confirm this is NOT a medical emergency.
+                    </Label>
                   </div>
                 </Alert>
 
-                <div className="space-y-4 p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg">Patient Information</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="patientNameForVisit">Patient's Full Name *</Label>
-                    <Input 
-                      id="patientNameForVisit" 
-                      value={appointmentDetails.patientNameForVisit} 
-                      onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)}
-                      required
-                    />
-                  </div>
-                   <div className="grid grid-cols-2 gap-4">
+                {/* Patient Demographics */}
+                <div className="space-y-4 p-4 sm:p-5 border border-gray-200 rounded-lg bg-gray-50/50">
+                  <h3 className="font-semibold text-lg text-teal-900 flex items-center">
+                    <div className="h-6 w-1 bg-teal-600 rounded-full mr-2"></div>
+                    Patient Information
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="patientNameForVisit">Patient's Full Name *</Label>
+                      <Input id="patientNameForVisit" value={appointmentDetails.patientNameForVisit} onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} className="bg-white" />
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="phoneNumber">Phone Number *</Label>
                       <Input 
@@ -458,41 +475,27 @@ export default function BookAppointmentPage() {
                         type="tel" 
                         value={appointmentDetails.phoneNumber} 
                         onChange={(e) => handleDetailsChange("phoneNumber", e.target.value)} 
-                        required
+                        className="bg-white"
+                        maxLength={10}
                       />
-                      {formErrors.phoneNumber && <p className="text-xs text-red-600 mt-1">{formErrors.phoneNumber}</p>}
+                      {formErrors.phoneNumber && <p className="text-xs text-red-600">{formErrors.phoneNumber}</p>}
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address *</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        value={appointmentDetails.email} 
-                        onChange={(e) => handleDetailsChange("email", e.target.value)} 
-                        required
-                      />
+                      <Input id="email" type="email" value={appointmentDetails.email} onChange={(e) => handleDetailsChange("email", e.target.value)} className="bg-white" />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+
                     <div className="space-y-2">
                       <Label htmlFor="birthDate">Birth Date *</Label>
-                      <Input 
-                        id="birthDate" 
-                        type="date" 
-                        value={appointmentDetails.birthDate} 
-                        onChange={(e) => handleDetailsChange("birthDate", e.target.value)} 
-                        required
-                      />
-                      {formErrors.birthDate && <p className="text-xs text-red-600 mt-1">{formErrors.birthDate}</p>}
+                      <Input id="birthDate" type="date" value={appointmentDetails.birthDate} onChange={(e) => handleDetailsChange("birthDate", e.target.value)} className="bg-white" />
+                      {formErrors.birthDate && <p className="text-xs text-red-600">{formErrors.birthDate}</p>}
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="sex">Sex *</Label>
-                      <Select 
-                        value={appointmentDetails.sex} 
-                        onValueChange={(value) => handleDetailsChange("sex", value)}
-                        required
-                      >
-                        <SelectTrigger id="sex"><SelectValue placeholder="Select sex" /></SelectTrigger>
+                      <Select value={appointmentDetails.sex} onValueChange={(value) => handleDetailsChange("sex", value)}>
+                        <SelectTrigger id="sex" className="bg-white w-full"><SelectValue placeholder="Select sex" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Male">Male</SelectItem>
                           <SelectItem value="Female">Female</SelectItem>
@@ -501,179 +504,163 @@ export default function BookAppointmentPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                   <div className="space-y-2">
-                    <Label htmlFor="primaryLanguage">Primary Language Spoken *</Label>
-                    <Input 
-                      id="primaryLanguage" 
-                      value={appointmentDetails.primaryLanguage} 
-                      onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} 
-                      required
-                    />
+
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="primaryLanguage">Primary Language Spoken *</Label>
+                      <Input id="primaryLanguage" value={appointmentDetails.primaryLanguage} onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} className="bg-white" placeholder="e.g., English, Hindi" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg">Triage Questions</h3>
+                {/* Triage Questions */}
+                <div className="space-y-5 p-4 sm:p-5 border border-gray-200 rounded-lg bg-gray-50/50">
+                  <h3 className="font-semibold text-lg text-teal-900 flex items-center">
+                     <div className="h-6 w-1 bg-teal-600 rounded-full mr-2"></div>
+                     Medical Details
+                  </h3>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="primaryReason">What is the primary reason for your visit? *</Label>
+                    <Label htmlFor="primaryReason" className="text-base">What is the primary reason for your visit? *</Label>
                     <Input 
                       id="primaryReason" 
-                      placeholder="e.g., Annual checkup, sore throat..." 
+                      placeholder="e.g., Fever, Annual checkup..." 
                       value={appointmentDetails.primaryReason} 
                       onChange={(e) => handleDetailsChange("primaryReason", e.target.value)} 
-                      required
+                      className="bg-white"
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>What symptoms are you experiencing?</Label>
-                    <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-3">
+                    <Label className="text-base">What symptoms are you experiencing?</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {commonSymptoms.map((symptom) => (
-                        <div key={symptom} className="flex items-center space-x-2">
+                        <div key={symptom} className="flex items-center space-x-2 p-2 rounded hover:bg-white transition-colors">
                           <Checkbox 
                             id={symptom} 
                             onCheckedChange={(checked) => handleChecklistChange("symptomsList", symptom, checked)} 
                             checked={appointmentDetails.symptomsList.includes(symptom)}
                           />
-                          <Label htmlFor={symptom} className="font-normal">{symptom}</Label>
+                          <Label htmlFor={symptom} className="font-normal cursor-pointer text-sm">{symptom}</Label>
                         </div>
                       ))}
                     </div>
-                    <Input placeholder="Other symptoms..." value={appointmentDetails.symptomsOther} onChange={(e) => handleDetailsChange("symptomsOther", e.target.value)} />
+                    <Input placeholder="Other symptoms..." value={appointmentDetails.symptomsOther} onChange={(e) => handleDetailsChange("symptomsOther", e.target.value)} className="bg-white mt-2" />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>When did your main symptoms begin? *</Label>
+                  <div className="space-y-3">
+                    <Label className="text-base">When did your main symptoms begin? *</Label>
                     <RadioGroup 
                       value={appointmentDetails.symptomsBegin} 
                       onValueChange={(value) => handleDetailsChange("symptomsBegin", value)} 
-                      className="space-y-1"
-                      required
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                     >
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="Less than 24 hours ago" id="s1" /><Label htmlFor="s1" className="font-normal">Less than 24 hours ago</Label></div>
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="1-3 days ago" id="s2" /><Label htmlFor="s2" className="font-normal">1-3 days ago</Label></div>
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="4-7 days ago" id="s3" /><Label htmlFor="s3" className="font-normal">4-7 days ago</Label></div>
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="1-2 weeks ago" id="s4" /><Label htmlFor="s4" className="font-normal">1-2 weeks ago</Label></div>
-                      <div className="flex items-center space-x-2"><RadioGroupItem value="More than 2 weeks ago" id="s5" /><Label htmlFor="s5" className="font-normal">More than 2 weeks ago</Label></div>
+                      {["Less than 24 hours ago", "1-3 days ago", "4-7 days ago", "1-2 weeks ago", "More than 2 weeks ago"].map((timeframe, idx) => (
+                         <div key={idx} className="flex items-center space-x-2 p-2 rounded hover:bg-white">
+                           <RadioGroupItem value={timeframe} id={`s${idx}`} />
+                           <Label htmlFor={`s${idx}`} className="font-normal cursor-pointer">{timeframe}</Label>
+                         </div>
+                      ))}
                     </RadioGroup>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label>Have you experienced any of the following severe symptoms in the last 7 days? *</Label>
-                    {severeSymptoms.map((symptom) => (
-                      <div key={symptom} className="flex items-center space-x-2">
+                  <div className="space-y-3 p-4 bg-red-50 rounded-md border border-red-100">
+                    <Label className="text-base text-red-900 font-medium">Have you experienced any of the following severe symptoms in the last 7 days? *</Label>
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                        {severeSymptoms.map((symptom) => (
+                        <div key={symptom} className="flex items-center space-x-2">
+                            <Checkbox 
+                            id={symptom} 
+                            onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", symptom, checked)} 
+                            checked={appointmentDetails.severeSymptomsCheck.includes(symptom)}
+                            />
+                            <Label htmlFor={symptom} className="font-normal text-sm">{symptom}</Label>
+                        </div>
+                        ))}
+                        <div className="flex items-center space-x-2 mt-2 pt-2 border-t border-red-200">
                         <Checkbox 
-                          id={symptom} 
-                          onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", symptom, checked)} 
-                          checked={appointmentDetails.severeSymptomsCheck.includes(symptom)}
+                            id="none-severe" 
+                            onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", "None of the above", checked)} 
+                            checked={appointmentDetails.severeSymptomsCheck.includes("None of the above")}
                         />
-                        <Label htmlFor={symptom} className="font-normal">{symptom}</Label>
-                      </div>
-                    ))}
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="none-severe" 
-                        onCheckedChange={(checked) => handleChecklistChange("severeSymptomsCheck", "None of the above", checked)} 
-                        checked={appointmentDetails.severeSymptomsCheck.includes("None of the above")}
-                      />
-                      <Label htmlFor="none-severe" className="font-normal">None of the above</Label>
+                        <Label htmlFor="none-severe" className="font-medium text-sm">None of the above</Label>
+                        </div>
                     </div>
                   </div>
                 </div>
 
-                 <div className="space-y-4 p-4 border rounded-lg">
-                  <h3 className="font-semibold text-lg">Medical History</h3>
-                  <div className="space-y-2">
-                    <Label>Do you have any pre-existing medical conditions?</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                 <div className="space-y-5 p-4 sm:p-5 border border-gray-200 rounded-lg bg-gray-50/50">
+                  <h3 className="font-semibold text-lg text-teal-900 flex items-center">
+                     <div className="h-6 w-1 bg-teal-600 rounded-full mr-2"></div>
+                     History
+                  </h3>
+                  <div className="space-y-3">
+                    <Label className="text-base">Do you have any pre-existing medical conditions?</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {preExistingConditions.map((condition) => (
                         <div key={condition} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={condition} 
-                            onCheckedChange={(checked) => handleChecklistChange("preExistingConditions", condition, checked)} 
-                            checked={appointmentDetails.preExistingConditions.includes(condition)}
-                          />
-                          <Label htmlFor={condition} className="font-normal">{condition}</Label>
+                          <Checkbox id={condition} onCheckedChange={(checked) => handleChecklistChange("preExistingConditions", condition, checked)} checked={appointmentDetails.preExistingConditions.includes(condition)} />
+                          <Label htmlFor={condition} className="font-normal text-sm">{condition}</Label>
                         </div>
                       ))}
                     </div>
-                    <Input placeholder="Other conditions (please specify)..." value={appointmentDetails.preExistingConditionsOther} onChange={(e) => handleDetailsChange("preExistingConditionsOther", e.target.value)} />
+                    <Input placeholder="Other conditions..." value={appointmentDetails.preExistingConditionsOther} onChange={(e) => handleDetailsChange("preExistingConditionsOther", e.target.value)} className="bg-white" />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="pastSurgeries">Have you had any past surgeries or hospitalizations? (Include procedure and year)</Label>
-                    <Textarea id="pastSurgeries" placeholder="e.g., Appendectomy (2015), Knee surgery (2019)" value={appointmentDetails.pastSurgeries} onChange={(e) => handleDetailsChange("pastSurgeries", e.target.value)} />
+                    <Label htmlFor="pastSurgeries">Past surgeries or hospitalizations</Label>
+                    <Textarea id="pastSurgeries" placeholder="Procedure and year..." value={appointmentDetails.pastSurgeries} onChange={(e) => handleDetailsChange("pastSurgeries", e.target.value)} className="bg-white" rows={2} />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Does your immediate family have a history of any of the following?</Label>
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-3">
+                    <Label>Immediate Family History</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {familyHistoryOptions.map((condition) => (
                         <div key={condition} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={condition+"-fam"} 
-                            onCheckedChange={(checked) => handleChecklistChange("familyHistory", condition, checked)} 
-                            checked={appointmentDetails.familyHistory.includes(condition)}
-                          />
-                          <Label htmlFor={condition+"-fam"} className="font-normal">{condition}</Label>
+                          <Checkbox id={condition+"-fam"} onCheckedChange={(checked) => handleChecklistChange("familyHistory", condition, checked)} checked={appointmentDetails.familyHistory.includes(condition)} />
+                          <Label htmlFor={condition+"-fam"} className="font-normal text-sm">{condition}</Label>
                         </div>
                       ))}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="none-fam" 
-                          onCheckedChange={(checked) => handleChecklistChange("familyHistory", "None of the above", checked)} 
-                          checked={appointmentDetails.familyHistory.includes("None of the above")}
-                        />
-                        <Label htmlFor="none-fam" className="font-normal">None of the above</Label>
+                       <div className="flex items-center space-x-2">
+                          <Checkbox id="none-fam" onCheckedChange={(checked) => handleChecklistChange("familyHistory", "None of the above", checked)} checked={appointmentDetails.familyHistory.includes("None of the above")} />
+                          <Label htmlFor="none-fam" className="font-normal text-sm">None of the above</Label>
                       </div>
                     </div>
-                    <Input placeholder="If cancer, please specify type..." value={appointmentDetails.familyHistoryOther} onChange={(e) => handleDetailsChange("familyHistoryOther", e.target.value)} />
+                    <Input placeholder="If cancer, specify type..." value={appointmentDetails.familyHistoryOther} onChange={(e) => handleDetailsChange("familyHistoryOther", e.target.value)} className="bg-white" />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="allergies">Do you have any allergies (medication, food, seasonal, etc.)?</Label>
-                    <Textarea id="allergies" placeholder="If yes, please list all allergies... If no, leave blank." value={appointmentDetails.allergies} onChange={(e) => handleDetailsChange("allergies", e.target.value)} />
+                    <Label htmlFor="allergies">Allergies (Food, Drug, Seasonal)</Label>
+                    <Textarea id="allergies" placeholder="List any allergies..." value={appointmentDetails.allergies} onChange={(e) => handleDetailsChange("allergies", e.target.value)} className="bg-white" rows={2} />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="medications">Please list all medications, vitamins, and supplements you are currently taking.</Label>
-                    <Textarea id="medications" placeholder="e.g., Lisinopril 10mg, Vitamin D 2000 IU..." value={appointmentDetails.medications} onChange={(e) => handleDetailsChange("medications", e.target.value)} />
+                    <Label htmlFor="medications">Current Medications</Label>
+                    <Textarea id="medications" placeholder="e.g., Lisinopril 10mg..." value={appointmentDetails.medications} onChange={(e) => handleDetailsChange("medications", e.target.value)} className="bg-white" rows={2} />
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3 p-4 border rounded-lg">
+                {/* Consent */}
+                <div className="flex items-start space-x-3 p-4 border border-teal-100 bg-teal-50/50 rounded-lg">
                   <Checkbox 
                     id="consentToAI" 
                     checked={appointmentDetails.consentToAI} 
                     onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} 
+                    className="mt-1"
                   />
                   <div className="grid gap-1.5 leading-none">
-                    <Label htmlFor="consentToAI" className="font-semibold">Consent to AI Processing *</Label>
-                    <p className="text-sm text-muted-foreground">
+                    <Label htmlFor="consentToAI" className="font-semibold text-teal-900 cursor-pointer">Consent to AI Processing *</Label>
+                    <p className="text-sm text-gray-600">
                       I confirm the information is accurate and consent to it being processed by an AI to create a medical summary for my doctor.
                     </p>
                   </div>
                 </div>
 
-                <div className="flex justify-between mt-6">
-                  <Button variant="outline" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
+                <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setStep(1)} className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
                   <Button 
                     onClick={() => setStep(3)} 
-                    disabled={
-                      !appointmentDetails.consentToAI || 
-                      !appointmentDetails.primaryReason || 
-                      !appointmentDetails.emergencyDisclaimerAcknowledged ||
-                      !appointmentDetails.patientNameForVisit ||
-                      !appointmentDetails.phoneNumber ||
-                      !appointmentDetails.email ||
-                      !appointmentDetails.birthDate ||
-                      !appointmentDetails.sex ||
-                      !appointmentDetails.primaryLanguage ||
-                      !appointmentDetails.symptomsBegin ||
-                      appointmentDetails.severeSymptomsCheck.length === 0 ||
-                      Object.values(formErrors).some(err => err)
-                    }
+                    disabled={!isStep2Valid}
+                    className="w-full sm:w-auto bg-teal-600 text-white hover:bg-teal-700"
                   >
                     Review Booking <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -682,30 +669,35 @@ export default function BookAppointmentPage() {
             </Card>
           )}
 
+          {/* Step 3: Confirmation */}
           {step === 3 && (
             <Card className="bg-white border-gray-200">
-              <CardHeader><CardTitle>Confirm Your Appointment</CardTitle><CardDescription>Review your details before confirming.</CardDescription></CardHeader>
+              <CardHeader>
+                <CardTitle>Confirm Your Appointment</CardTitle>
+                <CardDescription>Review your details before confirming.</CardDescription>
+              </CardHeader>
               <CardContent className="space-y-6">
-                <div className="bg-emerald-50/50 p-4 rounded-lg space-y-3">
-                  <h3 className="font-semibold mb-3">Booking Summary</h3>
-                  <div className="flex justify-between"><span className="text-gray-600">Doctor:</span><span className="font-medium">{doctor.fullName}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-600">Date & Time:</span><span className="font-medium">{new Date(selectedSlot.date).toDateString()} at {selectedSlot.time}</span></div>
-                  
-                  <div className="border-t pt-3 mt-3 space-y-2">
-                    <div className="flex justify-between"><span className="text-gray-600">Patient Name:</span><span className="font-medium">{appointmentDetails.patientNameForVisit}</span></div>
-                    <div className="flex justify-between"><span className="text-gray-600">Primary Reason:</span><span className="font-medium text-right">{appointmentDetails.primaryReason}</span></div>
+                <div className="bg-emerald-50/50 p-5 rounded-lg space-y-4 border border-emerald-100">
+                  <h3 className="font-semibold text-lg text-teal-900 border-b border-emerald-200 pb-2">Booking Summary</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                     <div className="flex flex-col"><span className="text-gray-500">Doctor</span><span className="font-medium text-gray-900">{doctor.fullName}</span></div>
+                     <div className="flex flex-col"><span className="text-gray-500">Date & Time</span><span className="font-medium text-gray-900">{new Date(selectedSlot.date).toDateString()} at {selectedSlot.time}</span></div>
+                     <div className="flex flex-col"><span className="text-gray-500">Patient</span><span className="font-medium text-gray-900">{appointmentDetails.patientNameForVisit}</span></div>
+                     <div className="flex flex-col"><span className="text-gray-500">Primary Reason</span><span className="font-medium text-gray-900">{appointmentDetails.primaryReason}</span></div>
                   </div>
                 </div>
-                <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setStep(2)}><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <div className="flex space-x-3">
-                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isBooking}>
+                
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <Button variant="outline" onClick={() => setStep(2)} className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                     {/* Add Pay Later or Pay Now logic here based on reqs */}
+                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto" disabled={isBooking}>
                       {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {isBooking ? "Booking..." : "Confirm Booking"}
+                      {isBooking ? "Booking..." : "Confirm & Book"}
                     </Button>
-                    <Button onClick={handlePayment} size="lg" className="bg-teal-600 text-white hover:bg-teal-700" disabled={isPaymentProcessing}>
+                    <Button onClick={handlePayment} size="lg" className="bg-teal-800 text-white hover:bg-teal-900 w-full sm:w-auto" disabled={isPaymentProcessing}>
                       {isPaymentProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {isPaymentProcessing ? "Processing..." : "Complete Payment"}
+                      {isPaymentProcessing ? "Processing..." : "Pay & Book"}
                     </Button>
                   </div>
                 </div>

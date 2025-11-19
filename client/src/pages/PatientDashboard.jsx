@@ -15,7 +15,6 @@ import {  useLocation, useNavigate } from "react-router-dom";
 export default function PatientDashboard() {
   const primaryColor = '#0F5257';
 
-  // State for holding real data from the backend
   const [patient, setPatient] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +34,6 @@ export default function PatientDashboard() {
       }
 
       try {
-        // Fetch both profile and appointments in parallel for speed
         const [profileResponse, appointmentsResponse] = await Promise.all([
           axios.get('http://localhost:5001/api/users/profile', {
             headers: { Authorization: `Bearer ${token}` }
@@ -60,13 +58,10 @@ export default function PatientDashboard() {
     const aptToReview = location.state?.showReviewFor;
     
     if (aptToReview) {
-      // Find the appointment in our state (in case it's stale)
       const freshAppointmentData = appointments.find(a => a._id === aptToReview._id);
 
-      // Open the modal with the appointment data
       setReviewModalAppointment(freshAppointmentData || aptToReview);
       
-      // Clear the state from the URL so it doesn't pop up again on refresh
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, appointments, navigate]);
@@ -76,7 +71,6 @@ export default function PatientDashboard() {
   };
 
   const handleCancelAppointment = async (appointmentId) => {
-    // Ask for confirmation before deleting
     if (!window.confirm("Are you sure you want to cancel this appointment?")) {
       return;
     }
@@ -116,12 +110,12 @@ export default function PatientDashboard() {
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex flex-col sm:flex-row justify-between items-center h-16 gap-3">
             <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
-              <span className="text-3xl font-bold">IntelliConsult</span>
+              <img src="/Logo.svg" className="h-8 sm:h-10" style={{ color: primaryColor }} alt="Logo" />
+              <span className="text-2xl sm:text-3xl font-bold">IntelliConsult</span>
             </Link>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <Link to="/patient/doctors">
                 <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900">
                   <Search className="h-4 w-4 mr-2" /> Find Doctors
@@ -132,7 +126,7 @@ export default function PatientDashboard() {
               </Button>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Avatar className="cursor-pointer">
+                    <Avatar className="cursor-pointer w-8 h-8 sm:w-10 sm:h-10">
                       <AvatarImage src="/patient-consultation.png" alt={patient.fullName} />
                       <AvatarFallback className="bg-teal-100 text-teal-800">
                         {patient.fullName.split(" ").map((n) => n[0]).join("")}
@@ -161,7 +155,7 @@ export default function PatientDashboard() {
           <p className="text-gray-600">Manage your appointments and health journey.</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link to="/patient/doctors">
             <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 cursor-pointer">
               <CardHeader className="pb-3 flex-row items-center space-x-4"><div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"><Plus className="h-6 w-6" style={{ color: primaryColor }} /></div><div><CardTitle className="text-lg">Book Appointment</CardTitle><CardDescription>Find and book with doctors</CardDescription></div></CardHeader>
@@ -175,7 +169,7 @@ export default function PatientDashboard() {
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="bg-white border-gray-200">
             <CardHeader><CardTitle>Upcoming Appointments</CardTitle><CardDescription>Your scheduled consultations</CardDescription></CardHeader>
             <CardContent>
@@ -183,47 +177,50 @@ export default function PatientDashboard() {
                   <div className="space-y-4">
                     {upcomingAppointments.map((apt) => (
                       // --- THIS IS THE UPDATED CARD LAYOUT ---
-                      <div key={apt._id} className="flex items-start space-x-4 p-4 border rounded-lg bg-emerald-50/50">
-                        <Avatar><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
-                        
-                        {/* Appointment Details */}
-                        <div className="flex-1">
-                          <h3 className="font-semibold">{apt.doctor.fullName}</h3>
-                          <p className="text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
-                          <p className="text-sm text-gray-600">{apt.doctor.specialization}</p>
-                          <div className="flex items-center space-x-4 mt-2">
-                            <div className="flex items-center space-x-1 text-sm text-gray-600"><Calendar className="h-4 w-4" /><span>{new Date(apt.date).toLocaleDateString()}</span></div>
-                            <div className="flex items-center space-x-1 text-sm text-gray-600"><Clock className="h-4 w-4" /><span>{apt.time}</span></div>
+                      <div key={apt._id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg bg-emerald-50/50 gap-3">
+                        <div className="flex items-center space-x-4 w-full sm:w-auto">
+                          <Avatar className="w-12 h-12"><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
+                          <div>
+                            <h3 className="font-semibold">{apt.doctor.fullName}</h3>
+                            <p className="text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
+                            <p className="text-sm text-gray-600">{apt.doctor.specialization}</p>
+                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                              <div className="flex items-center space-x-1"><Calendar className="h-4 w-4" /><span>{new Date(apt.date).toLocaleDateString()}</span></div>
+                              <div className="flex items-center space-x-1"><Clock className="h-4 w-4" /><span>{apt.time}</span></div>
+                            </div>
                           </div>
                         </div>
-                        
-                      <Link 
-                          to={`/call/${apt._id}`} 
-                          state={{ 
-                            userName: patient.fullName,
-                            userType: 'patient', 
-                            appointment: apt 
-                          }}
-                        >
+
+                        <div className="flex flex-col sm:items-end sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                          <Link 
+                            to={`/call/${apt._id}`} 
+                            state={{ 
+                              userName: patient.fullName,
+                              userType: 'patient', 
+                              appointment: apt 
+                            }}
+                            className="w-full sm:w-auto"
+                          >
                             <Button
                               size="sm"
-                              className="h-8 text-xs bg-green-600 text-white hover:bg-green-700"
+                              className="w-full sm:w-auto h-8 text-xs bg-green-600 text-white hover:bg-green-700"
                             >
                               <Phone className="h-3 w-3 mr-1" />
                               Join Call
                             </Button>
                           </Link>
 
-                        <div className="flex flex-col items-end space-y-2">
-                          <Badge className="bg-teal-100 text-teal-800">Upcoming</Badge>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="h-8 text-xs" // Made the button small
-                            onClick={() => handleCancelAppointment(apt._id)}
-                          >
-                            Cancel Appointment
-                          </Button>
+                          <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                            <Badge className="bg-teal-100 text-teal-800">Upcoming</Badge>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 text-xs w-full sm:w-auto"
+                              onClick={() => handleCancelAppointment(apt._id)}
+                            >
+                              Cancel Appointment
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -259,7 +256,20 @@ export default function PatientDashboard() {
                         <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'}>
                           {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                         </Badge>
-                        
+                         {apt.status === 'completed' && (
+                          <>
+                            <Link to={`/patient/prescription/${apt._id}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs w-full" // w-full for alignment
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                View Prescription
+                              </Button>
+                            </Link>
+                          </>
+                        )}
                         {/* Show "Leave Review" button only if completed */}
                         {apt.status === 'completed' && (
                           <Button

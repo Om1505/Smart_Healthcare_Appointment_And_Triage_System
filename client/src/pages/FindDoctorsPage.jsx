@@ -73,25 +73,25 @@ const StarRating = ({ rating }) => {
 };
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
-      <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
+        <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-                <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                    <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
-                    <span className="text-3xl font-bold">IntelliConsult</span>
-                </Link>
-                <div className="flex items-center space-x-4">
-                    <Link to="/patient/dashboard">
-                        <Button variant="outline" size="sm">Dashboard</Button>
-                    </Link>
-                    <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50">
-                        <LogOut className="h-4 w-4 mr-2" /> Logout
-                    </Button>
-                    <Avatar><AvatarImage src="/patient-consultation.png" /><AvatarFallback><User className="h-4 w-4" /></AvatarFallback></Avatar>
-                </div>
+          <div className="flex flex-col sm:flex-row justify-between items-center h-16 sm:h-16 gap-3 sm:gap-0">
+            <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+              <img src="/Logo.svg" className="h-8 sm:h-10" style={{ color: primaryColor }} alt="Logo" />
+              <span className="text-2xl sm:text-3xl font-bold">IntelliConsult</span>
+            </Link>
+            <div className="flex items-center space-x-3">
+              <Link to="/patient/dashboard">
+                <Button variant="outline" size="sm">Dashboard</Button>
+              </Link>
+              <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50">
+                <LogOut className="h-4 w-4 mr-2" /> Logout
+              </Button>
+              <Avatar><AvatarImage src="/patient-consultation.png" /><AvatarFallback><User className="h-4 w-4" /></AvatarFallback></Avatar>
             </div>
+          </div>
         </div>
-      </nav>
+        </nav>
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 text-center">
@@ -99,8 +99,8 @@ const StarRating = ({ rating }) => {
           <p className="text-gray-600">Search and book with qualified healthcare professionals.</p>
         </div>
 
-        <Card className="bg-white border-gray-200 mb-8 sticky top-20 z-40">
-          <CardContent className="p-6">
+        <Card className="bg-white border-gray-200 mb-8 sticky md:top-20 top-16 z-40">
+          <CardContent className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

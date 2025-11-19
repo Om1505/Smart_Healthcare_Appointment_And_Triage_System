@@ -55,14 +55,14 @@ export default function DoctorReviewsPage() {
       <div className="container max-w-3xl mx-auto">
         {doctor && (
           <Card className="bg-white shadow-lg mb-8">
-            <CardHeader className="flex flex-row items-center space-x-4">
-              <Avatar className="w-20 h-20">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:space-x-4 p-4 sm:p-6">
+              <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-0">
                 <AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} />
                 <AvatarFallback>{doctor.fullName.split(" ").map(n => n[0]).join("")}</AvatarFallback>
               </Avatar>
-              <div>
-                <CardTitle className="text-2xl">{doctor.fullName}</CardTitle>
-                <CardDescription className="text-md">{doctor.specialization}</CardDescription>
+              <div className="flex-1">
+                <CardTitle className="text-xl sm:text-2xl">{doctor.fullName}</CardTitle>
+                <CardDescription className="text-sm sm:text-md">{doctor.specialization}</CardDescription>
                 <div className="flex items-center space-x-2 mt-2">
                   <StarRating rating={doctor.averageRating} />
                   <span className="text-gray-600">({doctor.reviewCount} reviews)</span>
@@ -72,10 +72,10 @@ export default function DoctorReviewsPage() {
           </Card>
         )}
 
-        <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <h2 className="text-2xl font-bold">All Reviews</h2>
-          <Link to="/patient/doctors">
-            <Button variant="outline"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Search</Button>
+          <Link to="/patient/doctors" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back to Search</Button>
           </Link>
         </div>
 

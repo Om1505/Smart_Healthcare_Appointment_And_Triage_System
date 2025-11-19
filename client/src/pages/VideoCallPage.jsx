@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
+import axios from 'axios';
 
 
 export default function VideoCallPage() {
@@ -21,7 +22,6 @@ export default function VideoCallPage() {
           headers: { Authorization: `Bearer ${token}` }
         }).catch(err => console.error("Failed to complete appointment", err));
       }
-      
             navigate(`/doctor/prescription/${userid}`); 
 
     } else if (userType === 'patient') {
@@ -68,14 +68,8 @@ export default function VideoCallPage() {
   };
 
   return (
-    <div 
-      className="flex items-center justify-center h-screen w-screen"
-      style={{ background: '#f0f2f5' }}
-    >
-      <div 
-        ref={myMeeting} 
-        className="w-full h-full"
-      />
+    <div className="fixed inset-0 flex items-center justify-center bg-[#f0f2f5]">
+      <div className="w-full h-full max-h-screen" ref={myMeeting} />
     </div>
   );
 }
