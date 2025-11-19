@@ -35,6 +35,56 @@ const daysOfWeek = [
 
 const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'http://localhost:5001';
 
+const getAppointmentDateTime = (dateString, timeString) => {
+    if (!dateString) return null;
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return null;
+
+    if (!timeString) return date;
+
+    let normalizedTime = timeString.trim();
+    let meridiem = null;
+
+    const meridiemMatch = normalizedTime.match(/(am|pm)$/i);
+    if (meridiemMatch) {
+        meridiem = meridiemMatch[0].toUpperCase();
+        normalizedTime = normalizedTime.replace(/(am|pm)$/i, '').trim();
+    }
+
+    const timeParts = normalizedTime.split(':').map(part => part.trim());
+    let hours = parseInt(timeParts[0], 10);
+    let minutes = parseInt(timeParts[1] || '0', 10);
+
+    if (Number.isNaN(hours)) return date;
+    if (Number.isNaN(minutes)) minutes = 0;
+
+    if (meridiem === 'PM' && hours < 12) hours += 12;
+    if (meridiem === 'AM' && hours === 12) hours = 0;
+
+    const combinedDate = new Date(date);
+    combinedDate.setHours(hours, minutes, 0, 0);
+
+    return combinedDate;
+};
+
+const isAppointmentInPast = (appointment) => {
+    if (!appointment) return false;
+    const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.time);
+    if (!appointmentDateTime) return false;
+    return appointmentDateTime.getTime() < Date.now();
+};
+
+const getDisplayStatus = (appointment) => {
+    if (!appointment) return 'unknown';
+    const baseStatus = appointment.status?.toLowerCase();
+    const normalizedStatus = baseStatus === 'pending' ? 'upcoming' : baseStatus;
+    if ((normalizedStatus === 'upcoming' || !normalizedStatus) && isAppointmentInPast(appointment)) {
+        return 'missed';
+    }
+    return normalizedStatus || 'unknown';
+};
+
 export default function DoctorSchedulePage() {
     const [doctor, setDoctor] = useState(null);
     const [appointments, setAppointments] = useState([]);
@@ -122,14 +172,17 @@ export default function DoctorSchedulePage() {
         }
     };
 
-    const getStatusBadge = (status) => {
-        switch (status?.toLowerCase()) {
+const getStatusBadge = (status) => {
+    const normalizedStatus = status?.toLowerCase();
+    switch (normalizedStatus) {
             case 'upcoming':
                 return <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Upcoming</Badge>;
             case 'completed':
                 return <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100">Completed</Badge>;
             case 'cancelled':
                 return <Badge className="bg-red-100 text-red-800 border-red-200 hover:bg-red-100">Cancelled</Badge>;
+        case 'missed':
+            return <Badge className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100">Missed</Badge>;
             default:
                 return <Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100">Unknown</Badge>;
         }
@@ -402,11 +455,7 @@ export default function DoctorSchedulePage() {
                                         <CalendarDays className="h-3 w-3 sm:h-4 sm:w-4 text-gray-500" />
                                     </div>
                                     <div className="text-xl sm:text-2xl font-bold text-green-600">
-                                        {appointments.filter(apt =>
-                                            new Date(apt.date) > new Date() && 
-                                            apt.status?.toLowerCase() !== 'completed' && 
-                                            apt.status?.toLowerCase() !== 'cancelled'
-                                        ).length}
+                                        {appointments.filter(apt => getDisplayStatus(apt) === 'upcoming').length}
                                     </div>
                                 </CardHeader>
                             </Card>
@@ -448,14 +497,14 @@ export default function DoctorSchedulePage() {
                                                                             </AvatarFallback>
                                                                         </Avatar>
                                                                         <div className="flex-1 min-w-0">
-                                                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                                                                                <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{appointment.patientNameForVisit || appointment.patient?.fullName || "Unknown Patient"}</h4>
-                                                                                <div className="flex items-center space-x-2 mt-1 sm:mt-0">
-                                                                                    {getStatusBadge(appointment.status)}
-                                                                                    <Badge variant="outline" className="text-xs">
-                                                                                        {appointment.time}
-                                                                                    </Badge>
-                                                                                </div>
+                                                                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                                                                {appointment.patientNameForVisit || appointment.patient?.fullName || "Unknown Patient"}
+                                                                            </h4>
+                                                                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                                                {getStatusBadge(getDisplayStatus(appointment))}
+                                                                                <Badge variant="outline" className="text-xs">
+                                                                                    {appointment.time || "Time TBD"}
+                                                                                </Badge>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -473,7 +522,7 @@ export default function DoctorSchedulePage() {
                                                                         </div>
                                                                     </div>
                                                                     <div className="flex flex-row sm:flex-col space-x-2 sm:space-x-0 sm:space-y-2 min-w-[140px] sm:min-w-[120px]">
-                                                                        {appointment.status === 'upcoming' && (
+                                                                        {getDisplayStatus(appointment) === 'upcoming' && (
                                                                             <Button
                                                                                 size="sm"
                                                                                 className="bg-teal-600 text-white hover:bg-teal-700 w-full text-xs sm:text-sm"
@@ -718,7 +767,7 @@ export default function DoctorSchedulePage() {
                                     <div>
                                         <Label className="text-xs sm:text-sm font-medium text-gray-700">Status</Label>
                                         <div className="mt-1">
-                                            {getStatusBadge(selectedAppointment.status)}
+                                            {getStatusBadge(getDisplayStatus(selectedAppointment))}
                                         </div>
                                     </div>
                                     <div>
@@ -954,7 +1003,7 @@ export default function DoctorSchedulePage() {
                         <Button variant="outline" onClick={() => setIsPatientDetailsOpen(false)} className="w-full sm:w-auto text-sm">
                             Close
                         </Button>
-                        {selectedAppointment?.status === 'upcoming' && (
+                        {getDisplayStatus(selectedAppointment) === 'upcoming' && (
                             <Button
                                 className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-sm"
                                 onClick={() => handleCompleteConsultation(selectedAppointment._id)}

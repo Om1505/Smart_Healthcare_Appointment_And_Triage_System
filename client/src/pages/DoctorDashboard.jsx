@@ -192,38 +192,83 @@ export default function DoctorDashboard() {
     };
 
     const fetchAITriage = async (appointmentId) => {
-    setLoadingTriage(prev => ({ ...prev, [appointmentId]: true }));
-    
-    try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(
-            `http://localhost:5001/api/triage/appointment/${appointmentId}`,
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
+        setLoadingTriage(prev => ({ ...prev, [appointmentId]: true }));
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `http://localhost:5001/api/triage/appointment/${appointmentId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
-        if (response.data.success) {
-            setTriageResults(prev => ({
-                ...prev,
-                [appointmentId]: response.data.triage
-            }));
+            if (response.data.success) {
+                setTriageResults(prev => ({
+                    ...prev,
+                    [appointmentId]: response.data.triage
+                }));
+            }
+        } catch (error) {
+            console.error('Error fetching triage:', error);
+        } finally {
+            setLoadingTriage(prev => ({ ...prev, [appointmentId]: false }));
         }
-    } catch (error) {
-        console.error('Error fetching triage:', error);
-    } finally {
-        setLoadingTriage(prev => ({ ...prev, [appointmentId]: false }));
-    }
-};
+    };
 
 
-useEffect(() => {
-    if (appointments.length > 0) {
-        const upcomingAppts = appointments.filter(apt => apt.status === 'upcoming');
-        upcomingAppts.forEach(apt => {
-            fetchAISummary(apt._id);
-            fetchAITriage(apt._id);
-        });
-    }
-}, [appointments]);
+    const getAppointmentDateTime = (dateString, timeString) => {
+        if (!dateString) return null;
+
+        const date = new Date(dateString);
+        if (Number.isNaN(date.getTime())) return null;
+
+        if (!timeString) return date;
+
+        let normalizedTime = timeString.trim();
+        let meridiem = null;
+
+        const meridiemMatch = normalizedTime.match(/(am|pm)$/i);
+        if (meridiemMatch) {
+            meridiem = meridiemMatch[0].toUpperCase();
+            normalizedTime = normalizedTime.replace(/(am|pm)$/i, '').trim();
+        }
+
+        const timeParts = normalizedTime.split(':').map(part => part.trim());
+        let hours = parseInt(timeParts[0], 10);
+        let minutes = parseInt(timeParts[1] || '0', 10);
+
+        if (Number.isNaN(hours)) return date;
+        if (Number.isNaN(minutes)) minutes = 0;
+
+        if (meridiem === 'PM' && hours < 12) hours += 12;
+        if (meridiem === 'AM' && hours === 12) hours = 0;
+
+        const combinedDate = new Date(date);
+        combinedDate.setHours(hours, minutes, 0, 0);
+
+        return combinedDate;
+    };
+
+    const isAppointmentInPast = (appointment) => {
+        if (!appointment) return false;
+        const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.time);
+        if (!appointmentDateTime) return false;
+        return appointmentDateTime.getTime() < Date.now();
+    };
+
+    const canStartConsultation = (appointment) => {
+        if (!appointment) return false;
+        return appointment.status?.toLowerCase() === 'upcoming' && !isAppointmentInPast(appointment);
+    };
+
+    useEffect(() => {
+        if (appointments.length > 0) {
+            const upcomingAppts = appointments.filter(canStartConsultation);
+            upcomingAppts.forEach(apt => {
+                fetchAISummary(apt._id);
+                fetchAITriage(apt._id);
+            });
+        }
+    }, [appointments]);
 
     // --- Data Computations (Moved to top level) ---
     const urgencyToValue = (urgency) => {
@@ -235,25 +280,29 @@ useEffect(() => {
         }
     };
 
-    const sortedUpcomingAppointments = useMemo(() => {
-        return appointments
-            .filter(apt => apt.status === 'upcoming')
-            .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
+    const actionableUpcomingAppointments = useMemo(() => {
+        return appointments.filter(canStartConsultation);
     }, [appointments]);
+
+    const sortedUpcomingAppointments = useMemo(() => {
+        return actionableUpcomingAppointments
+            .slice()
+            .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
+    }, [actionableUpcomingAppointments]);
 
     const upcomingAppointmentsToday = useMemo(() => {
-        return appointments.filter(apt => 
-            apt.status === 'upcoming' && 
-            new Date(apt.date).toDateString() === new Date().toDateString()
+        const today = new Date().toDateString();
+        return actionableUpcomingAppointments.filter(apt => 
+            new Date(apt.date).toDateString() === today
         );
-    }, [appointments]);
+    }, [actionableUpcomingAppointments]);
 
    const highPriorityCount = useMemo(() => {
-        return sortedUpcomingAppointments.filter(apt => {
+        return actionableUpcomingAppointments.filter(apt => {
             const priority = triageResults[apt._id]?.priority || apt.triagePriority;
             return priority === 'RED' || priority === 'P1';
         }).length;
-    }, [sortedUpcomingAppointments, triageResults]);
+    }, [actionableUpcomingAppointments, triageResults]);
 
     const completedAppointmentsToday = useMemo(() =>
         appointments.filter(apt => apt.status === 'completed' && new Date(apt.date).toDateString() === new Date().toDateString()),
@@ -367,7 +416,7 @@ useEffect(() => {
         },
         {
             title: "AI Analyzed",
-            value: sortedUpcomingAppointments.length,
+            value: actionableUpcomingAppointments.length,
             icon: Brain,
             accent: "bg-cyan-50 text-cyan-600"
         },
@@ -448,7 +497,7 @@ useEffect(() => {
                                     {getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!
                                 </h1>
                                 <p className="text-sm sm:text-base text-gray-600 mt-1">
-                                    You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} waiting today.
+                                    You have {actionableUpcomingAppointments.length} upcoming appointments.
                                 </p>
                             </div>
                             <div className="w-full lg:max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
@@ -491,14 +540,14 @@ useEffect(() => {
                             <CardHeader>
                                 <CardTitle className="flex items-center text-gray-900 text-lg sm:text-xl">
                                     <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} /> 
-                                    Triage Queue
+                                    Consultation Queue
                                 </CardTitle>
-                                <CardDescription className="text-sm">Patients waiting for consultation, sorted by urgency.</CardDescription>
+                                <CardDescription className="text-sm">Upcoming consultations prioritized by AI insights.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <Tabs defaultValue="queue" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 bg-emerald-100">
-                                        <TabsTrigger value="queue" className="text-xs sm:text-sm">Appointment Queue</TabsTrigger>
+                                        <TabsTrigger value="queue" className="text-xs sm:text-sm">Appointments</TabsTrigger>
                                         <TabsTrigger value="analysis" className="text-xs sm:text-sm">Patient Details</TabsTrigger>
                                     </TabsList>
                                         <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
@@ -537,21 +586,27 @@ useEffect(() => {
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col space-y-2 w-full sm:w-auto">
-                                                    <Link 
-                                                        to={`/call/${appointment._id}`} 
-                                                        state={{ 
-                                                            userName: doctor.fullName,
-                                                            userType: 'doctor',
-                                                            userid: appointment._id
-                                                        }}
->
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
-                                                    >
-                                                        Start Consultation
-                                                    </Button>
-                                                    </Link>
+                                                    {canStartConsultation(appointment) ? (
+                                                        <Link 
+                                                            to={`/call/${appointment._id}`} 
+                                                            state={{ 
+                                                                userName: doctor.fullName,
+                                                                userType: 'doctor',
+                                                                userid: appointment._id
+                                                            }}
+                                                        >
+                                                            <Button
+                                                                size="sm"
+                                                                className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
+                                                            >
+                                                                Start Consultation
+                                                            </Button>
+                                                        </Link>
+                                                    ) : (
+                                                        <Badge variant="outline" className="w-full sm:w-auto text-center text-[11px] sm:text-xs bg-orange-50 text-orange-700 border-orange-200">
+                                                            Consultation unavailable
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             </div>
                                         )) : <p className="text-center text-gray-500 py-8 text-sm sm:text-base">You have no scheduled appointments.</p>}
@@ -640,11 +695,11 @@ useEffect(() => {
                                     <Link to="/doctor/schedule" className="w-full">
                                         <Button variant="outline" className="w-full text-sm">Open full schedule</Button>
                                     </Link>
-                                    <Link to="/doctor/schedule" className="w-full sm:hidden">
+                                    {/* <Link to="/doctor/schedule" className="w-full sm:hidden">
                                         <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm">
                                             Add new slot
                                         </Button>
-                                    </Link>
+                                    </Link> */}
                                 </div>
                             </CardContent>
                         </Card>

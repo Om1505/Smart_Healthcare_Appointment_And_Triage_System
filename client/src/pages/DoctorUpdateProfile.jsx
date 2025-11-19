@@ -20,6 +20,7 @@ export default function DoctorUpdateProfile() {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [formErrors, setFormErrors] = useState({});
 
     const [formData, setFormData] = useState({
         fullName: "",
@@ -82,9 +83,21 @@ export default function DoctorUpdateProfile() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+        let updatedValue = value;
+
+        if (name === 'phoneNumber') {
+            const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+            updatedValue = digitsOnly;
+
+            setFormErrors(prev => ({
+                ...prev,
+                phoneNumber: digitsOnly.length === 0 || digitsOnly.length === 10 ? '' : prev.phoneNumber
+            }));
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: updatedValue
         }));
     };
 
@@ -97,9 +110,22 @@ export default function DoctorUpdateProfile() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSaving(true);
         setError('');
         setSuccessMessage('');
+
+        const errors = {};
+        if (formData.phoneNumber && formData.phoneNumber.length !== 10) {
+            errors.phoneNumber = 'Phone number must be exactly 10 digits.';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        } else {
+            setFormErrors({});
+        }
+
+        setIsSaving(true);
 
         const token = localStorage.getItem('token');
         if (!token) {
@@ -115,7 +141,8 @@ export default function DoctorUpdateProfile() {
                 }
             );
 
-            setDoctor(response.data);
+            setDoctor(response.data.user);
+            setSuccessMessage(response.data.message || 'Profile updated successfully!');
             
             // Show alert message and then route to dashboard
             alert('Profile updated successfully!');
@@ -286,9 +313,13 @@ export default function DoctorUpdateProfile() {
                                                 type="tel"
                                                 value={formData.phoneNumber}
                                                 onChange={handleInputChange}
-                                                placeholder="e.g., +91 9876543210"
+                                                placeholder="10-digit mobile number"
                                                 className="text-sm sm:text-base"
+                                                maxLength={10}
                                             />
+                                            {formErrors.phoneNumber && (
+                                                <p className="text-xs text-red-600">{formErrors.phoneNumber}</p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="licenseNumber" className="text-sm sm:text-base">Medical License Number*</Label>

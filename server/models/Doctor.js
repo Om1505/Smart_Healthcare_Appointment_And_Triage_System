@@ -47,6 +47,16 @@ const doctorSchema = new mongoose.Schema({
     min: [0, 'Years of experience must be positive.'],
   },
   licenseNumber: { type: String, required: true, unique: true, sparse: true },
+  phoneNumber: {
+    type: String,
+    validate: {
+      validator: function(v) {
+        if (!v) return true;
+        return /^\d{10}$/.test(v);
+      },
+      message: 'Phone number must be exactly 10 digits.'
+    }
+  },
   address: { type: String, required: true },
   consultationFee: { type: Number, required: true, min: [0] },
   averageRating: {
