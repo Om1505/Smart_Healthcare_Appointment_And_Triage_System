@@ -8,9 +8,6 @@ const Admin = require('../models/Admin');
 const Appointment = require('../models/Appointment');
 const sendEmail = require('../utils/email_utils');
 
-// ==========================================
-// GET USERS (Doctors & Patients with Filters)
-// ==========================================
 router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const { 
@@ -63,9 +60,6 @@ router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
   }
 });
 
-// ==========================================
-// GET ALL APPOINTMENTS
-// ==========================================
 router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const appointments = await Appointment.find()
@@ -80,9 +74,6 @@ router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) 
   }
 });
 
-// ==========================================
-// VERIFY DOCTOR
-// ==========================================
 router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id);
@@ -139,9 +130,6 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
   }
 });
 
-// ==========================================
-// SUSPEND DOCTOR
-// ==========================================
 router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
       const doctor = await Doctor.findById(req.params.id);
@@ -152,6 +140,14 @@ router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req,
   
       doctor.isVerified = false;
       await doctor.save();
+
+      
+      const cancelledAppointments = await Appointment.updateMany(
+        { doctor: doctor._id, status: 'upcoming' },
+        { $set: { status: 'cancelled' } }
+      );
+      console.log(`Cancelled ${cancelledAppointments.modifiedCount} appointments for suspended doctor.`);
+     
       
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff1f2;">
@@ -159,19 +155,10 @@ router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req,
             <h1 style="color: #e11d48; margin-top: 0;">Account Suspended</h1>
             <p style="color: #333; font-size: 16px; margin-bottom: 15px;">Dear Dr. ${doctor.fullName},</p>
             <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
-              Your IntelliConsult account has been temporarily suspended by our administrative team. 
-              Your profile is no longer visible to patients, and you cannot accept new appointments at this time.
+              Your IntelliConsult account has been temporarily suspended.
+              <strong>Any upcoming appointments have been automatically cancelled.</strong>
             </p>
-            <p style="color: #666; line-height: 1.6;">
-              If you believe this is an error, or to discuss reinstating your account, please contact our support team immediately.
-            </p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-              <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
-                Best regards,<br>
-                <strong>IntelliConsult Admin Team</strong>
-              </p>
             </div>
-          </div>
         </div>
       `;
   
@@ -185,7 +172,7 @@ router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req,
           console.error("Failed to send suspension email:", emailError);
       }
       
-      res.json({ message: 'Doctor suspended successfully', doctor });
+      res.json({ message: 'Doctor suspended and appointments cancelled successfully', doctor });
     
     } catch (err) {
       console.error(err.message);
@@ -193,9 +180,6 @@ router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req,
     }
 });
 
-// ==========================================
-// REJECT DOCTOR (DELETE)
-// ==========================================
 router.delete('/reject-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
         const doctor = await Doctor.findById(req.params.id);
@@ -245,10 +229,6 @@ router.delete('/reject-doctor/:id', [authMiddleware, adminMiddleware], async (re
         res.status(500).send('Server Error');
     }
 });
-
-// ==========================================
-// NEW: VERIFY (RE-ACTIVATE) PATIENT
-// ==========================================
 router.put('/verify-patient/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
       const patient = await Patient.findById(req.params.id);
@@ -305,9 +285,6 @@ router.put('/verify-patient/:id', [authMiddleware, adminMiddleware], async (req,
     }
   });
 
-// ==========================================
-// NEW: SUSPEND PATIENT
-// ==========================================
 router.put('/suspend-patient/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
       const patient = await Patient.findById(req.params.id);
@@ -316,9 +293,17 @@ router.put('/suspend-patient/:id', [authMiddleware, adminMiddleware], async (req
         return res.status(404).json({ message: 'Patient not found' });
       }
   
-      // Set verified to false (suspend)
+      
       patient.isVerified = false;
       await patient.save();
+
+     
+      const cancelledAppointments = await Appointment.updateMany(
+        { patient: patient._id, status: 'upcoming' },
+        { $set: { status: 'cancelled' } }
+      );
+      console.log(`Cancelled ${cancelledAppointments.modifiedCount} appointments for suspended patient.`);
+      
       
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff1f2;">
@@ -326,19 +311,10 @@ router.put('/suspend-patient/:id', [authMiddleware, adminMiddleware], async (req
             <h1 style="color: #e11d48; margin-top: 0;">Account Suspended</h1>
             <p style="color: #333; font-size: 16px; margin-bottom: 15px;">Dear ${patient.fullName},</p>
             <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
-              We are writing to inform you that your IntelliConsult account has been temporarily suspended by the administrator.
+              We are writing to inform you that your IntelliConsult account has been temporarily suspended.
+              <strong>All your upcoming appointments have been cancelled.</strong>
             </p>
-            <p style="color: #666; line-height: 1.6;">
-              During this suspension, you will not be able to book new appointments or access certain features of the platform. 
-              If you believe this action was taken in error, please contact our support team for assistance.
-            </p>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
-              <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
-                Best regards,<br>
-                <strong>IntelliConsult Admin Team</strong>
-              </p>
             </div>
-          </div>
         </div>
       `;
   
@@ -352,48 +328,14 @@ router.put('/suspend-patient/:id', [authMiddleware, adminMiddleware], async (req
           console.error("Failed to send suspension email:", emailError);
       }
       
-      res.json({ message: 'Patient suspended successfully', patient });
+      res.json({ message: 'Patient suspended and appointments cancelled successfully', patient });
     
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('Server Error');
-    }
-  });
-
-// ==========================================
-// GENERIC DELETE USER
-// ==========================================
-router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
-    try {
-      const { userType, id } = req.params;
-      let Model;
-  
-      if (userType === 'patient') {
-        Model = Patient;
-      } else if (userType === 'doctor') {
-        Model = Doctor;
-      } else {
-        return res.status(400).json({ message: 'Invalid user type' });
-      }
-  
-      const user = await Model.findById(id);
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      await Model.findByIdAndDelete(id);
-  
-      res.json({ message: `${userType} deleted successfully` });
-  
     } catch (err) {
       console.error(err.message);
       res.status(500).send('Server Error');
     }
 });
 
-// ==========================================
-// GET SINGLE USER DETAILS
-// ==========================================
 router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const userId = req.params.id;

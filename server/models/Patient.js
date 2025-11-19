@@ -35,6 +35,10 @@ const patientSchema = new mongoose.Schema({
     type: Boolean, 
     default: false 
   },
+  isVerified: { 
+    type: Boolean, 
+    default: true 
+  },
   emailVerificationToken: { 
     type: String 
   },

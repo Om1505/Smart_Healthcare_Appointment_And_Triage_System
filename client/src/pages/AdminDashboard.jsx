@@ -386,60 +386,72 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Action</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {loading && (
+              
+              <div className="rounded-md border max-h-[500px] overflow-y-auto relative"> 
+                <Table>
+                  <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
-                      </TableCell>
+                      <TableHead>Full Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Specialization</TableHead>
+                      <TableHead>License Number</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center">Action</TableHead>
                     </TableRow>
-                  )}
-                  {!loading && doctors.length > 0 ? (
-                    doctors.map((doctor) => (
-                      <TableRow key={doctor._id}>
-                        <TableCell className="font-medium">
-                          <button 
-                            onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
-                            className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
-                          >
-                            {doctor.fullName}
-                          </button>
-                        </TableCell>
-                        <TableCell>{doctor.email}</TableCell>
-                        <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
-                        <TableCell>{doctor.licenseNumber}</TableCell>
-                        <TableCell className="text-center">
-                          {doctor.isVerified ? (
-                            <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Verified</Badge>
-                          ) : (
-                            <Badge variant="destructive" className="bg-yellow-100 text-yellow-800"><ShieldAlert className="w-4 h-4 mr-1" />Pending</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {doctor.isVerified ? (
-                            <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleSuspend(doctor._id)} disabled={suspendingId === doctor._id}>
-                              {suspendingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
-                            </Button>
-                          ) : (
-                            <div className="flex justify-center gap-2">
-                              <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(doctor._id)} disabled={verifyingId === doctor._id || rejectingId === doctor._id}>
-                                {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                              </Button>
-                              <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleReject(doctor._id)} disabled={rejectingId === doctor._id || verifyingId === doctor._id}>
-                                {rejectingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject'}
-                              </Button>
-                            </div>
-                          )}
+                  </TableHeader>
+                  <TableBody>
+                    {loading && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    !loading && <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors match the current filters.</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                    {!loading && doctors.length > 0 ? (
+                      doctors.map((doctor) => (
+                        <TableRow key={doctor._id}>
+                          <TableCell className="font-medium">
+                            <button 
+                              onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
+                              className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
+                            >
+                              {doctor.fullName}
+                            </button>
+                          </TableCell>
+                          <TableCell>{doctor.email}</TableCell>
+                          <TableCell><Badge variant="outline">{doctor.specialization}</Badge></TableCell>
+                          <TableCell>{doctor.licenseNumber}</TableCell>
+                          <TableCell className="text-center">
+                            {doctor.isVerified ? (
+                              <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Verified</Badge>
+                            ) : (
+                              <Badge variant="destructive" className="bg-yellow-100 text-yellow-800"><ShieldAlert className="w-4 h-4 mr-1" />Pending</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {doctor.isVerified ? (
+                              <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleSuspend(doctor._id)} disabled={suspendingId === doctor._id}>
+                                {suspendingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
+                              </Button>
+                            ) : (
+                              <div className="flex justify-center gap-2">
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleVerify(doctor._id)} disabled={verifyingId === doctor._id || rejectingId === doctor._id}>
+                                  {verifyingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                                </Button>
+                                <Button variant="destructive" size="sm" className="bg-red-600 hover:bg-red-700" onClick={() => handleReject(doctor._id)} disabled={rejectingId === doctor._id || verifyingId === doctor._id}>
+                                  {rejectingId === doctor._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Reject'}
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      !loading && <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors match the current filters.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -474,70 +486,74 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Full Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Joined On</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-center">Action</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {!loading && patients.length > 0 ? (
-                    patients.map((patient) => (
-                      <TableRow key={patient._id}>
-                        <TableCell className="font-medium">{patient.fullName}</TableCell>
-                        <TableCell>{patient.email}</TableCell>
-                        <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
-                        
-                        {/* Status Column */}
-                        <TableCell className="text-center">
-                             {patient.isVerified !== false ? (
-                                <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Active</Badge>
-                             ) : (
-                                <Badge variant="destructive"><ShieldAlert className="w-4 h-4 mr-1" />Suspended</Badge>
-                             )}
-                        </TableCell>
-
-                        {/* Action Column */}
-                        <TableCell className="text-center">
-                            {patient.isVerified !== false ? (
-                                <Button 
-                                    variant="destructive" 
-                                    size="sm" 
-                                    className="bg-red-600 hover:bg-red-700"
-                                    onClick={() => handleSuspendPatient(patient._id)}
-                                    disabled={suspendingPatientId === patient._id}
-                                >
-                                    {suspendingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
-                                </Button>
-                            ) : (
-                                <Button 
-                                    size="sm" 
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => handleVerifyPatient(patient._id)}
-                                    disabled={verifyingPatientId === patient._id}
-                                >
-                                    {verifyingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                                </Button>
-                            )}
+              
+              <div className="rounded-md border max-h-[500px] overflow-y-auto relative">
+                <Table>
+                
+                  <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                      <TableRow>
+                          <TableHead>Full Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Joined On</TableHead>
+                          <TableHead className="text-center">Status</TableHead>
+                          <TableHead className="text-center">Action</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    !loading && <TableRow><TableCell colSpan={5} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                    {!loading && patients.length > 0 ? (
+                      patients.map((patient) => (
+                        <TableRow key={patient._id}>
+                          <TableCell className="font-medium">{patient.fullName}</TableCell>
+                          <TableCell>{patient.email}</TableCell>
+                          <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
+                          
+                          
+                          <TableCell className="text-center">
+                               {patient.isVerified !== false ? (
+                                  <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Active</Badge>
+                               ) : (
+                                  <Badge variant="destructive"><ShieldAlert className="w-4 h-4 mr-1" />Suspended</Badge>
+                               )}
+                          </TableCell>
+
+                        
+                          <TableCell className="text-center">
+                              {patient.isVerified !== false ? (
+                                  <Button 
+                                      variant="destructive" 
+                                      size="sm" 
+                                      className="bg-red-600 hover:bg-red-700"
+                                      onClick={() => handleSuspendPatient(patient._id)}
+                                      disabled={suspendingPatientId === patient._id}
+                                  >
+                                      {suspendingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
+                                  </Button>
+                              ) : (
+                                  <Button 
+                                      size="sm" 
+                                      className="bg-green-600 hover:bg-green-700"
+                                      onClick={() => handleVerifyPatient(patient._id)}
+                                      disabled={verifyingPatientId === patient._id}
+                                  >
+                                      {verifyingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                                  </Button>
+                              )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      !loading && <TableRow><TableCell colSpan={5} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

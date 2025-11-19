@@ -226,6 +226,11 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials.' });
     }
+    if (user.isVerified === false) {
+      return res.status(403).json({ 
+        message: 'Your account has been suspended or is currently under review. Please contact support.' 
+      });
+    }
 
     if (!user.isEmailVerified) {
       return res.status(401).json({ 
