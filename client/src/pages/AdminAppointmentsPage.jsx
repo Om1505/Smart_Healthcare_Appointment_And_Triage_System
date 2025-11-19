@@ -34,15 +34,12 @@ export default function AdminAppointmentsPage() {
         
         const allAppointments = response.data;
 
-        // --- New Logic: Filter and Sort Appointments ---
-
         // 1. Filter by status
         const upcoming = allAppointments.filter(a => a.status === 'upcoming' || a.status === 'rescheduled');
         const cancelled = allAppointments.filter(a => a.status === 'cancelled');
         const completed = allAppointments.filter(a => a.status === 'completed');
 
         // 2. Sort upcoming appointments (soonest first)
-        // We assume 'date' is a full ISO string or timestamp that can be parsed
         upcoming.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         // 3. Set the new states
@@ -150,62 +147,64 @@ export default function AdminAppointmentsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
           {/* Upcoming Appointments Card */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center text-2xl text-blue-800">
                 <Calendar className="w-6 h-6 mr-3" />
                 Upcoming Appointments
               </CardTitle>
               <CardDescription>
-                A list of all upcoming appointments, sorted by the soonest.
+                Sorted by soonest.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto"> 
+              {/* SCROLLABLE CONTAINER (h-400px) */}
+              <div className="h-[400px] overflow-y-auto relative border rounded-md"> 
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Doctor</TableHead>
-                    <TableHead>Specialization</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <AppointmentTableBody appointments={upcomingAppointments} />
-                </TableBody>
+                  <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Doctor</TableHead>
+                      <TableHead>Spec</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AppointmentTableBody appointments={upcomingAppointments} />
+                  </TableBody>
                 </Table>
               </div>
             </CardContent>
           </Card>
 
           {/* Cancelled Appointments Card */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center text-2xl text-red-800">
                 <XCircle className="w-6 h-6 mr-3" />
                 Cancelled Appointments
               </CardTitle>
               <CardDescription>
-                A list of all cancelled appointments.
+                List of cancelled appointments.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto"> 
+              {/* SCROLLABLE CONTAINER (h-400px) */}
+              <div className="h-[400px] overflow-y-auto relative border rounded-md"> 
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Patient</TableHead>
-                    <TableHead>Doctor</TableHead>
-                    <TableHead>Specialization</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <AppointmentTableBody appointments={cancelledAppointments} />
-                </TableBody>
+                  <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                    <TableRow>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Doctor</TableHead>
+                      <TableHead>Spec</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AppointmentTableBody appointments={cancelledAppointments} />
+                  </TableBody>
                 </Table>
               </div>
             </CardContent>
@@ -220,25 +219,26 @@ export default function AdminAppointmentsPage() {
               Completed Appointments
             </CardTitle>
             <CardDescription>
-              A history of all completed appointments.
+              History of all completed appointments.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto"> 
+            {/* SCROLLABLE CONTAINER (h-500px) */}
+            <div className="h-[500px] overflow-y-auto relative border rounded-md">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Patient</TableHead>
-                  <TableHead>Doctor</TableHead>
-                  <TableHead>Specialization</TableHead>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <AppointmentTableBody appointments={completedAppointments} />
-              </TableBody>
-            </Table>
+                <TableHeader className="sticky top-0 bg-white z-10 shadow-sm">
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
+                    <TableHead>Doctor</TableHead>
+                    <TableHead>Specialization</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <AppointmentTableBody appointments={completedAppointments} />
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>

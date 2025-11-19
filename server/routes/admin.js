@@ -8,6 +8,9 @@ const Admin = require('../models/Admin');
 const Appointment = require('../models/Appointment');
 const sendEmail = require('../utils/email_utils');
 
+// ==========================================
+// GET USERS (Doctors & Patients with Filters)
+// ==========================================
 router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const { 
@@ -60,6 +63,9 @@ router.get('/users', [authMiddleware, adminMiddleware], async (req, res) => {
   }
 });
 
+// ==========================================
+// GET ALL APPOINTMENTS
+// ==========================================
 router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const appointments = await Appointment.find()
@@ -74,6 +80,9 @@ router.get('/appointments', [authMiddleware, adminMiddleware], async (req, res) 
   }
 });
 
+// ==========================================
+// VERIFY DOCTOR
+// ==========================================
 router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const doctor = await Doctor.findById(req.params.id);
@@ -130,6 +139,9 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
   }
 });
 
+// ==========================================
+// SUSPEND DOCTOR
+// ==========================================
 router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
       const doctor = await Doctor.findById(req.params.id);
@@ -179,8 +191,11 @@ router.put('/suspend-doctor/:id', [authMiddleware, adminMiddleware], async (req,
       console.error(err.message);
       res.status(500).send('Server Error');
     }
-  });
+});
 
+// ==========================================
+// REJECT DOCTOR (DELETE)
+// ==========================================
 router.delete('/reject-doctor/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
         const doctor = await Doctor.findById(req.params.id);
@@ -231,6 +246,123 @@ router.delete('/reject-doctor/:id', [authMiddleware, adminMiddleware], async (re
     }
 });
 
+// ==========================================
+// NEW: VERIFY (RE-ACTIVATE) PATIENT
+// ==========================================
+router.put('/verify-patient/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+      const patient = await Patient.findById(req.params.id);
+  
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+  
+      patient.isVerified = true;
+      await patient.save();
+  
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f0fdf4;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 5px solid #16a34a;">
+            <h1 style="color: #16a34a; margin-top: 0;">Account Reactivated</h1>
+            <p style="color: #333; font-size: 16px; margin-bottom: 15px;">Dear ${patient.fullName},</p>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+              Great news! Your IntelliConsult account has been reactivated by our administrative team.
+            </p>
+            <p style="color: #666; line-height: 1.6;">
+              You can now log in, search for doctors, and book appointments as usual.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" 
+                 style="background-color: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+                Login to Portal
+              </a>
+            </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
+                Best regards,<br>
+                <strong>IntelliConsult Admin Team</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+  
+      try {
+        await sendEmail({
+          email: patient.email,
+          subject: '✅ IntelliConsult Account Reactivated',
+          html: emailHtml
+        });
+      } catch (emailError) {
+        console.error('Error sending patient verification email:', emailError);
+      }
+  
+      res.json({ message: 'Patient verified successfully', patient });
+  
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
+
+// ==========================================
+// NEW: SUSPEND PATIENT
+// ==========================================
+router.put('/suspend-patient/:id', [authMiddleware, adminMiddleware], async (req, res) => {
+    try {
+      const patient = await Patient.findById(req.params.id);
+  
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+  
+      // Set verified to false (suspend)
+      patient.isVerified = false;
+      await patient.save();
+      
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff1f2;">
+          <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-top: 5px solid #e11d48;">
+            <h1 style="color: #e11d48; margin-top: 0;">Account Suspended</h1>
+            <p style="color: #333; font-size: 16px; margin-bottom: 15px;">Dear ${patient.fullName},</p>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+              We are writing to inform you that your IntelliConsult account has been temporarily suspended by the administrator.
+            </p>
+            <p style="color: #666; line-height: 1.6;">
+              During this suspension, you will not be able to book new appointments or access certain features of the platform. 
+              If you believe this action was taken in error, please contact our support team for assistance.
+            </p>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+              <p style="color: #9ca3af; font-size: 14px; margin: 5px 0 0 0;">
+                Best regards,<br>
+                <strong>IntelliConsult Admin Team</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+  
+      try {
+          await sendEmail({
+              email: patient.email,
+              subject: '⚠️ IntelliConsult Account Suspended',
+              html: emailHtml,
+          });
+      } catch (emailError) {
+          console.error("Failed to send suspension email:", emailError);
+      }
+      
+      res.json({ message: 'Patient suspended successfully', patient });
+    
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  });
+
+// ==========================================
+// GENERIC DELETE USER
+// ==========================================
 router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (req, res) => {
     try {
       const { userType, id } = req.params;
@@ -258,6 +390,10 @@ router.delete('/user/:userType/:id', [authMiddleware, adminMiddleware], async (r
       res.status(500).send('Server Error');
     }
 });
+
+// ==========================================
+// GET SINGLE USER DETAILS
+// ==========================================
 router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
   try {
     const userId = req.params.id;
@@ -270,7 +406,6 @@ router.get('/user/:id', [authMiddleware, adminMiddleware], async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    
     res.json(user);
 
   } catch (error) {

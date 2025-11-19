@@ -35,9 +35,15 @@ export default function AdminDashboard() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Doctor Action States
   const [verifyingId, setVerifyingId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
   const [suspendingId, setSuspendingId] = useState(null);
+
+  // Patient Action States
+  const [verifyingPatientId, setVerifyingPatientId] = useState(null);
+  const [suspendingPatientId, setSuspendingPatientId] = useState(null);
   
   // --- Filter States ---
   const [specializationFilter, setSpecializationFilter] = useState('all');
@@ -92,7 +98,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     
-    // This is the fix: Only return, don't set state in a loop
     if (!adminProfile) {
       return;
     }
@@ -150,17 +155,17 @@ export default function AdminDashboard() {
     patientDateToFilter
   ]);
 
+  // --- Doctor Handlers ---
   const handleVerify = async (doctorId) => {
     const token = localStorage.getItem('token');
     if (!token) return;
     setVerifyingId(doctorId);
     try {
-      const response = await axios.put(
+      await axios.put(
         `http://localhost:5001/api/admin/verify-doctor/${doctorId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Update local state to reflect change immediately
       setDoctors(docs => docs.map(doc => doc._id === doctorId ? { ...doc, isVerified: true } : doc));
     } catch (err) {
       alert(`Error: ${err.response?.data?.message || "Failed to verify doctor."}`);
@@ -188,7 +193,7 @@ export default function AdminDashboard() {
   };
 
   const handleSuspend = async (doctorId) => {
-    if (!window.confirm("Are you sure you want to suspend this doctor? Their profile will be hidden from patients.")) return;
+    if (!window.confirm("Are you sure you want to suspend this doctor? They will not appear in search results.")) return;
     const token = localStorage.getItem('token');
     if (!token) return;
     setSuspendingId(doctorId);
@@ -203,6 +208,45 @@ export default function AdminDashboard() {
       alert(`Error: ${err.response?.data?.message || "Failed to suspend doctor."}`);
     } finally {
       setSuspendingId(null);
+    }
+  };
+
+  // --- Patient Handlers ---
+
+  const handleVerifyPatient = async (patientId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setVerifyingPatientId(patientId);
+    try {
+      await axios.put(
+        `http://localhost:5001/api/admin/verify-patient/${patientId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPatients(pats => pats.map(p => p._id === patientId ? { ...p, isVerified: true } : p));
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to verify patient."}`);
+    } finally {
+      setVerifyingPatientId(null);
+    }
+  };
+
+  const handleSuspendPatient = async (patientId) => {
+    if (!window.confirm("Are you sure you want to suspend this patient? They will receive an email notification.")) return;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    setSuspendingPatientId(patientId);
+    try {
+      await axios.put(
+        `http://localhost:5001/api/admin/suspend-patient/${patientId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPatients(pats => pats.map(p => p._id === patientId ? { ...p, isVerified: false } : p));
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.message || "Failed to suspend patient."}`);
+    } finally {
+      setSuspendingPatientId(null);
     }
   };
 
@@ -243,7 +287,8 @@ export default function AdminDashboard() {
       <header className="bg-white shadow-sm sticky top-0 z-10 border-b">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <Stethoscope className="w-8 h-8 text-cyan-600" />
+            {/* UPDATE: Replaced Stethoscope with Logo.svg */}
+            <img src="/Logo.svg" className="h-8 w-auto" alt="IntelliConsult Logo" />
             <Link to="/" className="text-xl font-bold text-gray-800 hover:text-cyan-600 transition-colors">
               IntelliConsult
             </Link>
@@ -304,7 +349,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* --- Server-Side Filters --- */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4 mt-4 border-t">
                 <div className="space-y-1">
                   <Label htmlFor="nameFilter" className="text-xs font-medium">Name</Label>
                   <Input id="nameFilter" placeholder="Search by name..." value={nameFilter} onChange={e => setNameFilter(e.target.value)} />
@@ -320,7 +365,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="statusFilter" className="text-xs font-medium">Status</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger id="statusFilter" className="w-full"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+                    <SelectTrigger id="statusFilter"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="verified">Verified</SelectItem>
@@ -331,7 +376,7 @@ export default function AdminDashboard() {
                 <div className="space-y-1">
                   <Label htmlFor="specFilter" className="text-xs font-medium">Specialization</Label>
                   <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
-                    <SelectTrigger id="specFilter" className="w-full"><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
+                    <SelectTrigger id="specFilter"><SelectValue placeholder="Filter by specialization..." /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Specializations</SelectItem>
                       {uniqueSpecializations.map(spec => (<SelectItem key={spec} value={spec}>{spec}</SelectItem>))}
@@ -339,12 +384,9 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
               </div>
-              {/* --------------------------- */}
-              
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
+              <Table>
                 <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Specialization</TableHead><TableHead>License Number</TableHead><TableHead className="text-center">Status</TableHead><TableHead className="text-center">Action</TableHead></TableRow></TableHeader>
                 <TableBody>
                   {loading && (
@@ -359,7 +401,6 @@ export default function AdminDashboard() {
                       <TableRow key={doctor._id}>
                         <TableCell className="font-medium">
                           <button 
-                            // Change the onClick to navigate to the new route
                             onClick={() => navigate(`/admin/doctor-profile/${doctor._id}`)} 
                             className="text-cyan-700 hover:text-cyan-900 hover:underline focus:outline-none text-left"
                           >
@@ -398,8 +439,7 @@ export default function AdminDashboard() {
                     !loading && <TableRow><TableCell colSpan={6} className="text-center text-gray-500 py-8">No doctors match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
-                </Table>
-              </div>
+              </Table>
             </CardContent>
           </Card>
 
@@ -432,17 +472,22 @@ export default function AdminDashboard() {
                   <Input id="dateToFilter" type="date" value={patientDateToFilter} onChange={e => setPatientDateToFilter(e.target.value)} className="text-gray-700" />
                 </div>
               </div>
-              {/* ----------------------------------- */}
-
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                <TableHeader><TableRow><TableHead>Full Name</TableHead><TableHead>Email</TableHead><TableHead>Joined On</TableHead></TableRow></TableHeader>
+              <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Full Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Joined On</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
+                        <TableHead className="text-center">Action</TableHead>
+                    </TableRow>
+                </TableHeader>
                 <TableBody>
                   {loading && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8">
+                      <TableCell colSpan={5} className="text-center py-8">
                         <Loader2 className="w-8 h-8 animate-spin text-cyan-600 mx-auto" />
                       </TableCell>
                     </TableRow>
@@ -453,20 +498,52 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium">{patient.fullName}</TableCell>
                         <TableCell>{patient.email}</TableCell>
                         <TableCell>{new Date(patient.createdAt).toLocaleDateString()}</TableCell>
+                        
+                        {/* Status Column */}
+                        <TableCell className="text-center">
+                             {patient.isVerified !== false ? (
+                                <Badge className="bg-green-100 text-green-800"><ShieldCheck className="w-4 h-4 mr-1" />Active</Badge>
+                             ) : (
+                                <Badge variant="destructive"><ShieldAlert className="w-4 h-4 mr-1" />Suspended</Badge>
+                             )}
+                        </TableCell>
+
+                        {/* Action Column */}
+                        <TableCell className="text-center">
+                            {patient.isVerified !== false ? (
+                                <Button 
+                                    variant="destructive" 
+                                    size="sm" 
+                                    className="bg-red-600 hover:bg-red-700"
+                                    onClick={() => handleSuspendPatient(patient._id)}
+                                    disabled={suspendingPatientId === patient._id}
+                                >
+                                    {suspendingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Suspend'}
+                                </Button>
+                            ) : (
+                                <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleVerifyPatient(patient._id)}
+                                    disabled={verifyingPatientId === patient._id}
+                                >
+                                    {verifyingPatientId === patient._id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
+                                </Button>
+                            )}
+                        </TableCell>
                       </TableRow>
                     ))
                   ) : (
-                    !loading && <TableRow><TableCell colSpan={3} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
+                    !loading && <TableRow><TableCell colSpan={5} className="text-center text-gray-500 py-8">No patients match the current filters.</TableCell></TableRow>
                   )}
                 </TableBody>
-                </Table>
-              </div>
+              </Table>
             </CardContent>
           </Card>
         </div>
       </main>
 
-      {/* Profile Modal (kept the same) */}
+      {/* Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-96">
