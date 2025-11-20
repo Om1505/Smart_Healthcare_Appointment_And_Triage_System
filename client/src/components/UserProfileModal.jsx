@@ -38,7 +38,7 @@ export function UserProfileModal({ isOpen, onClose, patient, onProfileUpdate }) 
     if (isDoctor) return;
     const token = localStorage.getItem('token');
     try {    
-      const response = await axios.put('http://localhost:5001/api/users/profile', formData, {
+      const response = await axios.put('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       onProfileUpdate(response.data); // Update the state in the parent component

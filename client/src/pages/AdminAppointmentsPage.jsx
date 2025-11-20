@@ -47,7 +47,7 @@ export default function AdminAppointmentsPage() {
         return;
       }
       try {
-        const response = await axios.get('http://localhost:5001/api/users/profile', {
+        const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.userType !== 'admin') {
@@ -76,7 +76,7 @@ export default function AdminAppointmentsPage() {
       }
 
       try {
-        const response = await axios.get('http://localhost:5001/api/admin/appointments', {
+        const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/appointments', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         

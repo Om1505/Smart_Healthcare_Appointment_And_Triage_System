@@ -51,7 +51,7 @@ export default function LandingPage() {
           const decoded = JSON.parse(jsonPayload);
           
           // Verify token is still valid by making API call
-          const response = await axios.get('http://localhost:5001/api/users/profile', {
+          const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
             headers: { Authorization: `Bearer ${token}` }
           });
           

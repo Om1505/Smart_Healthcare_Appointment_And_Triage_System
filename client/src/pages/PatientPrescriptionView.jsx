@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label.jsx";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.jsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Loader2, ArrowLeft, FileText, Pill, Calendar, Clock, FileDown } from "lucide-react";
-const API_BASE_URL = 'http://localhost:5001';
+const API_BASE_URL = 'https://smart-healthcare-appointment-and-triage.onrender.com';
 
 const PatientPrescriptionView = () => {
   const { appointmentId } = useParams();

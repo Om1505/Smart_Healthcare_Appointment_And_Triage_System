@@ -434,7 +434,7 @@ router.post('/verify-payment', authMiddleware, async (req, res) => {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/patient/dashboard" 
+            <a href="${process.env.CLIENT_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com'}/patient/dashboard" 
                style="background-color: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; margin-right: 10px;">
               View My Appointments
             </a>

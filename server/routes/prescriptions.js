@@ -48,7 +48,7 @@ async function sendPrescriptionSummaryEmail(medicalRecord, patient, doctor) {
 
     const actionsHtml = medicalRecord.followUpRequired ? `
       <div style="text-align: center; margin: 30px 0 15px;">
-        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/patient/dashboard" 
+        <a href="${process.env.CLIENT_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com'}/patient/dashboard" 
            style="background-color: #0F5257; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">
           Book Follow-up
         </a>

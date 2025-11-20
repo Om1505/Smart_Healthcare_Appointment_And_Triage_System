@@ -33,7 +33,7 @@ const daysOfWeek = [
     { key: "sunday", label: "Sunday" },
 ];
 
-const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com';
 
 const getAppointmentDateTime = (dateString, timeString) => {
     if (!dateString) return null;

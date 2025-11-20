@@ -87,8 +87,8 @@ export default function BookAppointmentPage() {
         const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
         
         const [doctorResponse, profileResponse] = await Promise.all([
-          axios.get(`http://localhost:5001/api/doctors/${doctorId}`),
-          axios.get('http://localhost:5001/api/users/profile', authHeaders),
+          axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/${doctorId}`),
+          axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', authHeaders),
         ]);
 
         setDoctor(doctorResponse.data);
@@ -101,7 +101,7 @@ export default function BookAppointmentPage() {
         setIsLoading(false); 
         
         const slotsResponse = await axios.get(
-          `http://localhost:5001/api/appointments/available-slots/${doctorId}`,
+          `https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/available-slots/${doctorId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -200,7 +200,7 @@ export default function BookAppointmentPage() {
     delete bookingData.familyHistoryOther;
     
     try {
-      await axios.post('http://localhost:5001/api/appointments/book', bookingData, {
+      await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/book', bookingData, {
         headers: { Authorization: `Bearer ${token}` }
       });
       alert("Appointment booked successfully!");
@@ -230,7 +230,7 @@ export default function BookAppointmentPage() {
     setIsPaymentProcessing(true);
 
     try {
-      const orderResponse = await axios.post('http://localhost:5001/api/appointments/create-payment-order', {
+      const orderResponse = await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/create-payment-order', {
         doctorId,
         amount: doctor.consultationFee * 100,
         currency: 'INR'
@@ -249,7 +249,7 @@ export default function BookAppointmentPage() {
         order_id: orderId,
         handler: async function (response) {
           try {
-            const verifyResponse = await axios.post('http://localhost:5001/api/appointments/verify-payment', {
+            const verifyResponse = await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/verify-payment', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,

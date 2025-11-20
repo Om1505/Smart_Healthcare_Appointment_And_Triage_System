@@ -26,7 +26,7 @@ export default function AdminDoctorProfilePage() {
         // Using the admin-specific endpoint to get FULL details (including email/phone/license)
         // If you haven't created this specific endpoint yet, you might need to use your general /api/doctors/${id}
         // but ensure it returns the sensitive fields for admins.
-        const response = await axios.get(`http://localhost:5001/api/admin/user/${id}`, {
+        const response = await axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/user/${id}`, {
              headers: { Authorization: `Bearer ${token}` }
         });
         

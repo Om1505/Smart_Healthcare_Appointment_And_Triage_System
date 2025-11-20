@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, FileText, Pill, Plus, X, Save, Loader2, ArrowLeft } from "lucide-react";
 
-const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'http://localhost:5001';
+const API_BASE_URL = import.meta?.env?.VITE_API_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com';
 
 const DEFAULT_PRESCRIPTION_ROW = { medication: '', dosage: '', instructions: '', duration: '' };
 

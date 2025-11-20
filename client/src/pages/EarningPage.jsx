@@ -29,8 +29,8 @@ export default function DoctorEarningsPage() {
                 const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
                 const [earningsRes, profileRes] = await Promise.all([
                     // --- UPDATE THIS URL ---
-                    axios.get('http://localhost:5001/api/doctors/earnings/data', authHeaders), // Use the new route
-                    axios.get('http://localhost:5001/api/users/profile', authHeaders)
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/earnings/data', authHeaders), // Use the new route
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', authHeaders)
                 ]);
                 setEarningsData(earningsRes.data);
                 setDoctor(profileRes.data);
@@ -61,7 +61,7 @@ export default function DoctorEarningsPage() {
         }
 
         try {
-            const response = await axios.get('http://localhost:5001/api/doctors/earnings/download-report', {
+            const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/earnings/download-report', {
                 headers: { Authorization: `Bearer ${token}` },
                 responseType: 'blob', // Important: Tell axios to expect binary data (the file)
             });

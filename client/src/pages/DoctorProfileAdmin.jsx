@@ -15,7 +15,7 @@ export default function DoctorProfilePage() {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost:5001/api/doctors/${id}`);
+        const response = await axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/${id}`);
         setDoctor(response.data);
       } catch (err) {
         setError('Could not fetch doctor profile.');

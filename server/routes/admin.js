@@ -103,7 +103,7 @@ router.put('/verify-doctor/:id', [authMiddleware, adminMiddleware], async (req, 
             </p>
           </div>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" 
+            <a href="${process.env.CLIENT_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com'}/login" 
                style="background-color: #0891b2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
               Login to Your Dashboard
             </a>
@@ -252,7 +252,7 @@ router.put('/verify-patient/:id', [authMiddleware, adminMiddleware], async (req,
               You can now log in, search for doctors, and book appointments as usual.
             </p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/login" 
+              <a href="${process.env.CLIENT_URL || 'https://smart-healthcare-appointment-and-triage.onrender.com'}/login" 
                  style="background-color: #16a34a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
                 Login to Portal
               </a>

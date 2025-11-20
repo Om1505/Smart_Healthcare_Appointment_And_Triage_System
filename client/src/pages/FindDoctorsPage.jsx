@@ -34,7 +34,7 @@ export default function FindDoctorsPage() {
       if (!token) return;
       
       try {
-        const response = await axios.get('http://localhost:5001/api/users/profile', {
+        const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPatient(response.data);
@@ -59,7 +59,7 @@ export default function FindDoctorsPage() {
           params.append('specialty', selectedSpecialty);
         }
         
-        const response = await axios.get(`http://localhost:5001/api/doctors?${params.toString()}`);
+        const response = await axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors?${params.toString()}`);
         setDoctors(response.data);
       } catch (err) {
         setError('Failed to fetch doctors. Please try again later.');

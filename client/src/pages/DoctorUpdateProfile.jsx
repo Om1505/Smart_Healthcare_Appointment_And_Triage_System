@@ -49,7 +49,7 @@ export default function DoctorUpdateProfile() {
             }
 
             try {
-                const response = await axios.get('http://localhost:5001/api/users/profile', {
+                const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -134,7 +134,7 @@ export default function DoctorUpdateProfile() {
         }
 
         try {
-            const response = await axios.put('http://localhost:5001/api/users/update-profile', 
+            const response = await axios.put('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/update-profile', 
                 formData, 
                 {
                     headers: { Authorization: `Bearer ${token}` }

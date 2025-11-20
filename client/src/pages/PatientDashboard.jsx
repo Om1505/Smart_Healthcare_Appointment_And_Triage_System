@@ -35,10 +35,10 @@ export default function PatientDashboard() {
 
       try {
         const [profileResponse, appointmentsResponse] = await Promise.all([
-          axios.get('http://localhost:5001/api/users/profile', {
+          axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
             headers: { Authorization: `Bearer ${token}` }
           }),
-          axios.get('http://localhost:5001/api/appointments/my-appointments', {
+          axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/my-appointments', {
             headers: { Authorization: `Bearer ${token}` }
           })
         ]);

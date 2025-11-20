@@ -136,10 +136,10 @@ export default function DoctorDashboard() {
             }
             try {
                 const [profileRes, appointmentsRes] = await Promise.all([
-                    axios.get('http://localhost:5001/api/users/profile', {
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
-                    axios.get('http://localhost:5001/api/appointments/doctor', {
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/doctor', {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
@@ -170,7 +170,7 @@ export default function DoctorDashboard() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `http://localhost:5001/api/summary/appointment/${appointmentId}`,
+                `https://smart-healthcare-appointment-and-triage.onrender.com/api/summary/appointment/${appointmentId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -197,7 +197,7 @@ export default function DoctorDashboard() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `http://localhost:5001/api/triage/appointment/${appointmentId}`,
+                `https://smart-healthcare-appointment-and-triage.onrender.com/api/triage/appointment/${appointmentId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 

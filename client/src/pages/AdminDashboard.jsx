@@ -75,7 +75,7 @@ export default function AdminDashboard() {
         return;
       }
       try {
-        const response = await axios.get('http://localhost:5001/api/users/profile', {
+        const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.userType !== 'admin') {
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         if (patientDateFromFilter) params.append('patientDateFrom', patientDateFromFilter);
         if (patientDateToFilter) params.append('patientDateTo', patientDateToFilter);
 
-        const response = await axios.get(`http://localhost:5001/api/admin/users?${params.toString()}`, {
+        const response = await axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/users?${params.toString()}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
     setVerifyingId(doctorId);
     try {
       await axios.put(
-        `http://localhost:5001/api/admin/verify-doctor/${doctorId}`,
+        `https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/verify-doctor/${doctorId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
     setRejectingId(doctorId);
     try {
       await axios.delete(
-        `http://localhost:5001/api/admin/reject-doctor/${doctorId}`,
+        `https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/reject-doctor/${doctorId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDoctors(docs => docs.filter(doc => doc._id !== doctorId));
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
     setSuspendingId(doctorId);
     try {
       await axios.put(
-        `http://localhost:5001/api/admin/suspend-doctor/${doctorId}`,
+        `https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/suspend-doctor/${doctorId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
     setVerifyingPatientId(patientId);
     try {
       await axios.put(
-        `http://localhost:5001/api/admin/verify-patient/${patientId}`,
+        `https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/verify-patient/${patientId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -238,7 +238,7 @@ export default function AdminDashboard() {
     setSuspendingPatientId(patientId);
     try {
       await axios.put(
-        `http://localhost:5001/api/admin/suspend-patient/${patientId}`,
+        `https://smart-healthcare-appointment-and-triage.onrender.com/api/admin/suspend-patient/${patientId}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

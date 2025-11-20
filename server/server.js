@@ -11,7 +11,7 @@ require('./config/passport')(passport);
 
 const _dirname= path.resolve();
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'https://smart-healthcare-appointment-and-triage.onrender.com',
   credentials: true
 }));
 app.use(express.json());

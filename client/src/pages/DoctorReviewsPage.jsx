@@ -33,8 +33,8 @@ export default function DoctorReviewsPage() {
       try {
         // Fetch doctor details and reviews in parallel
         const [doctorRes, reviewsRes] = await Promise.all([
-          axios.get(`http://localhost:5001/api/doctors/${doctorId}`),
-          axios.get(`http://localhost:5001/api/reviews/doctor/${doctorId}`)
+          axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/${doctorId}`),
+          axios.get(`https://smart-healthcare-appointment-and-triage.onrender.com/api/reviews/doctor/${doctorId}`)
         ]);
         setDoctor(doctorRes.data);
         setReviews(reviewsRes.data);
