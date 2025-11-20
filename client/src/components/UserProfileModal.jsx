@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 
 export function UserProfileModal({ isOpen, onClose, patient, onProfileUpdate }) {
+  // Early return BEFORE any hooks to maintain hook call order
+  if (!patient) return null;
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ fullName: '' });
   const isDoctor = patient?.userType === 'doctor';
@@ -55,8 +58,6 @@ export function UserProfileModal({ isOpen, onClose, patient, onProfileUpdate }) 
     // Reset form data to the original patient data
     setFormData({ fullName: patient.fullName });
   };
-
-  if (!patient) return null;
 
   const doctorHighlights = useMemo(() => ([
     {

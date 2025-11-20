@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Stethoscope, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from 'axios';
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4 text-gray-800">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center space-x-2 mb-8">
-          <Stethoscope className="h-8 w-8" style={{ color: primaryColor }} />
+          <img src="/Logo.svg" className="h-17 w-15" alt="IntelliConsult Logo" />
           <span className="text-2xl font-bold text-gray-900">IntelliConsult</span>
         </div>
         <Card className="bg-white border-gray-200 shadow-lg">

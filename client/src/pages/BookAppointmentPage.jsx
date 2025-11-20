@@ -335,13 +335,15 @@ export default function BookAppointmentPage() {
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-8">
+            <div className="flex justify-between items-center h-14 sm:h-16">
                 <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                    <img src="/Logo.svg" className="h-8 w-auto" alt="Logo" />
-                    <span className="text-xl sm:text-2xl font-bold text-teal-900">IntelliConsult</span>
+                    <img src="/Logo.svg" className="h-15 w-13 sm:h-20 sm:w-15" alt="Logo" />
+                    <span className="text-lg sm:text-2xl lg:text-3xl font-bold text-teal-900">IntelliConsult</span>
                 </Link>
-                <Button variant="outline" onClick={() => navigate('/patient/dashboard')} className="hidden sm:flex">Dashboard</Button>
+                <Button variant="outline" onClick={() => navigate('/patient/dashboard')} className="text-xs sm:text-sm">
+                  Dashboard
+                </Button>
             </div>
         </div>
       </nav>
@@ -689,17 +691,10 @@ export default function BookAppointmentPage() {
                 
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <Button variant="outline" onClick={() => setStep(2)} className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                     {/* Add Pay Later or Pay Now logic here based on reqs */}
-                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto" disabled={isBooking}>
-                      {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {isBooking ? "Booking..." : "Confirm & Book"}
-                    </Button>
-                    <Button onClick={handlePayment} size="lg" className="bg-teal-800 text-white hover:bg-teal-900 w-full sm:w-auto" disabled={isPaymentProcessing}>
-                      {isPaymentProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {isPaymentProcessing ? "Processing..." : "Pay & Book"}
-                    </Button>
-                  </div>
+                  <Button onClick={handlePayment} size="lg" className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto" disabled={isPaymentProcessing}>
+                    {isPaymentProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {isPaymentProcessing ? "Processing..." : "Pay & Book"}
+                  </Button>
                 </div>
               </CardContent>
             </Card>

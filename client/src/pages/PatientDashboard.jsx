@@ -109,20 +109,22 @@ export default function PatientDashboard() {
   return (
     <div className="min-h-screen bg-emerald-50 text-gray-800">
       <nav className="border-b border-gray-200 bg-white/95 backdrop-blur sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center h-16 gap-3">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
             <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <img src="/Logo.svg" className="h-8 sm:h-10" style={{ color: primaryColor }} alt="Logo" />
-              <span className="text-2xl sm:text-3xl font-bold">IntelliConsult</span>
+              <img src="/Logo.svg" className="h-15 w-13 sm:h-20 sm:w-15" style={{ color: primaryColor }} alt="Logo" />
+              <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
             </Link>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Link to="/patient/doctors">
-                <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900">
-                  <Search className="h-4 w-4 mr-2" /> Find Doctors
+                <Button variant="outline" size="sm" className="border-teal-300 text-teal-800 hover:bg-teal-50 hover:text-teal-900 text-xs sm:text-sm">
+                  <Search className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" /> 
+                  <span className="hidden sm:inline">Find Doctors</span>
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="outline" size="sm" className="border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900">
-                <LogOut className="h-4 w-4 mr-2" /> Logout
+              <Button onClick={handleLogout} variant="outline" size="sm" className="hidden sm:flex border-slate-300 text-slate-800 hover:bg-slate-50 hover:text-slate-900 text-xs sm:text-sm">
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" /> 
+                Logout
               </Button>
               <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -149,49 +151,86 @@ export default function PatientDashboard() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {patient.fullName.split(' ')[0]}!</h1>
-          <p className="text-gray-600">Manage your appointments and health journey.</p>
+      <div className="container mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="mb-4 sm:mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">Welcome back, {patient.fullName.split(' ')[0]}!</h1>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Manage your appointments and health journey.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
           <Link to="/patient/doctors">
-            <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 cursor-pointer">
-              <CardHeader className="pb-3 flex-row items-center space-x-4"><div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"><Plus className="h-6 w-6" style={{ color: primaryColor }} /></div><div><CardTitle className="text-lg">Book Appointment</CardTitle><CardDescription>Find and book with doctors</CardDescription></div></CardHeader>
+            <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+              <CardHeader className="pb-3 flex-row items-center space-x-3 sm:space-x-4">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Plus className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: primaryColor }} />
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg">Book Appointment</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Find and book with doctors</CardDescription>
+                </div>
+              </CardHeader>
             </Card>
           </Link>
-          <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-            <CardHeader className="pb-3 flex-row items-center space-x-4"><div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"><Calendar className="h-6 w-6" style={{ color: primaryColor }} /></div><div><CardTitle className="text-lg">Upcoming</CardTitle><CardDescription>{upcomingAppointments.length} appointments</CardDescription></div></CardHeader>
+          <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <CardHeader className="pb-3 flex-row items-center space-x-3 sm:space-x-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: primaryColor }} />
+              </div>
+              <div>
+                <CardTitle className="text-base sm:text-lg">Upcoming</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{upcomingAppointments.length} appointments</CardDescription>
+              </div>
+            </CardHeader>
           </Card>
-          <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
-            <CardHeader className="pb-3 flex-row items-center space-x-4"><div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center"><Clock className="h-6 w-6" style={{ color: primaryColor }} /></div><div><CardTitle className="text-lg">Past Visits</CardTitle><CardDescription>{pastAppointments.length} completed</CardDescription></div></CardHeader>
+          <Card className="bg-white border-gray-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <CardHeader className="pb-3 flex-row items-center space-x-3 sm:space-x-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: primaryColor }} />
+              </div>
+              <div>
+                <CardTitle className="text-base sm:text-lg">Past Visits</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">{pastAppointments.length} completed</CardDescription>
+              </div>
+            </CardHeader>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <Card className="bg-white border-gray-200">
-            <CardHeader><CardTitle>Upcoming Appointments</CardTitle><CardDescription>Your scheduled consultations</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl">Upcoming Appointments</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Your scheduled consultations</CardDescription>
+            </CardHeader>
             <CardContent>
               {upcomingAppointments.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {upcomingAppointments.map((apt) => (
-                      // --- THIS IS THE UPDATED CARD LAYOUT ---
-                      <div key={apt._id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg bg-emerald-50/50 gap-3">
-                        <div className="flex items-center space-x-4 w-full sm:w-auto">
-                          <Avatar className="w-12 h-12"><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
-                          <div>
-                            <h3 className="font-semibold">{apt.doctor.fullName}</h3>
-                            <p className="text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
-                            <p className="text-sm text-gray-600">{apt.doctor.specialization}</p>
-                            <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                              <div className="flex items-center space-x-1"><Calendar className="h-4 w-4" /><span>{new Date(apt.date).toLocaleDateString()}</span></div>
-                              <div className="flex items-center space-x-1"><Clock className="h-4 w-4" /><span>{apt.time}</span></div>
+                      <div key={apt._id} className="flex flex-col gap-3 p-3 sm:p-4 border rounded-lg bg-emerald-50/50">
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
+                            <AvatarImage src="/female-doctor.jpg" />
+                            <AvatarFallback>Dr</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{apt.doctor.fullName}</h3>
+                            <p className="text-xs sm:text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
+                            <p className="text-xs sm:text-sm text-gray-600">{apt.doctor.specialization}</p>
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <span>{new Date(apt.date).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <span>{apt.time}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:items-end sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                        <Badge className="bg-teal-100 text-teal-800 w-fit text-xs">Upcoming</Badge>
+
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <Link 
                             to={`/call/${apt._id}`} 
                             state={{ 
@@ -199,83 +238,88 @@ export default function PatientDashboard() {
                               userType: 'patient', 
                               appointment: apt 
                             }}
-                            className="w-full sm:w-auto"
+                            className="flex-1 min-h-[36px]"
                           >
                             <Button
                               size="sm"
-                              className="w-full sm:w-auto h-8 text-xs bg-green-600 text-white hover:bg-green-700"
+                              className="w-full min-h-[36px] h-9 text-xs sm:text-sm bg-green-600 text-white hover:bg-green-700"
                             >
-                              <Phone className="h-3 w-3 mr-1" />
+                              <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                               Join Call
                             </Button>
                           </Link>
 
-                          <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-                            <Badge className="bg-teal-100 text-teal-800">Upcoming</Badge>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="h-8 text-xs w-full sm:w-auto"
-                              onClick={() => handleCancelAppointment(apt._id)}
-                            >
-                              Cancel Appointment
-                            </Button>
-                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="min-h-[36px] h-9 text-xs sm:text-sm flex-1"
+                            onClick={() => handleCancelAppointment(apt._id)}
+                          >
+                            Cancel
+                          </Button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 mb-4">No upcoming appointments</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <Calendar className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">No upcoming appointments</p>
                     <Link to="/patient/doctors">
-                      <Button className="bg-teal-600 text-white hover:bg-teal-700">Book Your First Appointment</Button>
+                      <Button className="bg-teal-600 text-white hover:bg-teal-700 text-xs sm:text-sm">Book Your First Appointment</Button>
                     </Link>
                   </div>
                 )}
               </CardContent>
             </Card>
           <Card className="bg-white border-gray-200">
-            <CardHeader><CardTitle>Recent Visits</CardTitle><CardDescription>Your consultation history</CardDescription></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl">Recent Visits</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Your consultation history</CardDescription>
+            </CardHeader>
             <CardContent>
               {pastAppointments.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {pastAppointments.map((apt) => (
-                    <div key={apt._id} className="flex items-center space-x-4 p-4 border rounded-lg bg-emerald-50/50">
-                        <Avatar><AvatarImage src="/female-doctor.jpg" /><AvatarFallback>Dr</AvatarFallback></Avatar>
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{apt.doctor.fullName}</h3>
-                        <p className="text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
-                        <p className="text-sm text-gray-600">{apt.doctor.specialization}</p>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <div className="flex items-center space-x-1 text-sm text-gray-600"><Calendar className="h-4 w-4" /><span>{new Date(apt.date).toLocaleDateString()}</span></div>
+                    <div key={apt._id} className="flex flex-col sm:flex-row gap-3 p-3 sm:p-4 border rounded-lg bg-emerald-50/50">
+                      <div className="flex items-start gap-3 sm:gap-4 flex-1">
+                        <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
+                          <AvatarImage src="/female-doctor.jpg" />
+                          <AvatarFallback>Dr</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">{apt.doctor.fullName}</h3>
+                          <p className="text-xs sm:text-sm font-medium text-teal-800">For: {apt.patientNameForVisit}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{apt.doctor.specialization}</p>
+                          <div className="flex items-center gap-1 mt-2">
+                            <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600">
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span>{new Date(apt.date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                        <div className="flex flex-col items-end space-y-2">
-                        <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'}>
+                      <div className="flex flex-col gap-2 sm:items-end">
+                        <Badge variant={apt.status === 'completed' ? 'outline' : 'destructive'} className="w-fit text-xs">
                           {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                         </Badge>
-                         {apt.status === 'completed' && (
-                          <>
-                            <Link to={`/patient/prescription/${apt._id}`}>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 text-xs w-full" // w-full for alignment
-                              >
-                                <FileText className="h-3 w-3 mr-1" />
-                                View Prescription
-                              </Button>
-                            </Link>
-                          </>
+                        {apt.status === 'completed' && (
+                          <Link to={`/patient/prescription/${apt._id}`} className="w-full sm:w-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 sm:h-9 text-xs sm:text-sm w-full"
+                            >
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                              View Prescription
+                            </Button>
+                          </Link>
                         )}
-                        {/* Show "Leave Review" button only if completed */}
                         {apt.status === 'completed' && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs"
+                            className="h-8 sm:h-9 text-xs sm:text-sm w-full sm:w-auto"
                             onClick={() => setReviewModalAppointment(apt)}
                           >
                             Leave Review
@@ -283,13 +327,12 @@ export default function PatientDashboard() {
                         )}
                       </div>
                     </div>
-                    
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">No past appointments</p>
+                <div className="text-center py-6 sm:py-8">
+                  <Clock className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <p className="text-sm sm:text-base text-gray-600">No past appointments</p>
                 </div>
               )}
             </CardContent>

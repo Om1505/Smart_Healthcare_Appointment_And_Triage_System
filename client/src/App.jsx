@@ -13,7 +13,6 @@ import AuthCallback from '@/pages/AuthCallback';
 import CompleteProfilePage from '@/pages/CompleteProfilePage';
 import AdminDashboard from '@/pages/AdminDashboard';
 import AdminDoctorProfilePage from '@/pages/AdminDoctorProfilePage';
-import AppointmentsPage from '@/pages/Appointment'; 
 import AdminAppointmentsPage from '@/pages/AdminAppointmentsPage'; 
 import DoctorEarningsPage from '@/pages/EarningPage';
 import DoctorSchedulePage from '@/pages/SchedulePage';
@@ -57,7 +56,6 @@ function App() {
       <Route path="/patient/dashboard" element={<PatientDashboard />} />
       <Route path="/patient/doctors" element={<FindDoctorsPage />} />
       <Route path="/patient/book/:doctorId" element={<BookAppointmentPage />} />
-      <Route path="/appointments" element={<AppointmentsPage />} />
       <Route path="/call/:roomId" element={<VideoCallPage />} />
       <Route path="/patient/prescription/:appointmentId" element={<PatientPrescriptionView />} />
       <Route path="/doctor/:id/reviews" element={<DoctorReviewsPage />} />

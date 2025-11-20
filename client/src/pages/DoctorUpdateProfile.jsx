@@ -188,8 +188,8 @@ export default function DoctorUpdateProfile() {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-14 sm:h-16">
                         <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
-                            <img src="/Logo.svg" className="h-25 w-30" alt="Logo" />
-                            <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
+                            <img src="/Logo.svg" className="h-20 w-15" alt="Logo" />
+                            <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-2 sm:space-x-4">
                             <Link to="/doctor/dashboard" className="hidden sm:block">

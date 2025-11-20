@@ -434,7 +434,7 @@ export default function DoctorDashboard() {
                 <div className="container mx-auto px-2 sm:px-4 lg:px-8">
                     <div className="flex justify-between items-center h-14 sm:h-16">
                         <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
-                            <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
+                            <img src="/Logo.svg" className="h-15 w-13 sm:h-20 sm:w-15" style={{ color: primaryColor }} alt="Logo" />
                             <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
@@ -540,9 +540,9 @@ export default function DoctorDashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center text-gray-900 text-lg sm:text-xl">
                                     <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} /> 
-                                    Consultation Queue
+                                    Consultation List
                                 </CardTitle>
-                                <CardDescription className="text-sm">Upcoming consultations prioritized by AI insights.</CardDescription>
+                                <CardDescription className="text-sm">Upcoming consultations summarized by AI.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <Tabs defaultValue="queue" className="w-full">
@@ -552,25 +552,25 @@ export default function DoctorDashboard() {
                                     </TabsList>
                                         <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
                                           {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
-                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
-                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
+                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 mx-auto sm:mx-0">
                                                     <AvatarImage src="/placeholder.svg" />
                                                     <AvatarFallback className="text-xs sm:text-sm">
                                                         {appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <div className="flex-1 min-w-0">
+                                                <div className="flex-1 min-w-0 text-center sm:text-left">
                                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
                                                         <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                                                             {appointment.patientNameForVisit || 'N/A'}
                                                         </h3>
                                                         {loadingTriage[appointment._id] ? (
-                                                            <Badge variant="outline" className="animate-pulse text-xs w-fit">
+                                                            <Badge variant="outline" className="animate-pulse text-xs w-fit mx-auto sm:mx-0">
                                                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                                                 Triaging...
                                                             </Badge>
                                                                 ) : (
-                                                            <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit`}>
+                                                            <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit mx-auto sm:mx-0`}>
                                                             {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
                                                             </Badge>
                                                             )}
@@ -578,8 +578,8 @@ export default function DoctorDashboard() {
                                                     <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
                                                         Reason: {appointment.primaryReason || 'Not specified'}
                                                     </p>
-                                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600">
-                                                        <div className="flex items-center space-x-1">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600 justify-center sm:justify-start">
+                                                        <div className="flex items-center space-x-1 justify-center sm:justify-start">
                                                             <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                                             <span className="truncate">{appointment.time} on {new Date(appointment.date).toLocaleDateString()}</span>
                                                         </div>
@@ -695,11 +695,6 @@ export default function DoctorDashboard() {
                                     <Link to="/doctor/schedule" className="w-full">
                                         <Button variant="outline" className="w-full text-sm">Open full schedule</Button>
                                     </Link>
-                                    {/* <Link to="/doctor/schedule" className="w-full sm:hidden">
-                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm">
-                                            Add new slot
-                                        </Button>
-                                    </Link> */}
                                 </div>
                             </CardContent>
                         </Card>
