@@ -92,7 +92,7 @@ router.get('/verify-email/:token', async (req, res) => {
                await Admin.findOne(query);
     
     if (!user) {
-      return res.redirect('http://localhost:5173/login?verified=false');
+      return res.redirect('http://localhost:5001/login?verified=false');
     }
     
     user.isEmailVerified = true;
@@ -100,11 +100,11 @@ router.get('/verify-email/:token', async (req, res) => {
     user.emailVerificationTokenExpires = undefined;
     await user.save();
     
-    res.redirect('http://localhost:5173/login?verified=true');
+    res.redirect('http://localhost:5001/login?verified=true');
     
   } catch (error) {
     console.error('Email verification error:', error);
-    res.redirect('http://localhost:5173/login?verified=false');
+    res.redirect('http://localhost:5001/login?verified=false');
   }
 });
 
@@ -131,7 +131,7 @@ router.post('/forgot-password', async (req, res) => {
     
     await user.save({ validateBeforeSave: false });
 
-    const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetURL = `http://localhost:5001/reset-password/${resetToken}`;
 
     const message = `
       <h1>Password Reset Request</h1>
@@ -270,7 +270,7 @@ router.get('/google', passport.authenticate('google', {
 
 router.get('/google/callback',
   passport.authenticate('google', {
-    failureRedirect: 'http://localhost:5173/login?error=google_failed', 
+    failureRedirect: 'http://localhost:5001/login?error=google_failed', 
     failureMessage: true,
     session: false 
   }),
@@ -296,7 +296,7 @@ router.get('/google/callback',
       }
     }
 
-    res.redirect(`http://localhost:5173/auth/callback?token=${token}&userType=${userType}&next=${encodeURIComponent(redirectPath)}`);
+    res.redirect(`http://localhost:5001/auth/callback?token=${token}&userType=${userType}&next=${encodeURIComponent(redirectPath)}`);
   }
 );
 
