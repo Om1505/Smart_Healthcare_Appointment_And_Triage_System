@@ -78,7 +78,7 @@ export default function PatientDashboard() {
     const token = localStorage.getItem('token');
     try {
       
-      await axios.put(`http://localhost:5001/api/appointments/${appointmentId}/cancel`, {}, {
+      await axios.put(`https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/${appointmentId}/cancel`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAppointments(prevAppointments =>

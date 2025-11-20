@@ -45,7 +45,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', loginData);
+      const response = await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/auth/login', loginData);
       localStorage.setItem('token', response.data.token);
 
       if (response.data.profileComplete === false) {
