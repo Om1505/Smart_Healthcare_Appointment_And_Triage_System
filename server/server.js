@@ -6,7 +6,10 @@ const session = require('express-session');
 const passport = require('passport');
 const app = express();
 const PORT = process.env.PORT || 5001;
+const path = require('path'); 
 require('./config/passport')(passport);
+
+const _dirname= path.resolve();
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
@@ -42,5 +45,10 @@ app.use('/api/summary', summaryRoutes);
 app.use('/api/triage', triageRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/reviews', reviewsRoutes);
-app.get('/', (req, res) => res.send('API Running'));
+
+app.use(express.static(path.join(_dirname,"/client/dist")));
+app.get(/^\/(?!api).*/, (_, res) => {
+  res.sendFile(path.resolve(_dirname, "client","dist","index.html"));
+})
+
 app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
