@@ -1,33 +1,20 @@
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendEmail = async (options) => {
-
-  const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com', 
-  port: 465,             
-  secure: true,     
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  
-  connectionTimeout: 10000, 
-});
-
-  const mailOptions = {
-    from: `IntelliConsult <${process.env.EMAIL_USER}>`,
+  const msg = {
     to: options.email,
+    from: `IntelliConsult <${process.env.EMAIL_USER}>`, // must be verified in SendGrid
     subject: options.subject,
     html: options.html,
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
     console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending email:", error);
-    // Optional: throw error so your API knows it failed
-    // throw new Error('Email could not be sent'); 
   }
 };
 
