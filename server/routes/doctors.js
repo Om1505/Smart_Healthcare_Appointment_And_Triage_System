@@ -61,23 +61,45 @@ router.get('/earnings/data', authMiddleware, async (req, res) => {
     weekStart.setDate(weekStart.getDate() - todayStart.getDay()); // Start of current week (Sunday)
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
+    const tomorrowStart = new Date(todayStart);
+    tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1);
+
+    const shouldCountAppointment = (apt) => {
+      const status = apt.status?.toLowerCase();
+      return status === 'completed' || status === 'upcoming';
+    };
+
     appointments.forEach(apt => {
-      if (apt.status === 'completed') {
-        const fee = apt.consultationFeeAtBooking || 0;
-        totalEarnings += fee;
-        const aptDate = new Date(apt.date);
+      if (!shouldCountAppointment(apt)) return;
 
-        if (aptDate >= todayStart) today += fee;
-        if (aptDate >= weekStart) thisWeek += fee;
-        if (aptDate >= monthStart) thisMonth += fee;
+      const fee = apt.consultationFeeAtBooking || 0;
+      totalEarnings += fee;
+      const aptDate = new Date(apt.date);
 
-        const monthYear = `${aptDate.toLocaleString('default', { month: 'long' })} ${aptDate.getFullYear()}`;
-        if (!monthlyBreakdownMap[monthYear]) {
-          monthlyBreakdownMap[monthYear] = { month: monthYear, appointments: 0, earnings: 0 };
-        }
-        monthlyBreakdownMap[monthYear].appointments++;
-        monthlyBreakdownMap[monthYear].earnings += fee;
+      if (aptDate >= todayStart && aptDate < tomorrowStart) today += fee;
+      if (aptDate >= weekStart && aptDate < weekEnd) thisWeek += fee;
+      if (aptDate >= monthStart && aptDate < monthEnd) thisMonth += fee;
+
+      const monthIndex = aptDate.getMonth();
+      const year = aptDate.getFullYear();
+      const monthKey = `${year}-${monthIndex}`;
+      if (!monthlyBreakdownMap[monthKey]) {
+        monthlyBreakdownMap[monthKey] = {
+          key: monthKey,
+          month: `${aptDate.toLocaleString('default', { month: 'long' })} ${year}`,
+          monthIndex,
+          year,
+          appointments: 0,
+          earnings: 0
+        };
       }
+      monthlyBreakdownMap[monthKey].appointments++;
+      monthlyBreakdownMap[monthKey].earnings += fee;
     });
 
     // 4. Format recent transactions (show non-cancelled, use main status)
@@ -94,8 +116,13 @@ router.get('/earnings/data', authMiddleware, async (req, res) => {
       }));
 
     const monthlyBreakdown = Object.values(monthlyBreakdownMap)
-      // Correct sorting: Compare Date objects for reliability
-      .sort((a, b) => new Date(b.month.split(' ')[1], getMonthIndex(b.month.split(' ')[0])) - new Date(a.month.split(' ')[1], getMonthIndex(a.month.split(' ')[0])));
+      .sort((a, b) => {
+        if (b.year === a.year) {
+          return b.monthIndex - a.monthIndex;
+        }
+        return b.year - a.year;
+      })
+      .map(({ month, appointments, earnings }) => ({ month, appointments, earnings }));
 
 
     res.json({
@@ -112,13 +139,6 @@ router.get('/earnings/data', authMiddleware, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
-// Helper function to get month index for sorting
-function getMonthIndex(monthName) {
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    return months.indexOf(monthName);
-}
-
 
 // @route   GET api/doctors/earnings/download-report
 // @desc    Download earnings report as CSV for the logged-in doctor
