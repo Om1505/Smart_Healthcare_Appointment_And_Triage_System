@@ -3,9 +3,7 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (options) => {
 
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: true,
+    service: 'gmail', 
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
@@ -21,9 +19,11 @@ const sendEmail = async (options) => {
 
   try {
     await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully");
   } catch (error) {
     console.error("Error sending email:", error);
-    
+    // Optional: throw error so your API knows it failed
+    // throw new Error('Email could not be sent'); 
   }
 };
 
