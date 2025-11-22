@@ -13,6 +13,12 @@ router.get('/', async (req, res) => {
     const { search, specialty } = req.query;
     const query = {};
 
+    // By default, only return verified doctors to public clients.
+    // Use `?includeUnverified=true` to explicitly request unverified doctors (admin/debug use).
+    if (req.query.includeUnverified !== 'true') {
+      query.isVerified = true;
+    }
+
     // Filter by specialization (corrected field name)
     if (specialty && specialty !== 'All Specialties') {
       query.specialization = specialty;
