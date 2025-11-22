@@ -75,10 +75,10 @@ return `
 PATIENT TRIAGE ASSESSMENT:
 
 CHIEF COMPLAINT:
-${appointment.primaryReason || 'Not specified'}
+${appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}
 
 CURRENT SYMPTOMS:
-${allSymptoms.length > 0 ? '- ' + allSymptoms.join('\n- ') : 'None reported'}
+${allSymptoms.length > 0 ? allSymptoms.map(s => `- ${s}`).join('\n') : '- None reported'}
 
 SYMPTOM ONSET:
 ${appointment.symptomsBegin || 'Unknown'}
