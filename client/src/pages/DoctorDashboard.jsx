@@ -337,7 +337,7 @@ export default function DoctorDashboard() {
         }
 
         // Fallback to generated summary from form data
-        let summary = `Patient is scheduled for a consultation regarding: ${apt.primaryReason || 'Not specified'}. `;
+        let summary = `Patient is scheduled for a consultation regarding: ${apt.primaryReason || apt.reasonForVisit || 'Not specified'}. `;
         let symptoms = [...(apt.symptomsList || [])];
         if (apt.symptomsOther) {
             symptoms.push(apt.symptomsOther);
@@ -576,7 +576,7 @@ export default function DoctorDashboard() {
                                                             )}
                                                     </div>
                                                     <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
-                                                        Reason: {appointment.primaryReason || 'Not specified'}
+                                                        Reason: {appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}
                                                     </p>
                                                     <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600 justify-center sm:justify-start">
                                                         <div className="flex items-center space-x-1 justify-center sm:justify-start">
@@ -669,7 +669,7 @@ export default function DoctorDashboard() {
                                                             {appointment.patientNameForVisit || 'N/A'}
                                                         </p>
                                                         <p className="text-xs sm:text-sm text-gray-600 truncate">
-                                                            Reason: {appointment.primaryReason || 'Consultation'}
+                                                            Reason: {appointment.primaryReason || appointment.reasonForVisit || 'Consultation'}
                                                         </p>
                                                     </div>
                                                     <Badge
