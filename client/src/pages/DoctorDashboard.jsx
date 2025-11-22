@@ -331,6 +331,23 @@ export default function DoctorDashboard() {
         setDoctor(updatedDoctor);
     };
 
+    // Mark appointment as completed when doctor starts consultation
+    const handleClick = async (appointmentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(
+                `https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/${appointmentId}/complete`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Optimistically update local state so UI reflects completion if the doctor stays on this page
+            setAppointments(prev => prev.map(a => a._id === appointmentId ? { ...a, status: 'completed' } : a));
+        } catch (err) {
+            console.error('Failed to mark appointment as completed:', err?.response || err);
+        }
+    };
+
     const generateAISummary = (apt) => {
         if (aiSummaries[apt._id]) {
             return aiSummaries[apt._id];
@@ -597,6 +614,7 @@ export default function DoctorDashboard() {
                                                         >
                                                             <Button
                                                                 size="sm"
+                                                                onClick={() => handleClick(appointment._id)}
                                                                 className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
                                                             >
                                                                 Start Consultation
