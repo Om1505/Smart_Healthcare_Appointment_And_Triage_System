@@ -232,7 +232,7 @@ router.put('/:id/cancel', authMiddleware, async (req, res) => {
     }
 
     appointment.status = 'cancelled';
-    await appointment.save();
+    await appointment.save({ validateBeforeSave: false });
     res.json({ message: 'Appointment cancelled successfully', appointment });
   } catch (err) {
     console.error(err.message);
@@ -262,7 +262,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
     }
 
     appointment.status = 'completed';
-    await appointment.save();
+    await appointment.save({ validateBeforeSave: false });
     res.json({ message: 'Appointment marked as completed successfully', appointment });
   } catch (err) {
     console.error('Complete Appointment Error:', err.message);
@@ -360,7 +360,9 @@ router.post('/verify-payment', authMiddleware, async (req, res) => {
       doctor: doctorId,
       date: appointmentData.date,
       time: appointmentData.time,
-      reasonForVisit: appointmentData.primaryReason,
+      // Ensure primaryReason is set (some code paths used reasonForVisit previously)
+      primaryReason: appointmentData.primaryReason || appointmentData.reasonForVisit,
+      reasonForVisit: appointmentData.reasonForVisit || appointmentData.primaryReason,
       symptoms: appointmentData.symptoms || [],
       patientNameForVisit: appointmentData.patientNameForVisit,
       phoneNumber: appointmentData.phoneNumber,
