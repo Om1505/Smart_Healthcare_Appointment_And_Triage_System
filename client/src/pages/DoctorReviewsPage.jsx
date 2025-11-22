@@ -86,9 +86,13 @@ export default function DoctorReviewsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>{review.appointment.patientNameForVisit.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                      <AvatarFallback>
+                      {review.appointment?.patientNameForVisit 
+                        ? review.appointment.patientNameForVisit.split(" ").map(n => n[0]).join("") 
+                        : "P"} 
+                    </AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold">{review.appointment.patientNameForVisit}</span>
+                    <span className="font-semibold">{review.appointment?.patientNameForVisit || "Patient"}</span>
                   </div>
                   <span className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
