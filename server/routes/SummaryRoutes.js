@@ -9,31 +9,45 @@ const groq = new Groq({
 });
 
 const formatAppointmentData = (appointment) => {
-  // symptoms
-  const symptomsList = appointment.symptomsList || [];
-  const symptomsOther = appointment.symptomsOther || '';
-  const allSymptoms = [...symptomsList];
-  if (symptomsOther) {
-    allSymptoms.push(symptomsOther);
+  // --- 1. FIX SYMPTOMS LOGIC ---
+  // Start with the new list
+  let allSymptoms = appointment.symptomsList ? [...appointment.symptomsList] : [];
+  
+  // Add "Other" symptoms if present
+  if (appointment.symptomsOther) {
+    allSymptoms.push(appointment.symptomsOther);
   }
 
-  // severe symptoms
-  const severeSymptoms = appointment.severeSymptomCheck || [];
+  // BACKWARD COMPATIBILITY: Check the old 'symptoms' string field
+  // If the list is empty but the old field has data, use it
+  if (allSymptoms.length === 0 && appointment.symptoms && typeof appointment.symptoms === 'string') {
+    allSymptoms.push(appointment.symptoms);
+  }
+  // -----------------------------
 
-  // pre-existing conditions
+  // ... (severe symptoms logic from previous fix) ...
+  const severeSymptoms = appointment.severeSymptomsCheck || []; 
+
+  // ... (conditions logic) ...
   const conditions = appointment.preExistingConditions || [];
   const conditionsOther = appointment.preExistingConditionsOther || '';
   const allConditions = [...conditions];
-  if (conditionsOther) {
-    allConditions.push(conditionsOther);
-  }
+  if (conditionsOther) allConditions.push(conditionsOther);
 
-  // family history
+  // ... (family history logic) ...
   const familyHistory = appointment.familyHistory || [];
   const familyHistoryOther = appointment.familyHistoryOther || '';
   const allFamilyHistory = [...familyHistory];
-  if (familyHistoryOther) {
-    allFamilyHistory.push(familyHistoryOther);
+  if (familyHistoryOther) allFamilyHistory.push(familyHistoryOther);
+
+  // ... (age calculation from previous fix) ...
+  let age = 'Not provided';
+  if (appointment.birthDate) {
+     // ... (age logic)
+     const birthDate = new Date(appointment.birthDate);
+     const today = new Date();
+     age = today.getFullYear() - birthDate.getFullYear();
+     // ... (rest of age calculation)
   }
 
   return `
@@ -41,23 +55,22 @@ PATIENT CONSULTATION SUMMARY REQUEST:
 
 PATIENT BASIC DETAILS:
 - Name: ${appointment.patientNameForVisit || 'Not provided'}
-- Age: ${appointment.age || 'Not provided'}
+- Age: ${age}
 - Sex: ${appointment.sex || 'Not provided'}
 
 CHIEF COMPLAINT:
-${appointment.primaryReason || 'Not specified'}
+${appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}  <-- FIX 2: Check both fields
 
 CURRENT SYMPTOMS:
 ${allSymptoms.length > 0 ? allSymptoms.map(s => `- ${s}`).join('\n') : '- None reported'}
 
 SYMPTOM BEGINNING:
 ${appointment.symptomsBegin || 'Not specified'}
-
+  
 SEVERE SYMPTOMS :
 ${severeSymptoms.length > 0 ? severeSymptoms.map(s => `- ${s}`).join('\n') : '- None reported'}
 
 MEDICAL HISTORY:
-
 Pre-existing Conditions:
 ${allConditions.length > 0 ? allConditions.map(c => `- ${c}`).join('\n') : '- None'}
 
