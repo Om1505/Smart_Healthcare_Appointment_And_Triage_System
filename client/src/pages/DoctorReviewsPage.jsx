@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.jsx";
 import { Badge } from "@/components/ui/badge.jsx";
 import { Star, ArrowLeft } from 'lucide-react';
-
+  
 // Helper component to render stars
 const StarRating = ({ rating }) => {
   return (
@@ -86,9 +86,9 @@ export default function DoctorReviewsPage() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>{review.patient.fullName.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                      <AvatarFallback>{review.appointment.patientNameForVisit.split(" ").map(n => n[0]).join("")}</AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold">{review.patient.fullName}</span>
+                    <span className="font-semibold">{review.appointment.patientNameForVisit}</span>
                   </div>
                   <span className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>

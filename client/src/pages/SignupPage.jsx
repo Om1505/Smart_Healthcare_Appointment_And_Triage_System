@@ -98,11 +98,10 @@ export default function SignupPage() {
                     <Label htmlFor="userType" className="text-gray-700">I am a</Label>
                     <Select value={formData.userType} onValueChange={(value) => handleSelectChange('userType', value)} required>
                       <SelectTrigger className="w-full"><SelectValue placeholder="Select your role" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="patient">Patient</SelectItem>
-                        <SelectItem value="doctor">Doctor</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="patient">Patient</SelectItem>
+                          <SelectItem value="doctor">Doctor</SelectItem>
+                        </SelectContent>
                     </Select>
                   </div>
 

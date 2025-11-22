@@ -21,10 +21,10 @@ const appointmentSchema = new mongoose.Schema({
     required: true,
   },
   emergencyDisclaimerAcknowledged: { type: Boolean, default: false },
-  primaryReason: { type: String, default: '' },
+  primaryReason: { type: String, default: '',required: true },
   symptomsList: [String],
   symptomsOther: { type: String, default: '' },
-  symptomsBegin: { type: String, default: '' },
+  symptomsBegin: { type: String, default: '', required: true },
   severeSymptomsCheck: [String],
   preExistingConditions: [String],
   preExistingConditionsOther: { type: String, default: '' },
@@ -40,11 +40,11 @@ const appointmentSchema = new mongoose.Schema({
   orderId: { type: String }, // Razorpay order ID
   reasonForVisit: { type: String },
   symptoms: [String],
-  phoneNumber: { type: String },
-  email: { type: String },
-  birthDate: { type: Date },
-  sex: { type: String },
-  primaryLanguage: { type: String },
+  phoneNumber: { type: String, required: true },
+  email: { type: String, required: true },
+  birthDate: { type: Date, required: true },
+  sex: { type: String, required: true },
+  primaryLanguage: { type: String, required: true},
 
 }, { timestamps: true });
 
