@@ -92,7 +92,7 @@ export default function DoctorReviewsPage() {
                         : "P"} 
                     </AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold">{review.appointment?.patientNameForVisit || "Patient"}</span>
+                    <span className="font-semibold">{review.patient?.fullName || "Patient"}</span>
                   </div>
                   <span className="text-sm text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>

@@ -21,7 +21,7 @@ const appointmentSchema = new mongoose.Schema({
     required: true,
   },
   emergencyDisclaimerAcknowledged: { type: Boolean, default: false },
-  primaryReason: { type: String, default: '',required: true },
+  primaryReason: { type: String, default: '' }, 
   symptomsList: [String],
   symptomsOther: { type: String, default: '' },
   symptomsBegin: { type: String, default: '', required: true },
