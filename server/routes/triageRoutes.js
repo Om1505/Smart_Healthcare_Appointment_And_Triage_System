@@ -7,7 +7,7 @@ const Appointment = require('../models/Appointment');
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
-    
+
 const ESI_KNOWLEDGE_BASE = `
 EMERGENCY SEVERITY INDEX (ESI) TRIAGE SYSTEM:
 
@@ -31,7 +31,6 @@ YELLOW (P2) - URGENT/NON-LIFE THREATENING:
 - Vomiting blood, severe dehydration
 - Chest pain (stable vitals)
 
-
 GREEN (P3) - MINOR/OBSERVATION:
 - Multiple resources needed (stable but requires tests/treatment)
 - Minor injuries, lacerations
@@ -45,6 +44,80 @@ BLACK (P4) - NON-URGENT:
 - Prescription refills
 - Routine check-ups
 - No immediate medical concerns
+`;
+
+const Examples = `
+EXAMPLES:
+
+Example 1:
+PATIENT TRIAGE ASSESSMENT:
+PRIMARY REASON: - Severe chest pain or pressure
+MAIN SYMPTOM BEGIN: less than 25 hours
+SEVERE SYMPTOMS: - Severe chest pain or pressure
+MEDICAL HISTORY:
+Pre-existing Conditions: - Hypertension
+Age: 55
+Sex: Male
+
+Classification:
+{
+  "priority": "RED",
+  "priorityLevel": "P1",
+  "label": "Immediate"
+}
+
+Example 2:
+PATIENT TRIAGE ASSESSMENT:
+PRIMARY REASON: Ankle pain after fall which has caused swelling
+SYMPTOM BEGIN: Less than 24 hours
+SEVERE SYMPTOMS - RED FLAGS: None reported
+MEDICAL HISTORY:
+Pre-existing Conditions: None
+Age: 28
+Sex: Female
+
+Classification:
+{
+  "priority": "GREEN",
+  "priorityLevel": "P3",
+  "label": "Minor"
+}
+
+Example 3:
+PATIENT TRIAGE ASSESSMENT:
+PRIMARY REASON: High fever and vomiting
+SYMPTOM BEGIN: less than 24 hours
+SEVERE SYMPTOMS - RED FLAGS: - High fever (over 103°F / 39.4°C)
+WARNING: High fever reported
+MEDICAL HISTORY:
+Pre-existing Conditions: None
+Age: 6
+Sex: Male
+
+Classification:
+{
+  "priority": "YELLOW",
+  "priorityLevel": "P2",
+  "label": "Urgent"
+}
+
+Example 4:
+PATIENT TRIAGE ASSESSMENT:
+PRIMARY REASON: Prescription refill
+SYMPTOM BEGIN: More than 2 weeks
+SEVERE SYMPTOMS - RED FLAGS: None reported
+MEDICAL HISTORY:
+Pre-existing Conditions: - Diabetes
+Current Medications: Metformin
+Age: 42
+Sex: Female
+
+Classification:
+{
+  "priority": "BLACK",
+  "priorityLevel": "P4",
+  "label": "Non-Urgent"
+}
 `;
 
 const formatTriageData = (appointment) => {
@@ -123,7 +196,7 @@ const performAITriage = async (patientData) => {
 
 ${patientData}
 
-Thinking yourself as a nurse or a medical practitioner using the ESI system, analyze the patient and provide triage classification.
+Thinking yourself as a nurse or a medical practitioner using the ESI system and the examples, analyze the patient and provide triage classification.
 Respond in this exact JSON format:
 {
   "priority": "RED/YELLOW/GREEN/BLACK",
