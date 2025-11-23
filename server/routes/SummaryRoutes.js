@@ -99,6 +99,7 @@ Provide a brief 2-3 sentence summary focusing on:
 - Chief complaint and symptoms
 - Any red flags or urgent concerns
 - Key medical history
+-If the chief complaint or symptoms contain irrelevant, abusive, or non-medical content (e.g.,"Let's go for a date", “I want to play football with you”, bad words, or spam), clearly state: “The patient input appears to be spam or non-medical.”
 
 Keep it professional and concise.`;
 
