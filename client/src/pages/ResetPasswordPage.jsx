@@ -93,8 +93,9 @@ export default function ResetPasswordPage() {
                       value={password} 
                       onChange={(e) => setPassword(e.target.value)} 
                       required 
+                      data-testid="reset-password-input"
                     />
-                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)} data-testid="reset-toggle-password-btn">
                       {showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
                     </Button>
                   </div>
@@ -113,21 +114,22 @@ export default function ResetPasswordPage() {
                       value={confirmPassword} 
                       onChange={(e) => setConfirmPassword(e.target.value)} 
                       required 
+                      data-testid="reset-confirm-password-input"
                     />
-                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowConfirmPassword(!showConfirmPassword)} data-testid="reset-toggle-confirm-password-btn">
                       {showConfirmPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}
                     </Button>
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading} data-testid="reset-password-submit-btn">
                   {isLoading ? 'Resetting Password...' : 'Reset Password'}
                 </Button>
               </form>
             )}
             
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">Remembered your password?{" "}<Link to="/login" className="text-teal-700 hover:text-teal-800 font-medium">Sign in</Link></p>
+              <p className="text-sm text-gray-600">Remembered your password?{" "}<Link to="/login" className="text-teal-700 hover:text-teal-800 font-medium" data-testid="reset-password-login-link">Sign in</Link></p>
             </div>
           </CardContent>
         </Card>

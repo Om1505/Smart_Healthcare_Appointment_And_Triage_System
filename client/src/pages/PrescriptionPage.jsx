@@ -353,6 +353,7 @@ export default function PrescriptionPage() {
                       placeholder="e.g., Upper Respiratory Tract Infection, Hypertension, etc."
                       required
                       className="w-full"
+                      data-testid="prescription-diagnosis-input"
                     />
                     <p className="text-xs text-gray-500">Enter the primary diagnosis or condition</p>
                   </div>
@@ -372,6 +373,7 @@ export default function PrescriptionPage() {
                       size="sm"
                       onClick={addPrescription}
                       className="border-teal-300 text-teal-800 hover:bg-teal-50"
+                      data-testid="prescription-add-medication-btn"
                     >
                       <Plus className="h-4 w-4 mr-2" /> Add Medication
                     </Button>
@@ -407,6 +409,7 @@ export default function PrescriptionPage() {
                             onChange={(e) => updatePrescription(index, 'medication', e.target.value)}
                             placeholder="e.g., Paracetamol, Amoxicillin"
                             required={index === 0}
+                            data-testid={`prescription-medication-${index}-input`}
                           />
                         </div>
                         <div className="space-y-2">
@@ -417,6 +420,7 @@ export default function PrescriptionPage() {
                             onChange={(e) => updatePrescription(index, 'dosage', e.target.value)}
                             placeholder="e.g., 500mg, 10ml"
                             required={(prescription.medication || '').trim() !== ''}
+                            data-testid={`prescription-dosage-${index}-input`}
                           />
                         </div>
                       </div>
@@ -430,6 +434,7 @@ export default function PrescriptionPage() {
                           placeholder="e.g., Take twice daily after meals"
                           rows={2}
                           required={(prescription.medication || '').trim() !== ''}
+                          data-testid={`prescription-instructions-${index}-input`}
                         />
                       </div>
 
@@ -440,6 +445,7 @@ export default function PrescriptionPage() {
                           value={prescription.duration}
                           onChange={(e) => updatePrescription(index, 'duration', e.target.value)}
                           placeholder="e.g., 7 days, 2 weeks, As needed"
+                          data-testid={`prescription-duration-${index}-input`}
                         />
                       </div>
                     </div>
@@ -465,6 +471,7 @@ export default function PrescriptionPage() {
                       placeholder="Enter any additional notes, observations, or recommendations..."
                       rows={6}
                       className="w-full"
+                      data-testid="prescription-notes-input"
                     />
                     <p className="text-xs text-gray-500">Optional: Add any relevant clinical notes or observations</p>
                   </div>
@@ -487,6 +494,7 @@ export default function PrescriptionPage() {
                       id="followUpRequired"
                       checked={followUpRequired}
                       onCheckedChange={(checked) => setFollowUpRequired(checked === true)}
+                      data-testid="prescription-followup-checkbox"
                     />
                     <Label htmlFor="followUpRequired" className="font-normal cursor-pointer">
                       Follow-up required
@@ -504,6 +512,7 @@ export default function PrescriptionPage() {
                           onChange={(e) => setFollowUpDate(e.target.value)}
                           min={new Date().toISOString().split('T')[0]}
                           required={followUpRequired}
+                          data-testid="prescription-followup-date-input"
                         />
                       </div>
                       <div className="space-y-2">
@@ -514,6 +523,7 @@ export default function PrescriptionPage() {
                           onChange={(e) => setFollowUpNotes(e.target.value)}
                           placeholder="e.g., Review blood pressure, Check lab results..."
                           rows={4}
+                          data-testid="prescription-followup-notes-input"
                         />
                       </div>
                     </>
@@ -530,6 +540,7 @@ export default function PrescriptionPage() {
                     type="submit"
                     className="w-full bg-teal-600 text-white hover:bg-teal-700"
                     disabled={isSaving}
+                    data-testid="prescription-save-btn"
                   >
                     {isSaving ? (
                       <>
@@ -548,6 +559,7 @@ export default function PrescriptionPage() {
                     variant="outline"
                     className="w-full"
                     onClick={() => navigate('/doctor/dashboard')}
+                    data-testid="prescription-cancel-btn"
                   >
                     Cancel
                   </Button>

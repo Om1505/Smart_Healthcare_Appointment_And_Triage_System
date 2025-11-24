@@ -264,6 +264,7 @@ export default function DoctorUpdateProfile() {
                                                 onChange={handleInputChange}
                                                 className="text-sm sm:text-base"
                                                 required
+                                                data-testid="doctor-update-fullname-input"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -276,6 +277,7 @@ export default function DoctorUpdateProfile() {
                                                 onChange={handleInputChange}
                                                 className="text-sm sm:text-base"
                                                 required
+                                                data-testid="doctor-update-email-input"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -288,6 +290,7 @@ export default function DoctorUpdateProfile() {
                                                 onChange={handleInputChange}
                                                 placeholder="e.g., +91 9876543210"
                                                 className="text-sm sm:text-base"
+                                                data-testid="doctor-update-phone-input"
                                             />
                                         </div>
                                         <div className="space-y-2">
@@ -299,6 +302,7 @@ export default function DoctorUpdateProfile() {
                                                 onChange={handleInputChange}
                                                 className="text-sm sm:text-base"
                                                 required
+                                                data-testid="doctor-update-license-input"
                                             />
                                         </div>
                                     </div>
@@ -312,6 +316,7 @@ export default function DoctorUpdateProfile() {
                                             placeholder="Your clinic/hospital address"
                                             rows={3}
                                             className="text-sm sm:text-base"
+                                            data-testid="doctor-update-address-input"
                                         />
                                     </div>
                                 </CardContent>
@@ -328,7 +333,7 @@ export default function DoctorUpdateProfile() {
                                         <div className="space-y-2">
                                             <Label htmlFor="specialization" className="text-sm sm:text-base">Specialization*</Label>
                                             <Select value={formData.specialization} onValueChange={handleSpecializationChange}>
-                                                <SelectTrigger className="text-sm sm:text-base">
+                                                <SelectTrigger className="text-sm sm:text-base" data-testid="doctor-update-specialization-select">
                                                     <SelectValue placeholder="Select your specialization" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -352,6 +357,7 @@ export default function DoctorUpdateProfile() {
                                                 onChange={handleInputChange}
                                                 className="text-sm sm:text-base"
                                                 required
+                                                data-testid="doctor-update-experience-input"
                                             />
                                         </div>
                                     </div>
@@ -367,6 +373,7 @@ export default function DoctorUpdateProfile() {
                                             placeholder="e.g., 800"
                                             className="text-sm sm:text-base"
                                             required
+                                            data-testid="doctor-update-fee-input"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -379,6 +386,7 @@ export default function DoctorUpdateProfile() {
                                             placeholder="Tell patients about yourself, your expertise, and approach to treatment..."
                                             rows={4}
                                             className="text-sm sm:text-base"
+                                            data-testid="doctor-update-bio-input"
                                         />
                                     </div>
                                 </CardContent>
@@ -387,7 +395,7 @@ export default function DoctorUpdateProfile() {
                             {/* Save Button */}
                             <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                                 <Link to="/doctor/dashboard" className="w-full sm:w-auto">
-                                    <Button type="button" variant="outline" className="w-full sm:w-auto">
+                                    <Button type="button" variant="outline" className="w-full sm:w-auto" data-testid="doctor-update-cancel-btn">
                                         Cancel
                                     </Button>
                                 </Link>
@@ -395,6 +403,7 @@ export default function DoctorUpdateProfile() {
                                     type="submit" 
                                     className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto"
                                     disabled={isSaving}
+                                    data-testid="doctor-update-save-btn"
                                 >
                                     {isSaving ? (
                                         <>

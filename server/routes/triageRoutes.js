@@ -31,7 +31,6 @@ YELLOW (P2) - URGENT/NON-LIFE THREATENING:
 - Vomiting blood, severe dehydration
 - Chest pain (stable vitals)
 
-
 GREEN (P3) - MINOR/OBSERVATION:
 - Multiple resources needed (stable but requires tests/treatment)
 - Minor injuries, lacerations
@@ -46,7 +45,6 @@ BLACK (P4) - NON-URGENT:
 - Routine check-ups
 - No immediate medical concerns
 `;
-
 const formatTriageData = (appointment) => {
 const symptomsList = appointment.symptomsList || [];
 const symptomsOther = appointment.symptomsOther || '';

@@ -104,11 +104,11 @@ export default function DoctorProfilePage() {
           
           <div className="text-center mt-8 fade-in-up" style={{ animationDelay: '0.9s' }}>
             <Link to={`/patient/book/${doctor._id}`}>
-             <Button size="lg" className="w-full md:w-auto bg-teal-600 text-white hover:bg-teal-700 px-6 py-3 md:px-10 md:py-6 text-lg transition-transform duration-300 hover:scale-105">
+             <Button size="lg" className="w-full md:w-auto bg-teal-600 text-white hover:bg-teal-700 px-6 py-3 md:px-10 md:py-6 text-lg transition-transform duration-300 hover:scale-105" data-testid="doctor-profile-book-btn">
                 Book an Appointment
              </Button>
             </Link>
-            <Link to="/patient/doctors" className="block mt-4 text-sm text-teal-700 hover:underline">
+            <Link to="/patient/doctors" className="block mt-4 text-sm text-teal-700 hover:underline" data-testid="doctor-profile-back-link">
               ← Back to search results
             </Link>
           </div>

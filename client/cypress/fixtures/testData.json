@@ -1,0 +1,199 @@
+{
+  "users": {
+    "patient": {
+      "fullName": "John Doe",
+      "email": "john.doe@test.com",
+      "password": "TestPass123!",
+      "userType": "patient"
+    },
+    "doctor": {
+      "fullName": "Dr. Jane Smith",
+      "email": "jane.smith@test.com",
+      "password": "DoctorPass123!",
+      "userType": "doctor",
+      "specialization": "Cardiology",
+      "experience": "10",
+      "licenseNumber": "MED123456",
+      "address": "123 Medical Center, Health City, HC 12345",
+      "consultationFee": "1000",
+      "bio": "Experienced cardiologist with 10 years of practice in treating heart conditions.",
+      "isVerified": true
+    },
+    "admin": {
+      "fullName": "Admin User",
+      "email": "admin@test.com",
+      "password": "AdminPass123!",
+      "userType": "admin"
+    }
+  },
+  "appointments": {
+    "validAppointment": {
+      "patientName": "John Doe",
+      "phoneNumber": "9876543210",
+      "email": "john@example.com",
+      "birthDate": "1990-01-15",
+      "sex": "Male",
+      "primaryLanguage": "English",
+      "primaryReason": "Regular health checkup and blood pressure monitoring",
+      "symptoms": ["Fever", "Headache"],
+      "symptomsBegin": "1-3 days ago",
+      "allergies": "Penicillin",
+      "medications": "Lisinopril 10mg daily"
+    },
+    "upcomingAppointment": {
+      "_id": "apt1",
+      "doctor": {
+        "_id": "doc1",
+        "fullName": "Dr. Sarah Johnson",
+        "specialization": "Cardiology"
+      },
+      "patient": {
+        "_id": "pat1",
+        "fullName": "John Doe",
+        "email": "john@example.com"
+      },
+      "patientNameForVisit": "John Doe",
+      "date": "2025-12-15",
+      "time": "10:00 AM",
+      "status": "upcoming",
+      "primaryReason": "Regular checkup",
+      "symptomsList": ["Fever", "Headache"],
+      "preExistingConditions": ["Hypertension"],
+      "triagePriority": "GREEN",
+      "triageLabel": "Minor (P3)"
+    },
+    "completedAppointment": {
+      "_id": "apt2",
+      "doctor": {
+        "_id": "doc2",
+        "fullName": "Dr. Michael Chen",
+        "specialization": "Dermatology"
+      },
+      "patient": {
+        "_id": "pat1",
+        "fullName": "John Doe",
+        "email": "john@example.com"
+      },
+      "patientNameForVisit": "John Doe",
+      "date": "2024-11-15",
+      "time": "02:00 PM",
+      "status": "completed",
+      "primaryReason": "Skin consultation"
+    }
+  },
+  "prescriptions": {
+    "validPrescription": {
+      "diagnosis": "Upper Respiratory Tract Infection",
+      "medications": [
+        {
+          "medication": "Paracetamol",
+          "dosage": "500mg",
+          "instructions": "Take twice daily after meals",
+          "duration": "7 days"
+        },
+        {
+          "medication": "Amoxicillin",
+          "dosage": "250mg",
+          "instructions": "Take three times daily",
+          "duration": "5 days"
+        }
+      ],
+      "notes": "Patient shows mild symptoms. Advised rest and hydration. Follow up if symptoms persist beyond 7 days.",
+      "followUpRequired": true,
+      "followUpDate": "2025-12-20",
+      "followUpNotes": "Review progress and check if symptoms have resolved"
+    }
+  },
+  "doctors": {
+    "sampleDoctor": {
+      "_id": "507f1f77bcf86cd799439011",
+      "fullName": "Dr. Sarah Johnson",
+      "specialization": "Cardiology",
+      "consultationFee": 1000,
+      "experience": 15,
+      "averageRating": 4.8,
+      "reviewCount": 45,
+      "address": "456 Heart Care Center, Medical District",
+      "bio": "Experienced cardiologist specializing in heart disease prevention"
+    },
+    "doctorList": [
+      {
+        "_id": "doc1",
+        "fullName": "Dr. Sarah Johnson",
+        "specialization": "Cardiology",
+        "experience": 15,
+        "bio": "Experienced cardiologist specializing in heart disease prevention",
+        "consultationFee": 1000,
+        "averageRating": 4.8,
+        "reviewCount": 45
+      },
+      {
+        "_id": "doc2",
+        "fullName": "Dr. Michael Chen",
+        "specialization": "Dermatology",
+        "experience": 10,
+        "bio": "Expert in skin conditions and cosmetic dermatology",
+        "consultationFee": 800,
+        "averageRating": 4.5,
+        "reviewCount": 32
+      },
+      {
+        "_id": "doc3",
+        "fullName": "Dr. Emily Rodriguez",
+        "specialization": "Pediatrics",
+        "experience": 12,
+        "bio": "Caring pediatrician with focus on child development",
+        "consultationFee": 900,
+        "averageRating": 4.9,
+        "reviewCount": 67
+      }
+    ]
+  },
+  "timeSlots": [
+    {
+      "date": "2025-12-01",
+      "time": "09:00 AM"
+    },
+    {
+      "date": "2025-12-01",
+      "time": "10:00 AM"
+    },
+    {
+      "date": "2025-12-01",
+      "time": "11:00 AM"
+    },
+    {
+      "date": "2025-12-02",
+      "time": "02:00 PM"
+    },
+    {
+      "date": "2025-12-02",
+      "time": "03:00 PM"
+    },
+    {
+      "date": "2025-12-03",
+      "time": "09:00 AM"
+    }
+  ],
+  "specialties": [
+    "All Specialties",
+    "Cardiology",
+    "Dermatology",
+    "Pediatrics",
+    "Neurology",
+    "Orthopedics"
+  ],
+  "sexOptions": [
+    "Male",
+    "Female",
+    "Other",
+    "Prefer not to say"
+  ],
+  "validationMessages": {
+    "emailRequired": "Please include an '@' in the email address",
+    "passwordMismatch": "Passwords do not match",
+    "userTypeRequired": "Please select a user role",
+    "phoneNumberLength": "Phone number must be 10 digits",
+    "futureBirthdate": "Date of birth cannot be in the future"
+  }
+}

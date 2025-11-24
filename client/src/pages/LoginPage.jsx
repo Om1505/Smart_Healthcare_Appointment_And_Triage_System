@@ -140,7 +140,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <Label htmlFor="userType">I am a</Label>
                 <Select value={userType} onValueChange={setUserType} required>
-                  <SelectTrigger>
+                  <SelectTrigger data-testid="user-type-select">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -152,19 +152,19 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="name@example.com" value={formData.email} onChange={handleInputChange} required />
+                <Input id="email" name="email" type="email" placeholder="name@example.com" value={formData.email} onChange={handleInputChange} required data-testid="email-input" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={formData.password} onChange={handleInputChange} required />
-                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}</Button>
+                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={formData.password} onChange={handleInputChange} required data-testid="password-input" />
+                    <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3" onClick={() => setShowPassword(!showPassword)} data-testid="toggle-password-btn">{showPassword ? <EyeOff className="h-4 w-4 text-gray-500" /> : <Eye className="h-4 w-4 text-gray-500" />}</Button>
                 </div>
               </div>
               <div className="flex items-center justify-end">
-                <Link to="/forgot-password" className="text-sm text-teal-700 hover:text-teal-800">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-sm text-teal-700 hover:text-teal-800" data-testid="forgot-password-link">Forgot password?</Link>
               </div>
-              <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading} data-testid="login-submit-btn">
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
@@ -178,13 +178,14 @@ export default function LoginPage() {
                 className="w-full"
                 onClick={handleGoogleLogin}
                 disabled={isLoading}
+                data-testid="google-login-btn"
               >
                 Sign in with Google
               </Button>
             </div>
             
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">Don't have an account?{" "}<Link to="/signup" className="text-teal-700 hover:text-teal-800 font-medium">Sign up</Link></p>
+              <p className="text-sm text-gray-600">Don't have an account?{" "}<Link to="/signup" className="text-teal-700 hover:text-teal-800 font-medium" data-testid="signup-link">Sign up</Link></p>
             </div>
           </CardContent>
         </Card>

@@ -394,6 +394,7 @@ export default function BookAppointmentPage() {
                         <Button 
                           key={index} 
                           variant={isSelected ? "default" : "outline"} 
+                          data-testid="time-slot"
                           className={`h-auto p-4 justify-start flex items-center space-x-3 border ${
                             isSelected 
                               ? "bg-teal-600 text-white border-teal-600 hover:bg-teal-700" 
@@ -421,6 +422,7 @@ export default function BookAppointmentPage() {
                     onClick={() => setStep(2)} 
                     disabled={!selectedSlot.date}
                     className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto"
+                    data-testid="appointment-next-step-1-btn"
                   >
                     Next Step <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -449,6 +451,7 @@ export default function BookAppointmentPage() {
                       id="emergencyDisclaimer" 
                       checked={appointmentDetails.emergencyDisclaimerAcknowledged}
                       onCheckedChange={(checked) => handleDetailsChange("emergencyDisclaimerAcknowledged", checked)} 
+                      data-testid="appointment-emergency-disclaimer-checkbox"
                     />
                     <Label htmlFor="emergencyDisclaimer" className="font-medium text-red-900 cursor-pointer leading-snug">
                       I confirm this is NOT a medical emergency.
@@ -465,7 +468,7 @@ export default function BookAppointmentPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="patientNameForVisit">Patient's Full Name *</Label>
-                      <Input id="patientNameForVisit" value={appointmentDetails.patientNameForVisit} onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} className="bg-white" />
+                      <Input id="patientNameForVisit" value={appointmentDetails.patientNameForVisit} onChange={(e) => handleDetailsChange("patientNameForVisit", e.target.value)} className="bg-white" data-testid="appointment-patient-name-input" />
                     </div>
 
                     <div className="space-y-2">
@@ -477,25 +480,26 @@ export default function BookAppointmentPage() {
                         onChange={(e) => handleDetailsChange("phoneNumber", e.target.value)} 
                         className="bg-white"
                         maxLength={10}
+                        data-testid="appointment-phone-input"
                       />
                       {formErrors.phoneNumber && <p className="text-xs text-red-600">{formErrors.phoneNumber}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address *</Label>
-                      <Input id="email" type="email" value={appointmentDetails.email} onChange={(e) => handleDetailsChange("email", e.target.value)} className="bg-white" />
+                      <Input id="email" type="email" value={appointmentDetails.email} onChange={(e) => handleDetailsChange("email", e.target.value)} className="bg-white" data-testid="appointment-email-input" />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="birthDate">Birth Date *</Label>
-                      <Input id="birthDate" type="date" value={appointmentDetails.birthDate} onChange={(e) => handleDetailsChange("birthDate", e.target.value)} className="bg-white" />
+                      <Input id="birthDate" type="date" value={appointmentDetails.birthDate} onChange={(e) => handleDetailsChange("birthDate", e.target.value)} className="bg-white" data-testid="appointment-birthdate-input" />
                       {formErrors.birthDate && <p className="text-xs text-red-600">{formErrors.birthDate}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="sex">Sex *</Label>
                       <Select value={appointmentDetails.sex} onValueChange={(value) => handleDetailsChange("sex", value)}>
-                        <SelectTrigger id="sex" className="bg-white w-full"><SelectValue placeholder="Select sex" /></SelectTrigger>
+                        <SelectTrigger id="sex" className="bg-white w-full" data-testid="appointment-sex-select"><SelectValue placeholder="Select sex" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Male">Male</SelectItem>
                           <SelectItem value="Female">Female</SelectItem>
@@ -507,7 +511,7 @@ export default function BookAppointmentPage() {
 
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="primaryLanguage">Primary Language Spoken *</Label>
-                      <Input id="primaryLanguage" value={appointmentDetails.primaryLanguage} onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} className="bg-white" placeholder="e.g., English, Hindi" />
+                      <Input id="primaryLanguage" value={appointmentDetails.primaryLanguage} onChange={(e) => handleDetailsChange("primaryLanguage", e.target.value)} className="bg-white" placeholder="e.g., English, Hindi" data-testid="appointment-language-input" />
                     </div>
                   </div>
                 </div>
@@ -527,6 +531,7 @@ export default function BookAppointmentPage() {
                       value={appointmentDetails.primaryReason} 
                       onChange={(e) => handleDetailsChange("primaryReason", e.target.value)} 
                       className="bg-white"
+                      data-testid="appointment-primary-reason-input"
                     />
                   </div>
 
@@ -646,6 +651,7 @@ export default function BookAppointmentPage() {
                     checked={appointmentDetails.consentToAI} 
                     onCheckedChange={(checked) => handleDetailsChange("consentToAI", checked)} 
                     className="mt-1"
+                    data-testid="appointment-consent-checkbox"
                   />
                   <div className="grid gap-1.5 leading-none">
                     <Label htmlFor="consentToAI" className="font-semibold text-teal-900 cursor-pointer">Consent to AI Processing *</Label>
@@ -656,11 +662,12 @@ export default function BookAppointmentPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-between gap-4 mt-6 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setStep(1)} className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
+                  <Button variant="outline" onClick={() => setStep(1)} className="w-full sm:w-auto" data-testid="appointment-back-to-step-1-btn"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
                   <Button 
                     onClick={() => setStep(3)} 
                     disabled={!isStep2Valid}
                     className="w-full sm:w-auto bg-teal-600 text-white hover:bg-teal-700"
+                    data-testid="appointment-next-step-2-btn"
                   >
                     Review Booking <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -688,14 +695,14 @@ export default function BookAppointmentPage() {
                 </div>
                 
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
-                  <Button variant="outline" onClick={() => setStep(2)} className="w-full sm:w-auto"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
+                  <Button variant="outline" onClick={() => setStep(2)} className="w-full sm:w-auto" data-testid="appointment-back-to-step-2-btn"><ArrowLeft className="h-4 w-4 mr-2" /> Back</Button>
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                      {/* Add Pay Later or Pay Now logic here based on reqs */}
-                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto" disabled={isBooking}>
+                    <Button onClick={handleBooking} size="lg" className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto" disabled={isBooking} data-testid="appointment-confirm-book-btn">
                       {isBooking ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       {isBooking ? "Booking..." : "Confirm & Book"}
                     </Button>
-                    <Button onClick={handlePayment} size="lg" className="bg-teal-800 text-white hover:bg-teal-900 w-full sm:w-auto" disabled={isPaymentProcessing}>
+                    <Button onClick={handlePayment} size="lg" className="bg-teal-800 text-white hover:bg-teal-900 w-full sm:w-auto" disabled={isPaymentProcessing} data-testid="appointment-pay-book-btn">
                       {isPaymentProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       {isPaymentProcessing ? "Processing..." : "Pay & Book"}
                     </Button>

@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
                 <div className="space-y-2">
                   <Label htmlFor="userType">I am a</Label>
                   <Select value={userType} onValueChange={setUserType} required>
-                    <SelectTrigger>
+                    <SelectTrigger data-testid="forgot-password-usertype-select">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -89,16 +89,17 @@ export default function ForgotPasswordPage() {
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
                     required 
+                    data-testid="forgot-password-email-input"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-teal-600 text-white hover:bg-teal-700" size="lg" disabled={isLoading} data-testid="forgot-password-submit-btn">
                   {isLoading ? 'Sending Email...' : 'Send Reset Link'}
                 </Button>
               </form>
             )}
             
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">Remembered your password?{" "}<Link to="/login" className="text-teal-700 hover:text-teal-800 font-medium">Sign in</Link></p>
+              <p className="text-sm text-gray-600">Remembered your password?{" "}<Link to="/login" className="text-teal-700 hover:text-teal-800 font-medium" data-testid="forgot-password-login-link">Sign in</Link></p>
             </div>
           </CardContent>
         </Card>
