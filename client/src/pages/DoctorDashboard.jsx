@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserProfileModal } from '@/components/UserProfileModal';
+import { Star } from "lucide-react"; // <-- 1. Import Star
 
 // --- Verification Pending Component ---
 const VerificationPending = ({ doctorName, onLogout }) => (
