@@ -273,7 +273,7 @@ export default function LandingPage() {
                 <Video className="h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold text-base sm:text-lg">Secure Video Consultations</CardTitle>
                 <CardDescription className="text-gray-700 text-sm sm:text-base">
-                  HIPAA-compliant video calls with real-time transcription and automated clinical note generation.
+                  Video call services with real-time transcription and automated clinical note generation.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -291,7 +291,7 @@ export default function LandingPage() {
                 <Shield className="h-10 w-10 sm:h-12 sm:w-12 mb-3 sm:mb-4 transition-transform duration-300 group-hover:scale-110" style={{ color: primaryColor }} />
                 <CardTitle className="font-bold text-base sm:text-lg">Privacy & Security</CardTitle>
                 <CardDescription className="text-gray-700 text-sm sm:text-base">
-                  End-to-end encryption and GDPR compliance ensure your health data remains completely secure.
+                  End-to-end encryption ensure your health data remains completely secure.
                 </CardDescription>
               </CardHeader>
             </Card>

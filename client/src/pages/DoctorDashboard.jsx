@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
-    Calendar, Clock, IndianRupee, AlertTriangle, CheckCircle, User, Brain, LogOut, Loader2, ShieldAlert
+    Calendar, Clock, IndianRupee, AlertTriangle, CheckCircle, User, Brain, LogOut, Loader2, ShieldAlert, FileText, Star // <-- Added Star
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserProfileModal } from '@/components/UserProfileModal';
@@ -136,10 +136,10 @@ export default function DoctorDashboard() {
             }
             try {
                 const [profileRes, appointmentsRes] = await Promise.all([
-                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', {
+                    axios.get('http://localhost:5001/api/users/profile', {
                         headers: { Authorization: `Bearer ${token}` }
                     }),
-                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/doctor', {
+                    axios.get('http://localhost:5001/api/appointments/doctor', {
                         headers: { Authorization: `Bearer ${token}` }
                     })
                 ]);
@@ -170,7 +170,7 @@ export default function DoctorDashboard() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `https://smart-healthcare-appointment-and-triage.onrender.com/api/summary/appointment/${appointmentId}`,
+                `http://localhost:5001/api/summary/appointment/${appointmentId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -197,7 +197,7 @@ export default function DoctorDashboard() {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
-                `https://smart-healthcare-appointment-and-triage.onrender.com/api/triage/appointment/${appointmentId}`,
+                `http://localhost:5001/api/triage/appointment/${appointmentId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -215,54 +215,9 @@ export default function DoctorDashboard() {
     };
 
 
-    const getAppointmentDateTime = (dateString, timeString) => {
-        if (!dateString) return null;
-
-        const date = new Date(dateString);
-        if (Number.isNaN(date.getTime())) return null;
-
-        if (!timeString) return date;
-
-        let normalizedTime = timeString.trim();
-        let meridiem = null;
-
-        const meridiemMatch = normalizedTime.match(/(am|pm)$/i);
-        if (meridiemMatch) {
-            meridiem = meridiemMatch[0].toUpperCase();
-            normalizedTime = normalizedTime.replace(/(am|pm)$/i, '').trim();
-        }
-
-        const timeParts = normalizedTime.split(':').map(part => part.trim());
-        let hours = parseInt(timeParts[0], 10);
-        let minutes = parseInt(timeParts[1] || '0', 10);
-
-        if (Number.isNaN(hours)) return date;
-        if (Number.isNaN(minutes)) minutes = 0;
-
-        if (meridiem === 'PM' && hours < 12) hours += 12;
-        if (meridiem === 'AM' && hours === 12) hours = 0;
-
-        const combinedDate = new Date(date);
-        combinedDate.setHours(hours, minutes, 0, 0);
-
-        return combinedDate;
-    };
-
-    const isAppointmentInPast = (appointment) => {
-        if (!appointment) return false;
-        const appointmentDateTime = getAppointmentDateTime(appointment.date, appointment.time);
-        if (!appointmentDateTime) return false;
-        return appointmentDateTime.getTime() < Date.now();
-    };
-
-    const canStartConsultation = (appointment) => {
-        if (!appointment) return false;
-        return appointment.status?.toLowerCase() === 'upcoming' && !isAppointmentInPast(appointment);
-    };
-
     useEffect(() => {
         if (appointments.length > 0) {
-            const upcomingAppts = appointments.filter(canStartConsultation);
+            const upcomingAppts = appointments.filter(apt => apt.status === 'upcoming');
             upcomingAppts.forEach(apt => {
                 fetchAISummary(apt._id);
                 fetchAITriage(apt._id);
@@ -280,29 +235,32 @@ export default function DoctorDashboard() {
         }
     };
 
-    const actionableUpcomingAppointments = useMemo(() => {
-        return appointments.filter(canStartConsultation);
+    const sortedUpcomingAppointments = useMemo(() => {
+        return appointments
+            .filter(apt => apt.status === 'upcoming')
+            .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
     }, [appointments]);
 
-    const sortedUpcomingAppointments = useMemo(() => {
-        return actionableUpcomingAppointments
-            .slice()
-            .sort((a, b) => urgencyToValue(b.urgency) - urgencyToValue(a.urgency));
-    }, [actionableUpcomingAppointments]);
-
     const upcomingAppointmentsToday = useMemo(() => {
-        const today = new Date().toDateString();
-        return actionableUpcomingAppointments.filter(apt => 
-            new Date(apt.date).toDateString() === today
+        return appointments.filter(apt => 
+            apt.status === 'upcoming' && 
+            new Date(apt.date).toDateString() === new Date().toDateString()
         );
-    }, [actionableUpcomingAppointments]);
+    }, [appointments]);
 
-   const highPriorityCount = useMemo(() => {
-        return actionableUpcomingAppointments.filter(apt => {
+    const completedAppointments = useMemo(() =>
+        appointments
+            .filter(apt => apt.status === 'completed')
+            .sort((a, b) => new Date(b.date) - new Date(a.date)),
+        [appointments]
+    );
+
+    const highPriorityCount = useMemo(() => {
+        return sortedUpcomingAppointments.filter(apt => {
             const priority = triageResults[apt._id]?.priority || apt.triagePriority;
             return priority === 'RED' || priority === 'P1';
         }).length;
-    }, [actionableUpcomingAppointments, triageResults]);
+    }, [sortedUpcomingAppointments, triageResults]);
 
     const completedAppointmentsToday = useMemo(() =>
         appointments.filter(apt => apt.status === 'completed' && new Date(apt.date).toDateString() === new Date().toDateString()),
@@ -331,22 +289,68 @@ export default function DoctorDashboard() {
         setDoctor(updatedDoctor);
     };
 
-    // Mark appointment as completed when doctor starts consultation
-    const handleClick = async (appointmentId) => {
+    const handleCompleteConsultation = async (appointmentId) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("Authentication error. Please log in again.");
+            return;
+        }
+
         try {
-            const token = localStorage.getItem('token');
-            await axios.put(
-                `https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/${appointmentId}/complete`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
+            const response = await axios.put(`http://localhost:5001/api/appointments/${appointmentId}/complete`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setAppointments(prevAppointments =>
+                prevAppointments.map(apt =>
+                    apt._id === appointmentId ? { ...apt, status: 'completed' } : apt
+                )
             );
 
-            // Optimistically update local state so UI reflects completion if the doctor stays on this page
-            setAppointments(prev => prev.map(a => a._id === appointmentId ? { ...a, status: 'completed' } : a));
+            console.log("Appointment marked as completed:", response.data.appointment);
+            alert("Appointment marked as completed! Redirecting to prescription form...");
+            navigate(`/doctor/prescription/${appointmentId}`);
+
         } catch (err) {
-            console.error('Failed to mark appointment as completed:', err?.response || err);
+            console.error("Error completing appointment:", err.response || err);
+            alert(err.response?.data?.message || "Failed to start consultation.");
         }
     };
+    
+    const handleStartConsultation = async (appointment) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert("Authentication error. Please log in again.");
+          return;
+        }
+      
+        try {
+          // 1. Mark the appointment as completed first
+          await axios.put(`http://localhost:5001/api/appointments/${appointment._id}/complete`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+      
+          // 2. Update local state so the appointment disappears from the queue
+          setAppointments(prevAppointments =>
+            prevAppointments.map(apt =>
+              apt._id === appointment._id ? { ...apt, status: 'completed' } : apt
+            )
+          );
+          
+          // 3. Navigate to the call page
+          navigate(`/call/${appointment._id}`, { 
+            state: { 
+              userName: doctor.fullName, 
+              userType: 'doctor',
+              userid: appointment._id 
+            } 
+          });
+      
+        } catch (err) {
+          console.error("Error starting consultation:", err.response || err);
+          alert(err.response?.data?.message || "Failed to start consultation.");
+        }
+      };
 
     const generateAISummary = (apt) => {
         if (aiSummaries[apt._id]) {
@@ -431,11 +435,18 @@ export default function DoctorDashboard() {
             icon: AlertTriangle,
             accent: "bg-red-50 text-red-600"
         },
+        // --- REPLACED "AI Analyzed" with "Patient Rating" ---
         {
-            title: "AI Analyzed",
-            value: actionableUpcomingAppointments.length,
-            icon: Brain,
-            accent: "bg-cyan-50 text-cyan-600"
+            title: "Patient Rating",
+            value: doctor.averageRating ? (
+                <div className="flex items-center">
+                    {doctor.averageRating.toFixed(1)}
+                    <Star className="w-5 h-5 ml-1 text-yellow-400 fill-current" />
+                </div>
+            ) : "N/A",
+            description: `${doctor.reviewCount || 0} reviews`, // Custom field for rendering
+            icon: Star,
+            accent: "bg-yellow-50 text-yellow-600"
         },
         {
             title: "Completed Today",
@@ -451,7 +462,7 @@ export default function DoctorDashboard() {
                 <div className="container mx-auto px-2 sm:px-4 lg:px-8">
                     <div className="flex justify-between items-center h-14 sm:h-16">
                         <Link to="/" className="flex items-center space-x-1 sm:space-x-2 hover:opacity-80 transition-opacity">
-                            <img src="/Logo.svg" className="h-15 w-13 sm:h-20 sm:w-15" style={{ color: primaryColor }} alt="Logo" />
+                            <img src="/Logo.svg" className="h-25 w-30" style={{ color: primaryColor }} alt="Logo" />
                             <span className="text-lg sm:text-2xl lg:text-3xl font-bold">IntelliConsult</span>
                         </Link>
                         <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
@@ -514,7 +525,7 @@ export default function DoctorDashboard() {
                                     {getTimeBasedGreeting()}, Dr. {doctor.fullName.split(' ').pop()}!
                                 </h1>
                                 <p className="text-sm sm:text-base text-gray-600 mt-1">
-                                    You have {actionableUpcomingAppointments.length} upcoming appointments.
+                                    You have {sortedUpcomingAppointments.length} {sortedUpcomingAppointments.length === 1 ? 'patient' : 'patients'} waiting today.
                                 </p>
                             </div>
                             <div className="w-full lg:max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
@@ -537,16 +548,24 @@ export default function DoctorDashboard() {
                         </div>
                     </div>
 
+                    {/* --- UPDATED STATS GRID (Responsive: 1 col -> 2 cols -> 4 cols) --- */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                        {statHighlights.map(({ title, value, icon: Icon, accent }) => (
-                            <div key={title} className="rounded-2xl border border-emerald-50 bg-white shadow-sm p-4 sm:p-5 hover:-translate-y-1 transition-all duration-300">
+                        {statHighlights.map(({ title, value, description, icon: Icon, accent }) => (
+                            <div key={title} className="rounded-2xl border border-emerald-50 bg-white shadow-sm p-4 sm:p-5 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between h-full">
                                 <div className="flex items-start justify-between">
                                     <p className="text-sm font-medium text-gray-600">{title}</p>
                                     <span className={`flex h-9 w-9 items-center justify-center rounded-full ${accent}`}>
                                         <Icon className="h-4 w-4" />
                                     </span>
                                 </div>
-                                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">{value}</p>
+                                <div>
+                                    <div className="text-2xl sm:text-3xl font-bold text-gray-900 mt-3">
+                                        {value}
+                                    </div>
+                                    {description && (
+                                        <p className="text-xs text-gray-500 mt-1">{description}</p>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -557,74 +576,62 @@ export default function DoctorDashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center text-gray-900 text-lg sm:text-xl">
                                     <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} /> 
-                                    Consultation List
+                                    Triage Queue
                                 </CardTitle>
-                                <CardDescription className="text-sm">Upcoming consultations summarized by AI.</CardDescription>
+                                <CardDescription className="text-sm">Patients waiting for consultation, sorted by urgency.</CardDescription>
                             </CardHeader>
                             <CardContent className="p-3 sm:p-6">
                                 <Tabs defaultValue="queue" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 bg-emerald-100">
-                                        <TabsTrigger value="queue" className="text-xs sm:text-sm">Appointments</TabsTrigger>
-                                        <TabsTrigger value="analysis" className="text-xs sm:text-sm">Patient Details</TabsTrigger>
+                                    {/* --- 1. UPDATED GRID COLUMNS to 3 --- */}
+                                    <TabsList className="grid w-full grid-cols-3 bg-emerald-100">
+                                        <TabsTrigger value="queue" className="text-xs sm:text-sm">Queue</TabsTrigger>
+                                        <TabsTrigger value="analysis" className="text-xs sm:text-sm">Analysis</TabsTrigger>
+                                        <TabsTrigger value="completed" className="text-xs sm:text-sm">Completed</TabsTrigger>
                                     </TabsList>
-                                        <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
-                                          {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
-                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
-                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 mx-auto sm:mx-0">
+
+                                    <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
+                                        {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
+                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
+                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                                                     <AvatarImage src="/placeholder.svg" />
                                                     <AvatarFallback className="text-xs sm:text-sm">
                                                         {appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <div className="flex-1 min-w-0 text-center sm:text-left">
+                                                <div className="flex-1 min-w-0">
                                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
                                                         <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                                                             {appointment.patientNameForVisit || 'N/A'}
                                                         </h3>
                                                         {loadingTriage[appointment._id] ? (
-                                                            <Badge variant="outline" className="animate-pulse text-xs w-fit mx-auto sm:mx-0">
-                                                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                            <Badge variant="outline" className="animate-pulse text-xs w-fit">
+                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                                                 Triaging...
                                                             </Badge>
-                                                                ) : (
-                                                            <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit mx-auto sm:mx-0`}>
-                                                            {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
+                                                        ) : (
+                                                            <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit`}>
+                                                                {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
                                                             </Badge>
-                                                            )}
+                                                        )}
                                                     </div>
                                                     <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
                                                         Reason: {appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}
                                                     </p>
-                                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600 justify-center sm:justify-start">
-                                                        <div className="flex items-center space-x-1 justify-center sm:justify-start">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-xs sm:text-sm text-gray-600">
+                                                        <div className="flex items-center space-x-1">
                                                             <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                                             <span className="truncate">{appointment.time} on {new Date(appointment.date).toLocaleDateString()}</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col space-y-2 w-full sm:w-auto">
-                                                    {canStartConsultation(appointment) ? (
-                                                        <Link 
-                                                            to={`/call/${appointment._id}`} 
-                                                            state={{ 
-                                                                userName: doctor.fullName,
-                                                                userType: 'doctor',
-                                                                userid: appointment._id
-                                                            }}
-                                                        >
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={() => handleClick(appointment._id)}
-                                                                className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
-                                                            >
-                                                                Start Consultation
-                                                            </Button>
-                                                        </Link>
-                                                    ) : (
-                                                        <Badge variant="outline" className="w-full sm:w-auto text-center text-[11px] sm:text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                                            Consultation unavailable
-                                                        </Badge>
-                                                    )}
+                                                    <Button
+                                                        size="sm"
+                                                        className="bg-teal-600 text-white hover:bg-teal-700 w-full sm:w-auto text-xs sm:text-sm"
+                                                        onClick={() => handleStartConsultation(appointment)}
+                                                    >
+                                                        Start Consultation
+                                                    </Button>
                                                 </div>
                                             </div>
                                         )) : <p className="text-center text-gray-500 py-8 text-sm sm:text-base">You have no scheduled appointments.</p>}
@@ -651,6 +658,50 @@ export default function DoctorDashboard() {
                                             </p>
                                         )}
                                     </TabsContent>
+
+                                    {/* --- 2. COMPLETED APPOINTMENTS TAB --- */}
+                                    <TabsContent value="completed" className="space-y-3 sm:space-y-4 mt-4">
+                                        {completedAppointments.length > 0 ? completedAppointments.map((appointment) => (
+                                            <div key={appointment._id} className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
+                                                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
+                                                    <AvatarImage src="/placeholder.svg" />
+                                                    <AvatarFallback className="text-xs sm:text-sm">
+                                                        {appointment.patientNameForVisit ? appointment.patientNameForVisit.split(" ").map((n) => n[0]).join("") : 'N/A'}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                                            {appointment.patientNameForVisit || 'N/A'}
+                                                        </h3>
+                                                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 text-xs w-fit">
+                                                            Completed
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
+                                                        Reason: {appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}
+                                                    </p>
+                                                    <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-600">
+                                                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                                                        <span className="truncate">{new Date(appointment.date).toLocaleDateString()} at {appointment.time}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col space-y-2 w-full sm:w-auto">
+                                                    <Link to={`/doctor/prescription/${appointment._id}`} className="w-full sm:w-auto">
+                                                        <Button variant="outline" size="sm" className="w-full text-xs sm:text-sm">
+                                                            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                                                            View Prescription
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        )) : (
+                                            <p className="text-center text-gray-500 py-8 text-sm sm:text-base">
+                                                No completed appointments yet.
+                                            </p>
+                                        )}
+                                    </TabsContent>
+
                                 </Tabs>
                             </CardContent>
                         </Card>
@@ -712,6 +763,11 @@ export default function DoctorDashboard() {
                                 <div className="flex flex-col sm:flex-row gap-2 mt-2">
                                     <Link to="/doctor/schedule" className="w-full">
                                         <Button variant="outline" className="w-full text-sm">Open full schedule</Button>
+                                    </Link>
+                                    <Link to="/doctor/schedule" className="w-full sm:hidden">
+                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm">
+                                            Add new slot
+                                        </Button>
                                     </Link>
                                 </div>
                             </CardContent>
