@@ -16,6 +16,10 @@ const adminSchema = new mongoose.Schema({
     required: function() { return !this.googleId; },
     validate: {
       validator: function(v) {
+        // Skip validation if password is already hashed (starts with $2b$ for bcrypt)
+        if (v && v.startsWith('$2b$')) {
+          return true;
+        }
         if (this.isNew || this.isModified('password')) {
           return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(v);
         }
@@ -51,23 +55,17 @@ const adminSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-adminSchema.pre('save', async function(next) {
+adminSchema.pre('save', async function() {
 
   if (this.password && this.isModified('password')) {
-    try {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    } catch (error) {
-      return next(error);
-    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   }
 
   if (this.isNew) {
   
     this.isProfileComplete = true;
   }
-
-  next();
 });
 
 adminSchema.methods.createEmailVerificationToken = function() {

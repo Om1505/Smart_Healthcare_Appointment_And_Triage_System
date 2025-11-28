@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:run": "vitest run",
+    "test:mutation": "stryker run"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^9.4.0",
+    "@stryker-mutator/vitest-runner": "^9.4.0",
+    "@vitest/coverage-istanbul": "^4.0.13",
+    "@vitest/coverage-v8": "^4.0.13",
+    "vitest": "^4.0.13"
+  }
+}

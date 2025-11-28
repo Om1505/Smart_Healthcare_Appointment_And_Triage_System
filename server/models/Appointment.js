@@ -35,6 +35,16 @@ const appointmentSchema = new mongoose.Schema({
   medications: { type: String, default: '' },
   consentToAI: { type: Boolean, default: false },
   
+  // AI Summary fields - for caching generated summaries
+  doctorSummary: { type: String },
+  summaryGeneratedAt: { type: Date },
+  age: { type: Number },
+  
+  // AI Triage fields - for caching triage results
+  triagePriority: { type: String }, // RED/YELLOW/GREEN/BLACK
+  triagePriorityLevel: { type: String }, // P1/P2/P3/P4
+  triageLabel: { type: String }, // Immediate/Urgent/Minor/Non-Urgent
+  
   // Payment related fields
   paymentId: { type: String }, // Razorpay payment ID
   orderId: { type: String }, // Razorpay order ID

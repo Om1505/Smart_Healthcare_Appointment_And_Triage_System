@@ -26,6 +26,10 @@ export default function DoctorProfilePage() {
 
     if (id) {
       fetchDoctorProfile();
+    } else {
+      // NEW: Handle case where ID is missing so loading stops
+      setIsLoading(false);
+      setError('No doctor ID provided.');
     }
   }, [id]);
 
@@ -55,6 +59,7 @@ export default function DoctorProfilePage() {
         <Card className="bg-white shadow-lg rounded-xl overflow-hidden">
           <CardHeader className="text-center p-8 bg-teal-50/50 border-b">
             <Avatar className="w-32 h-32 mx-auto mb-4 border-4 border-white shadow-md">
+              <AvatarImage src={doctor.profilePicture} alt={doctor.fullName} />
               <AvatarFallback className="text-4xl">
                 {doctor.fullName.split(" ").map(n => n[0]).join("")}
               </AvatarFallback>

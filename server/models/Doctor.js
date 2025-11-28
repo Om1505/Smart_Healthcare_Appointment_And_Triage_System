@@ -113,15 +113,12 @@ const doctorSchema = new mongoose.Schema({
   blockedTimes: [blockedTimeSchema],
 }, { timestamps: true });
 
-doctorSchema.pre('save', async function(next) {
+doctorSchema.pre('save', async function() {
   if (this.password && this.isModified('password')) {
-    try {
-      const salt = await bcrypt.genSalt(10);
-      this.password = await bcrypt.hash(this.password, salt);
-    } catch (error) {
-      return next(error);
-    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
   }
+
   if (this.isNew) {
     if (this.googleId) {
       this.isProfileComplete = false;
@@ -129,7 +126,7 @@ doctorSchema.pre('save', async function(next) {
       this.isProfileComplete = true;
     }
   }
-  next();
+  
 });
 
 doctorSchema.methods.createEmailVerificationToken = function() {

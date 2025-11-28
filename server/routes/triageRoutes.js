@@ -128,7 +128,7 @@ if (symptomsOther) {
 allSymptoms.push(symptomsOther);
 }
 
-const severeSymptoms = appointment.severeSymptomCheck || [];
+const severeSymptoms = appointment.severeSymptomsCheck || [];
 
 const conditions = appointment.preExistingConditions || [];
 const conditionsOther = appointment.preExistingConditionsOther || '';
