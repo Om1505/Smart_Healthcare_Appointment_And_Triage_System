@@ -85,7 +85,7 @@ export function UserProfileModal({ isOpen, onClose, patient, onProfileUpdate }) 
     },
     {
       label: "Ratings",
-      value: patient.reviewCount ? `${patient.reviewCount} / 5` : 'No ratings yet',
+      value: patient.averageRating ? `${patient.averageRating} / 5` : 'No ratings yet',
       icon: Star
     }
   ]), [patient.specialization, patient.experience, patient.consultationFee, patient.licenseNumber]);
