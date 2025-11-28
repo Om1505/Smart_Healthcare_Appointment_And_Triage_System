@@ -1,0 +1,25 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Configuration for DoctorDashboard Mutation Testing",
+  
+  "packageManager": "npm",
+  "reporters": [
+    "html",
+    "clear-text",
+    "progress"
+  ],
+  "testRunner": "vitest",
+  "testRunner_comment": "We use the vitest runner we installed",
+  
+  "coverageAnalysis": "perTest",
+  
+  "mutate": [
+    "src/pages/DoctorDashboard.jsx"
+  ],
+  
+  "vitest": {
+    "configFile": "vite.config.js" 
+  },
+
+  "timeoutMS": 15000
+}

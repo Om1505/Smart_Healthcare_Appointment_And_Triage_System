@@ -5,7 +5,9 @@
   "scripts": {
     "build": "npm install && npm install --prefix client && npm run build --prefix client",
     "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.js",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "author": "",
   "license": "ISC",
@@ -24,7 +26,6 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
-    "mongoose": "^8.19.4",
     "nodemailer": "^7.0.10",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
@@ -33,6 +34,13 @@
     "razorpay": "^2.9.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@stryker-mutator/core": "^9.3.0",
+    "@stryker-mutator/vitest-runner": "^9.3.0",
+    "@vitest/coverage-v8": "^4.0.13",
+    "mongodb-memory-server": "^10.3.0",
+    "mongoose": "^9.0.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.13"
   }
 }

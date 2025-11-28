@@ -39,7 +39,7 @@ export default function BookAppointmentPage() {
   const { doctorId } = useParams();
   const navigate = useNavigate();
   const [doctor, setDoctor] = useState(null);
-  
+
   const [availableSlots, setAvailableSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [step, setStep] = useState(1);
@@ -169,58 +169,49 @@ export default function BookAppointmentPage() {
     });
   };
 
-  const handleBooking = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert("You must be logged in to book an appointment.");
-      return;
-    }
+  // const handleBooking = async () => {
+  //   const token = localStorage.getItem('token');
+  //   if (!token) {
+  //     alert("You must be logged in to book an appointment.");
+  //     return;
+  //   }
     
-    if (!appointmentDetails.consentToAI) {
-      alert("You must consent to AI processing to continue.");
-      return;
-    }
+  //   if (!appointmentDetails.consentToAI) {
+  //     alert("You must consent to AI processing to continue.");
+  //     return;
+  //   }
 
-    setIsBooking(true);
+  //   setIsBooking(true);
     
-    const bookingData = {
-      doctorId,
-      date: selectedSlot.date,
-      time: selectedSlot.time,
-      ...appointmentDetails,
-      symptoms: [...appointmentDetails.symptomsList, appointmentDetails.symptomsOther].filter(Boolean),
-      preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
-      familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
-    };
+  //   const bookingData = {
+  //     doctorId,
+  //     date: selectedSlot.date,
+  //     time: selectedSlot.time,
+  //     ...appointmentDetails,
+  //     symptoms: [...appointmentDetails.symptomsList, appointmentDetails.symptomsOther].filter(Boolean),
+  //     preExistingConditions: [...appointmentDetails.preExistingConditions, appointmentDetails.preExistingConditionsOther].filter(Boolean),
+  //     familyHistory: [...appointmentDetails.familyHistory, appointmentDetails.familyHistoryOther].filter(Boolean),
+  //   };
     
-    // Clean up redundant fields before sending
-    delete bookingData.symptomsList;
-    delete bookingData.symptomsOther;
-    delete bookingData.preExistingConditionsOther;
-    delete bookingData.familyHistoryOther;
+  //   // Clean up redundant fields before sending
+  //   delete bookingData.symptomsList;
+  //   delete bookingData.symptomsOther;
+  //   delete bookingData.preExistingConditionsOther;
+  //   delete bookingData.familyHistoryOther;
     
-    try {
-      await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/book', bookingData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      alert("Appointment booked successfully!");
-      navigate('/patient/dashboard');
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to book appointment.");
-      setIsBooking(false);
-    }
-  };
+  //   try {
+  //     await axios.post('https://smart-healthcare-appointment-and-triage.onrender.com/api/appointments/book', bookingData, {
+  //       headers: { Authorization: `Bearer ${token}` }
+  //     });
+  //     alert("Appointment booked successfully!");
+  //     navigate('/patient/dashboard');
+  //   } catch (err) {
+  //     alert(err.response?.data?.message || "Failed to book appointment.");
+  //     setIsBooking(false);
+  //   }
+  // };
 
-  const handlePayment = async () => {
-    if (Object.values(formErrors).some(err => err)) {
-      alert("Please fix the errors on the form before proceeding.");
-      return;
-    }
-    if (!doctor || !selectedSlot.date) {
-      alert("Please complete all booking details first.");
-      return;
-    }
-
+  const handlePayment = async () => { 
     const token = localStorage.getItem('token');
     if (!token) {
       alert("You must be logged in to make a payment.");
@@ -316,7 +307,6 @@ export default function BookAppointmentPage() {
     </div>
   );
   if (error) return <div className="text-center p-8 text-red-600">{error}</div>;
-  if (!doctor) return null;
 
   const isStep2Valid = 
     appointmentDetails.patientNameForVisit &&

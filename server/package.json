@@ -1,0 +1,31 @@
+{
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "vitest": {
+    "test": {
+      "environment": "node",
+      "globals": true,
+      "include": [
+        "**/*.test.js"
+      ]
+    }
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^9.3.0",
+    "@stryker-mutator/vitest-runner": "^9.3.0",
+    "@vitest/coverage-v8": "^4.0.13",
+    "mongodb-memory-server": "^10.3.0",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.13"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "pdfkit": "^0.17.2"
+  }
+}

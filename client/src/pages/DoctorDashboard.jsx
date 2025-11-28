@@ -42,7 +42,7 @@ const VerificationPending = ({ doctorName, onLogout }) => (
 );
 
 // --- AI Urgency Helpers ---
-const getPriorityClasses = (priority) => {
+export const getPriorityClasses = (priority) => {
     switch (priority) {
         case 'RED':
         case 'P1':
@@ -61,9 +61,9 @@ const getPriorityClasses = (priority) => {
     }
 };
 
-const getPriorityLabel = (priority, label) => {
+export const getPriorityLabel = (priority, label) => {
     if (label) return label;
-    
+
     switch (priority) {
         case 'RED':
         case 'P1':
@@ -145,7 +145,7 @@ export default function DoctorDashboard() {
                     })
                 ]);
 
-                if (profileRes.data.userType !== 'doctor') {
+                if (profileRes.data?.userType !== 'doctor') {
                     setError('Access denied. Not a doctor account.');
                     localStorage.removeItem('token');
                     window.location.href = '/login';
@@ -194,7 +194,7 @@ export default function DoctorDashboard() {
 
     const fetchAITriage = async (appointmentId) => {
         setLoadingTriage(prev => ({ ...prev, [appointmentId]: true }));
-        
+
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(
@@ -214,8 +214,6 @@ export default function DoctorDashboard() {
             setLoadingTriage(prev => ({ ...prev, [appointmentId]: false }));
         }
     };
-
-
     const getAppointmentDateTime = (dateString, timeString) => {
         if (!dateString) return null;
 
@@ -293,12 +291,13 @@ export default function DoctorDashboard() {
 
     const upcomingAppointmentsToday = useMemo(() => {
         const today = new Date().toDateString();
-        return actionableUpcomingAppointments.filter(apt => 
-            new Date(apt.date).toDateString() === today
+        return actionableUpcomingAppointments.filter(apt =>
+            apt && apt.date && new Date(apt.date).toDateString() === today
         );
     }, [actionableUpcomingAppointments]);
 
-   const highPriorityCount = useMemo(() => {
+
+    const highPriorityCount = useMemo(() => {
         return actionableUpcomingAppointments.filter(apt => {
             const priority = triageResults[apt._id]?.priority || apt.triagePriority;
             return priority === 'RED' || priority === 'P1';
@@ -306,8 +305,13 @@ export default function DoctorDashboard() {
     }, [actionableUpcomingAppointments, triageResults]);
 
     const completedAppointmentsToday = useMemo(() =>
-        appointments.filter(apt => apt.status === 'completed' && new Date(apt.date).toDateString() === new Date().toDateString()),
+        appointments.filter(apt =>
+            apt &&
+            apt.status === 'completed' &&
+            new Date(apt.date).toDateString() === new Date().toDateString()
+        ),
         [appointments]);
+
     // --- End of Computations ---
 
     // Function to get time-based greeting
@@ -557,7 +561,7 @@ export default function DoctorDashboard() {
                         <Card className="bg-white hover:shadow-lg hover:-translate-y-2 transition-all duration-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center text-gray-900 text-lg sm:text-xl">
-                                    <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} /> 
+                                    <Brain className="h-4 w-4 sm:h-5 sm:w-5 mr-2" style={{ color: primaryColor }} />
                                     Consultation List
                                 </CardTitle>
                                 <CardDescription className="text-sm">Upcoming consultations summarized by AI.</CardDescription>
@@ -568,8 +572,8 @@ export default function DoctorDashboard() {
                                         <TabsTrigger value="queue" className="text-xs sm:text-sm">Appointments</TabsTrigger>
                                         <TabsTrigger value="analysis" className="text-xs sm:text-sm">Patient Details</TabsTrigger>
                                     </TabsList>
-                                        <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
-                                          {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
+                                    <TabsContent value="queue" className="space-y-3 sm:space-y-4 mt-4">
+                                        {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => (
                                             <div key={appointment._id} className="flex flex-col sm:flex-row items-center sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 p-3 sm:p-4 border rounded-lg hover:bg-emerald-50">
                                                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 mx-auto sm:mx-0">
                                                     <AvatarImage src="/placeholder.svg" />
@@ -584,14 +588,14 @@ export default function DoctorDashboard() {
                                                         </h3>
                                                         {loadingTriage[appointment._id] ? (
                                                             <Badge variant="outline" className="animate-pulse text-xs w-fit mx-auto sm:mx-0">
-                                                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                                                                 Triaging...
                                                             </Badge>
-                                                                ) : (
+                                                        ) : (
                                                             <Badge variant="outline" className={`${getPriorityClasses(triageResults[appointment._id]?.priority || appointment.triagePriority || 'GREEN')} text-xs w-fit mx-auto sm:mx-0`}>
-                                                            {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
+                                                                {getPriorityLabel(triageResults[appointment._id]?.priority || appointment.triagePriority, triageResults[appointment._id]?.label || appointment.triageLabel)}
                                                             </Badge>
-                                                            )}
+                                                        )}
                                                     </div>
                                                     <p className="text-xs sm:text-sm text-gray-600 mb-2 font-medium">
                                                         Reason: {appointment.primaryReason || appointment.reasonForVisit || 'Not specified'}
@@ -605,9 +609,9 @@ export default function DoctorDashboard() {
                                                 </div>
                                                 <div className="flex flex-col space-y-2 w-full sm:w-auto">
                                                     {canStartConsultation(appointment) ? (
-                                                        <Link 
-                                                            to={`/call/${appointment._id}`} 
-                                                            state={{ 
+                                                        <Link
+                                                            to={`/call/${appointment._id}`}
+                                                            state={{
                                                                 userName: doctor.fullName,
                                                                 userType: 'doctor',
                                                                 userid: appointment._id
@@ -635,13 +639,13 @@ export default function DoctorDashboard() {
                                         {sortedUpcomingAppointments.length > 0 ? sortedUpcomingAppointments.map((appointment) => {
                                             const triage = triageResults[appointment._id];
                                             const priority = triage?.priority || appointment.triagePriority || 'GREEN';
-                                            
+
                                             return (
-                                                <AITriageCard 
-                                                    key={appointment._id} 
-                                                    patientName={appointment.patientNameForVisit || 'N/A'} 
+                                                <AITriageCard
+                                                    key={appointment._id}
+                                                    patientName={appointment.patientNameForVisit || 'N/A'}
                                                     urgency={priority}
-                                                    aiSummary={generateAISummary(appointment)} 
+                                                    aiSummary={generateAISummary(appointment)}
                                                     riskFactors={generateRiskFactors(appointment)}
                                                     isLoading={loadingSummaries[appointment._id]}
                                                 />
@@ -722,11 +726,11 @@ export default function DoctorDashboard() {
             </div>
 
             {/* Profile Modal */}
-            <UserProfileModal 
-                isOpen={isProfileModalOpen} 
-                onClose={() => setIsProfileModalOpen(false)} 
-                patient={doctor} 
-                onProfileUpdate={handleProfileUpdate} 
+            <UserProfileModal
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+                patient={doctor}
+                onProfileUpdate={handleProfileUpdate}
             />
         </div>
     );

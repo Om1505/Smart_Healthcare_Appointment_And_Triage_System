@@ -1,17 +1,18 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { vi } from 'vitest';
+import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
 import axios from 'axios';
-import BookAppointmentPage from '@/pages/BookAppointmentPage';
+import BookAppointmentPage from '../src/pages/BookAppointmentPage';
 
 // --- GLOBAL MOCKS ---
 const mockOpen = vi.fn();
-let mockHandler; // This will store the Razorpay handler function
+let mockHandler;
 
 // --- MOCKS ---
 vi.mock('axios');
 const mockNavigate = vi.fn();
+
 vi.mock('react-router-dom', async (importOriginal) => {
     const actual = await importOriginal();
     return {
@@ -30,7 +31,7 @@ vi.mock('lucide-react', () => ({
     Loader2: () => <span data-testid="icon-loader" />,
 }));
 
-// --- ROBUST SHADCN MOCKS ---
+// --- UI COMPONENT MOCKS ---
 vi.mock('@/components/ui/button', () => ({
     Button: ({ children, onClick, disabled }) => (
         <button onClick={onClick} disabled={disabled}>{children}</button>
@@ -52,8 +53,8 @@ vi.mock('@/components/ui/label', () => ({
     Label: ({ children, htmlFor }) => <label htmlFor={htmlFor}>{children}</label>,
 }));
 vi.mock('@/components/ui/textarea', () => ({
-    Textarea: ({ value, onChange, id }) => (
-        <textarea value={value || ''} onChange={onChange} id={id} data-testid={id} />
+    Textarea: ({ value, onChange, id, ...props }) => (
+        <textarea value={value || ''} onChange={onChange} id={id} data-testid={id} {...props} />
     ),
 }));
 vi.mock('@/components/ui/badge', () => ({
@@ -76,14 +77,12 @@ vi.mock('@/components/ui/checkbox', () => ({
     ),
 }));
 
-// --- ROBUST RADIO GROUP MOCK ---
+// Clean Radio Group Mock
 vi.mock('@/components/ui/radio-group', () => {
     const passPropsToItems = (children, props) => {
         return React.Children.map(children, (child) => {
             if (!React.isValidElement(child)) return child;
-            if (child.props.value) {
-                return React.cloneElement(child, props);
-            }
+            if (child.props.value) return React.cloneElement(child, props);
             if (child.props.children) {
                 return React.cloneElement(child, {
                     children: passPropsToItems(child.props.children, props)
@@ -115,17 +114,28 @@ vi.mock('@/components/ui/radio-group', () => {
     };
 });
 
+// FIX: Valid HTML Select Mock
 vi.mock('@/components/ui/select', () => ({
     Select: ({ children, onValueChange, value }) => (
-        <select data-testid="sex" value={value || ''} onChange={(e) => onValueChange(e.target.value)}>
-            {children}
+        <select
+            data-testid="sex"
+            value={value || ''}
+            onChange={(e) => onValueChange(e.target.value)}
+        >
+            {/* Hardcoded options to avoid DOM nesting issues with sub-components */}
+            <option value="">Select sex</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
         </select>
     ),
-    SelectContent: ({ children }) => <>{children}</>,
-    SelectItem: ({ children, value }) => <option value={value}>{children}</option>,
-    SelectTrigger: () => <div></div>,
-    SelectValue: ({ placeholder }) => <option value="">{placeholder}</option>,
+    SelectContent: () => null,
+    SelectItem: () => null,
+    SelectTrigger: () => null,
+    SelectValue: () => null,
 }));
+
 vi.mock('@/components/ui/alert', () => ({
     Alert: ({ children }) => <div>{children}</div>,
     AlertDescription: ({ children }) => <p>{children}</p>,
@@ -175,8 +185,13 @@ const fillStep2Form = async () => {
     fireEvent.change(screen.getByTestId('birthDate'), { target: { value: '1990-01-01' } });
     fireEvent.change(screen.getByTestId('primaryLanguage'), { target: { value: 'English' } });
     fireEvent.change(screen.getByTestId('primaryReason'), { target: { value: 'Checkup' } });
+
+    // Handle Select mock specifically
     fireEvent.change(screen.getByTestId('sex'), { target: { value: 'Male' } });
-    fireEvent.click(screen.getByLabelText('1-3 days ago'));
+
+    const symptomRadio = screen.getByLabelText('1-3 days ago');
+    fireEvent.click(symptomRadio);
+
     fireEvent.click(screen.getByTestId('none-severe'));
     fireEvent.click(screen.getByTestId('emergencyDisclaimer'));
     fireEvent.click(screen.getByTestId('consentToAI'));
@@ -191,17 +206,14 @@ describe('BookAppointmentPage', () => {
         vi.clearAllMocks();
         localStorage.setItem('token', 'fake-token');
 
-        // FIX: Stub the global Razorpay constructor
         vi.stubGlobal('Razorpay', class {
             constructor(options) {
-                mockHandler = options.handler; // This will now correctly save the handler
-                return {
-                    open: mockOpen,
-                };
+                mockHandler = options.handler;
+                return { open: mockOpen };
             }
         });
+
         window.alert = vi.fn();
-        //... rest of the block;
 
         appendSpy = vi.spyOn(document.body, 'appendChild');
         removeSpy = vi.spyOn(document.body, 'removeChild');
@@ -218,7 +230,7 @@ describe('BookAppointmentPage', () => {
     afterEach(() => {
         appendSpy.mockRestore();
         removeSpy.mockRestore();
-        vi.unstubAllGlobals(); // Clean up the Razorpay stub
+        vi.unstubAllGlobals();
     });
 
     it('redirects to /login if no token is found', async () => {
@@ -241,22 +253,19 @@ describe('BookAppointmentPage', () => {
         expect(await screen.findByText(/Failed to fetch page details/i)).toBeInTheDocument();
     });
 
-    // --- FIX #1 ---
     it('pre-fills user data after loading', async () => {
         renderComponent();
-
-        // 1. Go to step 2 first
         const slotBtn = await screen.findByText('10:00 AM');
         fireEvent.click(slotBtn);
         const nextBtn = screen.getByRole('button', { name: /Next Step/i });
         await waitFor(() => expect(nextBtn).toBeEnabled());
         fireEvent.click(nextBtn);
 
-        // 2. NOW look for the pre-filled data
         expect(await screen.findByDisplayValue('Test Patient')).toBeInTheDocument();
         expect(screen.getByDisplayValue('patient@test.com')).toBeInTheDocument();
     });
 
+    // --- FIX: Corrected Text Matcher ---
     it('shows slot loading spinner', async () => {
         axios.get.mockImplementation((url) => {
             if (url.includes('/api/doctors/')) return Promise.resolve({ data: mockDoctor });
@@ -265,20 +274,36 @@ describe('BookAppointmentPage', () => {
             return Promise.reject(new Error('Not mocked'));
         });
         renderComponent();
-        expect(await screen.findByText('Loading available slots...')).toBeInTheDocument();
+        // Matched exactly "Loading slots..." from your component code
+        expect(await screen.findByText('Loading slots...')).toBeInTheDocument();
     });
 
-    it('filters out past slots and shows "no slots" message if all are in the past', async () => {
+    it('shows "No available slots found" when API returns no future slots', async () => {
+        // Mock API such that no future slots remain
         axios.get.mockImplementation((url) => {
             if (url.includes('/api/doctors/')) return Promise.resolve({ data: mockDoctor });
             if (url.includes('/api/users/profile')) return Promise.resolve({ data: mockProfile });
-            if (url.includes('/api/appointments/available-slots/')) {
-                return Promise.resolve({ data: [{ date: '2020-01-01', time: '10:00 AM' }] });
-            }
+            if (url.includes('/api/appointments/available-slots/'))
+                return Promise.resolve({ data: [] }); // 👈 force NO slots
+
             return Promise.reject(new Error('Not mocked'));
         });
+
         renderComponent();
-        expect(await screen.findByText('No available slots found for this doctor.')).toBeInTheDocument();
+
+        // Wait for the "No available slots" UI
+        expect(await screen.findByText('No available slots found.')).toBeInTheDocument();
+        expect(screen.getByText('Please try a different date or check back later.')).toBeInTheDocument();
+
+        // Step 1 "Next Step" must remain disabled
+        const nextBtn = screen.getByRole('button', { name: /Next Step/i });
+        expect(nextBtn).toBeDisabled();
+    });
+
+    it('filters out past slots', async () => {
+        renderComponent();
+        expect(await screen.findByText(/2099/)).toBeInTheDocument();
+        expect(screen.queryByText(/2020/)).not.toBeInTheDocument();
     });
 
     it('moves from step 1 to 2', async () => {
@@ -313,6 +338,27 @@ describe('BookAppointmentPage', () => {
         fireEvent.change(dateInput, { target: { value: '1990-01-01' } });
         expect(screen.queryByText('Date of birth cannot be in the future.')).not.toBeInTheDocument();
     });
+
+    it('stops updating phone number when more than 10 digits are entered', async () => {
+        renderComponent();
+
+        // Go to Step 2
+        fireEvent.click(await screen.findByText('10:00 AM'));
+        fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+        const phoneInput = await screen.findByTestId('phoneNumber');
+
+        // First set a valid 10-digit number
+        fireEvent.change(phoneInput, { target: { value: '1234567890' } });
+        expect(phoneInput.value).toBe('1234567890');
+
+        // Now try to enter 11 digits – handler should early-return and not change state
+        fireEvent.change(phoneInput, { target: { value: '12345678901' } });
+
+        // Because the component is controlled, value should stay at the valid 10-digit number
+        expect(phoneInput.value).toBe('1234567890');
+    });
+
 
     it('handles checklist "None of the above" logic', async () => {
         renderComponent();
@@ -351,7 +397,24 @@ describe('BookAppointmentPage', () => {
         });
     });
 
-    // --- ⬇️ FIX #2 HERE ⬇️ ---
+    it('updates generic fields (name, email) using handleDetailsChange', async () => {
+        renderComponent();
+
+        // Go to Step 2
+        fireEvent.click(await screen.findByText('10:00 AM'));
+        fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+        const nameInput = await screen.findByTestId('patientNameForVisit');
+        fireEvent.change(nameInput, { target: { value: 'New Name' } });
+        expect(nameInput.value).toBe('New Name');
+
+
+        const emailInput = screen.getByTestId('email');
+        fireEvent.change(emailInput, { target: { value: 'newemail@test.com' } });
+        expect(emailInput.value).toBe('newemail@test.com');
+    });
+
+
     it('goes from step 2 to 3 and back', async () => {
         renderComponent();
         fireEvent.click(await screen.findByText('10:00 AM'));
@@ -365,7 +428,6 @@ describe('BookAppointmentPage', () => {
 
         expect(await screen.findByText('Confirm Your Appointment')).toBeInTheDocument();
 
-        // Use findAllByText to avoid multiple element error
         const doctorHeadings = await screen.findAllByText('Dr. Test');
         expect(doctorHeadings.length).toBeGreaterThan(0);
 
@@ -375,59 +437,24 @@ describe('BookAppointmentPage', () => {
         expect(await screen.findByText('Appointment Details')).toBeInTheDocument();
     });
 
-    it('handles "Confirm Booking" (free) success', async () => {
+    it('navigates back from step 2 to step 1 using Back button', async () => {
         renderComponent();
+
+        // Go to Step 2
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
-        await act(async () => { await fillStep2Form(); });
 
-        const reviewBtn = screen.getByRole('button', { name: /Review Booking/i });
-        await waitFor(() => expect(reviewBtn).toBeEnabled());
-        fireEvent.click(reviewBtn);
+        // Click Back button
+        const backBtn = screen.getByRole('button', { name: /Back/i });
+        fireEvent.click(backBtn);
 
-        const bookBtn = await screen.findByRole('button', { name: /Confirm Booking/i });
-        fireEvent.click(bookBtn);
-
-        expect(await screen.findAllByTestId('icon-loader')).not.toHaveLength(0);
-        expect(bookBtn).toBeDisabled();
-
-        await waitFor(() => {
-            expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:5001/api/appointments/book',
-                expect.objectContaining({ doctorId: 'doc123', primaryReason: 'Checkup' }),
-                expect.any(Object)
-            );
-        });
-
-        expect(window.alert).toHaveBeenCalledWith('Appointment booked successfully!');
-        expect(mockNavigate).toHaveBeenCalledWith('/patient/dashboard');
+        // Step 1 screen should reappear
+        expect(await screen.findByText('Select Appointment Time')).toBeInTheDocument();
     });
 
-    it('handles "Confirm Booking" (free) failure', async () => {
-        axios.post.mockRejectedValue({ response: { data: { message: 'Slot taken' } } });
-        renderComponent();
-
-        fireEvent.click(await screen.findByText('10:00 AM'));
-        fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
-        await act(async () => { await fillStep2Form(); });
-
-        const reviewBtn = screen.getByRole('button', { name: /Review Booking/i });
-        await waitFor(() => expect(reviewBtn).toBeEnabled());
-        fireEvent.click(reviewBtn);
-
-        const bookBtn = await screen.findByRole('button', { name: /Confirm Booking/i });
-        fireEvent.click(bookBtn);
-
-        await waitFor(() => {
-            expect(window.alert).toHaveBeenCalledWith('Slot taken');
-        });
-        expect(bookBtn).not.toBeDisabled();
-    });
-
-    // --- ⬇️ FIX #3 HERE ⬇️ ---
-    it('handles "Complete Payment" flow and successful verification', async () => {
-        axios.post.mockResolvedValueOnce({ data: mockOrder }); // 1. Create Order
-        axios.post.mockResolvedValueOnce({ data: { success: true } }); // 2. Verify Payment
+    it('handles "Confirm Booking" (payment) flow success', async () => {
+        axios.post.mockResolvedValueOnce({ data: mockOrder });
+        axios.post.mockResolvedValueOnce({ data: { success: true } });
 
         renderComponent();
 
@@ -439,27 +466,24 @@ describe('BookAppointmentPage', () => {
         await waitFor(() => expect(reviewBtn).toBeEnabled());
         fireEvent.click(reviewBtn);
 
-        const paymentBtn = await screen.findByRole('button', { name: /Complete Payment/i });
+        const paymentBtn = await screen.findByRole('button', { name: /Pay & Book/i });
         fireEvent.click(paymentBtn);
 
-        // 1. Wait for the order to be created
         await waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:5001/api/appointments/create-payment-order',
+                expect.stringContaining('/api/appointments/create-payment-order'),
                 expect.any(Object),
                 expect.any(Object)
             );
         });
 
-        // 2. Manually invoke the Razorpay handler (which was saved by our mock)
         await act(async () => {
             mockHandler(mockRazorpayResponse);
         });
 
-        // 3. Wait for the verification call
         await waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:5001/api/appointments/verify-payment',
+                expect.stringContaining('/api/appointments/verify-payment'),
                 expect.objectContaining({ razorpay_order_id: 'order_123' }),
                 expect.any(Object)
             );
@@ -481,16 +505,14 @@ describe('BookAppointmentPage', () => {
         await waitFor(() => expect(reviewBtn).toBeEnabled());
         fireEvent.click(reviewBtn);
 
-        fireEvent.click(await screen.findByRole('button', { name: /Complete Payment/i }));
+        fireEvent.click(await screen.findByRole('button', { name: /Pay & Book/i }));
 
         await waitFor(() => {
             expect(window.alert).toHaveBeenCalledWith('Failed to initiate payment. Please try again.');
         });
     });
 
-    // --- ⬇️ FIX #4 HERE ⬇️ ---
     it('handles payment verification failure (API reject)', async () => {
-        // FIX: Mock sequence: Order OK -> Verify Fails
         axios.post.mockResolvedValueOnce({ data: mockOrder });
         axios.post.mockRejectedValueOnce(new Error('Verify failed'));
 
@@ -503,32 +525,45 @@ describe('BookAppointmentPage', () => {
         await waitFor(() => expect(reviewBtn).toBeEnabled());
         fireEvent.click(reviewBtn);
 
-        const paymentBtn = await screen.findByRole('button', { name: /Complete Payment/i });
+        const paymentBtn = await screen.findByRole('button', { name: /Pay & Book/i });
         fireEvent.click(paymentBtn);
 
-        // 1. Wait for create-order
         await waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:5001/api/appointments/create-payment-order',
+                expect.stringContaining('/api/appointments/create-payment-order'),
                 expect.any(Object),
                 expect.any(Object)
             );
         });
 
-        // 2. Manually invoke handler (which was saved by our mock)
         await act(async () => {
             mockHandler(mockRazorpayResponse);
         });
 
-        // 3. Wait for alert
         await waitFor(() => {
             expect(window.alert).toHaveBeenCalledWith('Payment verification failed. Please contact support.');
         });
     });
 
-    // --- ⬇️ FIX #5 HERE ⬇️ ---
+    it('handles cleanup gracefully if script is already missing', async () => {
+        const { unmount } = renderComponent();
+
+        // 1. Wait for the script to be added by the component
+        await waitFor(() => {
+            expect(document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')).toBeInTheDocument();
+        });
+        // 2. Manually remove the script to simulate it being missing
+        const script = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+        if (script) script.remove();
+
+        // 3. Unmount the component
+        unmount();
+
+        // If the test finishes without crashing, the code handled the missing script correctly
+        expect(document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')).toBeNull();
+    });
+
     it('handles payment verification failure (success: false)', async () => {
-        // FIX: Mock sequence: Order OK -> Verify returns false
         axios.post.mockResolvedValueOnce({ data: mockOrder });
         axios.post.mockResolvedValueOnce({ data: { success: false } });
 
@@ -541,24 +576,21 @@ describe('BookAppointmentPage', () => {
         await waitFor(() => expect(reviewBtn).toBeEnabled());
         fireEvent.click(reviewBtn);
 
-        const paymentBtn = await screen.findByRole('button', { name: /Complete Payment/i });
+        const paymentBtn = await screen.findByRole('button', { name: /Pay & Book/i });
         fireEvent.click(paymentBtn);
 
-        // 1. Wait for create-order
         await waitFor(() => {
             expect(axios.post).toHaveBeenCalledWith(
-                'http://localhost:5001/api/appointments/create-payment-order',
+                expect.stringContaining('/api/appointments/create-payment-order'),
                 expect.any(Object),
                 expect.any(Object)
             );
         });
 
-        // 2. Manually invoke handler
         await act(async () => {
             mockHandler(mockRazorpayResponse);
         });
 
-        // 3. Wait for alert
         await waitFor(() => {
             expect(window.alert).toHaveBeenCalledWith('Payment verification failed. Please contact support.');
         });
@@ -571,34 +603,15 @@ describe('BookAppointmentPage', () => {
                 expect.objectContaining({ src: 'https://checkout.razorpay.com/v1/checkout.js' })
             );
         });
-
         unmount();
-
         expect(removeSpy).toHaveBeenCalled();
     });
 
-    // PASTE THIS AT THE END OF YOUR TEST FILE
-
-    it('handles "None of the above" logic for all checklists', async () => {
+    it('handles "None of the above" logic for family history', async () => {
         renderComponent();
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
 
-        // Test Pre-existing Conditions
-        const diabetes = screen.getByLabelText('Diabetes (Type 1 or 2)');
-        // This ID is not in your component, so this test will fail.
-        // You need to add id="none-pre-existing" to your checkbox.
-        // <Checkbox id="none-pre-existing" ... />
-
-        // --- Add id="none-pre-existing" to this checkbox in your JSX ---
-        // const nonePreExisting = screen.getByTestId('none-pre-existing'); 
-
-        // fireEvent.click(diabetes);
-        // expect(diabetes.checked).toBe(true);
-        // fireEvent.click(nonePreExisting);
-        // expect(diabetes.checked).toBe(false);
-
-        // Test Family History
         const famDiabetes = screen.getByLabelText('Diabetes');
         const noneFam = screen.getByTestId('none-fam');
 
@@ -613,16 +626,13 @@ describe('BookAppointmentPage', () => {
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
 
-        // --- FIX: Use getByLabelText for Textareas ---
         const symptomsOther = screen.getByPlaceholderText('Other symptoms...');
-        const preExistingOther = screen.getByPlaceholderText('Other conditions (please specify)...');
-        const pastSurgeries = screen.getByLabelText(/Have you had any past surgeries/i);
-        const familyHistoryOther = screen.getByPlaceholderText('If cancer, please specify type...');
-        const allergies = screen.getByLabelText(/Do you have any allergies/i);
-        const medications = screen.getByLabelText(/Please list all medications/i);
-        // --- END FIX ---
+        const preExistingOther = screen.getByPlaceholderText('Other conditions...');
+        const pastSurgeries = screen.getByLabelText(/Past surgeries or hospitalizations/i);
+        const familyHistoryOther = screen.getByPlaceholderText('If cancer, specify type...');
+        const allergies = screen.getByLabelText(/Allergies \(Food, Drug, Seasonal\)/i);
+        const medications = screen.getByLabelText(/Current Medications/i);
 
-        // Simulate typing in all of them
         fireEvent.change(symptomsOther, { target: { value: 'test1' } });
         fireEvent.change(preExistingOther, { target: { value: 'test2' } });
         fireEvent.change(pastSurgeries, { target: { value: 'test3' } });
@@ -630,7 +640,6 @@ describe('BookAppointmentPage', () => {
         fireEvent.change(allergies, { target: { value: 'test5' } });
         fireEvent.change(medications, { target: { value: 'test6' } });
 
-        // Assert the values were updated
         expect(symptomsOther.value).toBe('test1');
         expect(preExistingOther.value).toBe('test2');
         expect(pastSurgeries.value).toBe('test3');
@@ -639,8 +648,6 @@ describe('BookAppointmentPage', () => {
         expect(medications.value).toBe('test6');
     });
 
-    // Add these tests to the end of your file
-
     it('handles un-checking a symptom', async () => {
         renderComponent();
         fireEvent.click(await screen.findByText('10:00 AM'));
@@ -648,16 +655,14 @@ describe('BookAppointmentPage', () => {
 
         const feverCheckbox = await screen.findByLabelText('Fever');
 
-        // 1. Check the box
         fireEvent.click(feverCheckbox);
         expect(feverCheckbox.checked).toBe(true);
 
-        // 2. Un-check the box (this covers the 'else' branch)
         fireEvent.click(feverCheckbox);
         expect(feverCheckbox.checked).toBe(false);
     });
 
-    it('does not book or pay if token is missing', async () => {
+    it('does not book or pay if token is missing on button click', async () => {
         renderComponent();
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
@@ -669,43 +674,69 @@ describe('BookAppointmentPage', () => {
         // Now remove the token
         localStorage.removeItem('token');
 
-        // Click buttons and assert no API call
-        fireEvent.click(await screen.findByRole('button', { name: /Confirm Booking/i }));
-        fireEvent.click(await screen.findByRole('button', { name: /Complete Payment/i }));
+        fireEvent.click(await screen.findByRole('button', { name: /Pay & Book/i }));
 
         expect(axios.post).not.toHaveBeenCalled();
-        expect(window.alert).toHaveBeenCalledWith("You must be logged in to book an appointment.");
         expect(window.alert).toHaveBeenCalledWith("You must be logged in to make a payment.");
     });
 
     it('navigates to dashboard on nav button click', async () => {
         renderComponent();
-        // Wait for page to be interactive
         const dashboardButton = await screen.findByRole('button', { name: 'Dashboard' });
         fireEvent.click(dashboardButton);
         expect(mockNavigate).toHaveBeenCalledWith('/patient/dashboard');
     });
 
-
-
-    it('does not book or pay if token is missing', async () => {
+    // --- NEW TEST: Covers form errors blocking payment ---
+    it('prevents payment if form errors exist', async () => {
         renderComponent();
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
-        await act(async () => { await fillStep2Form(); });
+
+        // Trigger error
+        const phoneInput = screen.getByTestId('phoneNumber');
+        fireEvent.change(phoneInput, { target: { value: '123' } }); // Too short
+        expect(screen.getByText('Phone number must be 10 digits.')).toBeInTheDocument();
+
+        // Fill other required fields to enable "Review Booking"
+        await act(async () => { await fillStep2Form(); }); // This overwrites phone to valid
+
+        // Re-trigger error
+        fireEvent.change(phoneInput, { target: { value: '123' } });
+
         const reviewBtn = screen.getByRole('button', { name: /Review Booking/i });
-        await waitFor(() => expect(reviewBtn).toBeEnabled());
-        fireEvent.click(reviewBtn);
-
-        // Now remove the token
-        localStorage.removeItem('token');
-
-        // Click buttons and assert no API call
-        fireEvent.click(await screen.findByRole('button', { name: /Confirm Booking/i }));
-        fireEvent.click(await screen.findByRole('button', { name: /Complete Payment/i }));
-
-        expect(axios.post).not.toHaveBeenCalled();
-        expect(window.alert).toHaveBeenCalledWith("You must be logged in to book an appointment.");
-        expect(window.alert).toHaveBeenCalledWith("You must be logged in to make a payment.");
+        expect(reviewBtn).toBeDisabled();
     });
+
+    it('handles pre-existing conditions checklist correctly', async () => {
+        renderComponent();
+        fireEvent.click(await screen.findByText('10:00 AM'));
+        fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+        const hypertension = screen.getByLabelText('Hypertension (High Blood Pressure)');
+
+        // Select item
+        fireEvent.click(hypertension);
+        expect(hypertension.checked).toBe(true);
+
+        // Unselect item
+        fireEvent.click(hypertension);
+        expect(hypertension.checked).toBe(false);
+    });
+
+    it('handles family history checklist selection and unselection', async () => {
+        renderComponent();
+        fireEvent.click(await screen.findByText('10:00 AM'));
+        fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
+
+        const diabetesFam = screen.getByLabelText('Diabetes');
+
+        fireEvent.click(diabetesFam);
+        expect(diabetesFam.checked).toBe(true);
+
+        fireEvent.click(diabetesFam);
+        expect(diabetesFam.checked).toBe(false);
+    });
+
+
 });
