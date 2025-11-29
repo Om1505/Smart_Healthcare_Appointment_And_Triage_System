@@ -1,7 +1,7 @@
 {
   "scripts": {
     "test": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage Test/admin.test.js Test/appointments.test.js Test/auth.test.js Test/doctors.test.js Test/prescriptions.test.js Test/reviews.test.js Test/schedule.test.js Test/triageRoutes.test.js Test/user.test.js Test/SummaryRoutes.test.js",
     "test:run": "vitest run",
     "test:mutation": "stryker run"
   },
@@ -10,6 +10,7 @@
     "@stryker-mutator/vitest-runner": "^9.4.0",
     "@vitest/coverage-istanbul": "^4.0.13",
     "@vitest/coverage-v8": "^4.0.13",
+    "@vitest/ui": "^4.0.13",
     "vitest": "^4.0.13"
   }
 }

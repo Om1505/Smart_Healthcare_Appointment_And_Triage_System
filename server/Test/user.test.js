@@ -748,8 +748,18 @@ describe('PUT /api/user/update-profile', () => {
     });
 
     it('should return 404 if user not found', async () => {
-        const nonExistentId = new mongoose.Types.ObjectId();
+        // Use a specific ObjectId that's unlikely to conflict
+        const nonExistentId = new mongoose.Types.ObjectId('507f1f77bcf86cd799439011');
         const mockUser = createMockUserHeader(nonExistentId, 'patient');
+
+        // Double-check that no user exists with this ID
+        const existingPatient = await Patient.findById(nonExistentId);
+        const existingDoctor = await Doctor.findById(nonExistentId);
+        const existingAdmin = await Admin.findById(nonExistentId);
+        
+        expect(existingPatient).toBeNull();
+        expect(existingDoctor).toBeNull();
+        expect(existingAdmin).toBeNull();
 
         const response = await request(app)
             .put('/api/user/update-profile')

@@ -13,10 +13,13 @@ export default defineConfig({
 
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json'],
+      reporter: ['text', 'html'],
       include: ['routes/**/*.js'],
-      exclude: ['node_modules/**', 'Test/**', 'coverage/**'],
-      all: false, 
+      exclude: [
+        'node_modules/**',
+        'Test/**',
+        'vitest.config.js',
+      ],
     },
   },
 });

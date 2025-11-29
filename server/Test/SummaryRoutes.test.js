@@ -292,6 +292,68 @@ describe('GET /api/summary/appointment/:appointmentId', () => {
         expect(response.body.error).toBe('Invalid prompt');
     });
 
+    it('generates comprehensive prompt with all sections and fallbacks', async () => {
+        const { doctor, patient } = await createDoctorAndPatient();
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id, {
+                primaryReason: 'Regular checkup',
+                symptomsList: ['Headache', 'Nausea'],
+                symptomsOther: 'Dizziness',
+                severeSymptomsCheck: ['Chest pain'],
+                preExistingConditions: ['Hypertension'],
+                preExistingConditionsOther: 'Diabetes',
+                familyHistory: ['Heart disease'],
+                familyHistoryOther: 'Stroke',
+                medications: 'Aspirin',
+                allergies: 'Penicillin',
+                pastSurgeries: 'Appendectomy',
+                patientNameForVisit: 'John Doe',
+                birthDate: '1980-01-01',
+                sex: 'male',
+                symptomsBegin: '2024-01-01'
+            })
+        );
+
+        mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: 'Summary generated' } }] });
+
+        await request(app)
+            .get(`/api/summary/appointment/${appointment._id}`)
+            .set('Authorization', buildAuthHeader(doctor._id));
+
+        const prompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
+        
+        // Check main sections
+        expect(prompt).toContain('Generate a concise clinical summary');
+        expect(prompt).toContain('PATIENT BASIC DETAILS');
+        expect(prompt).toContain('CHIEF COMPLAINT');
+        expect(prompt).toContain('CURRENT SYMPTOMS');
+        expect(prompt).toContain('SEVERE SYMPTOMS');
+        expect(prompt).toContain('MEDICAL HISTORY');
+        expect(prompt).toContain('Pre-existing Conditions');
+        expect(prompt).toContain('Past Surgeries/Hospitalizations');
+        expect(prompt).toContain('Family Medical History');
+        expect(prompt).toContain('Current Medications');
+        expect(prompt).toContain('Allergies');
+        
+        // Check specific content
+        expect(prompt).toContain('Name: John Doe');
+        expect(prompt).toContain('Age: 45'); // Calculated from 1980
+        expect(prompt).toContain('Sex: male');
+        expect(prompt).toContain('Regular checkup');
+        expect(prompt).toContain('- Headache');
+        expect(prompt).toContain('- Nausea');
+        expect(prompt).toContain('- Dizziness');
+        expect(prompt).toContain('- Chest pain');
+        expect(prompt).toContain('- Hypertension');
+        expect(prompt).toContain('- Diabetes');
+        expect(prompt).toContain('- Heart disease');
+        expect(prompt).toContain('- Stroke');
+        expect(prompt).toContain('Aspirin');
+        expect(prompt).toContain('Penicillin');
+        expect(prompt).toContain('Appendectomy');
+        expect(prompt).toContain('2024-01-01');
+    });
+
     it('returns 500 and does not cache when Groq throws', async () => {
         const { doctor, patient } = await createDoctorAndPatient();
         const appointment = await Appointment.create(
@@ -313,4 +375,47 @@ describe('GET /api/summary/appointment/:appointmentId', () => {
         const refreshed = await Appointment.findById(appointment._id);
         expect(refreshed.doctorSummary).toBeUndefined();
     });
-});
+
+    it('uses None fallbacks for empty fields', async () => {
+        const { doctor, patient } = await createDoctorAndPatient();
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id, {
+                primaryReason: 'Checkup',
+                symptomsList: [],
+                preExistingConditions: [],
+                familyHistory: [],
+                medications: '',
+                allergies: '',
+                pastSurgeries: '',
+                patientNameForVisit: 'Jane Doe',
+                birthDate: '1990-01-01',
+                sex: 'female', // Required field
+                symptomsBegin: '2024-01-01' // Required field
+            })
+        );
+
+        // Update to empty values to test fallbacks
+        await Appointment.updateOne(
+            { _id: appointment._id },
+            { $set: { sex: '', symptomsBegin: '' } }
+        );
+
+        mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: 'Summary generated' } }] });
+
+        await request(app)
+            .get(`/api/summary/appointment/${appointment._id}`)
+            .set('Authorization', buildAuthHeader(doctor._id));
+
+        const prompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
+        
+        // Check that None fallbacks are used
+        expect(prompt).toContain('- None reported');
+        expect(prompt).toContain('Sex: Not provided');
+        expect(prompt).toContain('SYMPTOM BEGINNING:');
+        expect(prompt).toContain('Not specified');
+        expect(prompt).toContain('Past Surgeries/Hospitalizations:');
+        expect(prompt).toContain('None');
+        expect(prompt).toContain('Current Medications:');
+        expect(prompt).toContain('Allergies:');
+    });
+}); 

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
-import '../routes/admin';
 
 const request = require('supertest');
 const express = require('express');
@@ -48,28 +47,27 @@ const adminRoutes = require('../routes/admin');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
-const Admin = require('../models/Admin');
 
 const app = express();
 app.use(express.json());
 app.use('/api/admin', adminRoutes);
 
-const requiredAppointmentFields = (overrides = {}) => ({
-    phoneNumber: '9999999999',
-    email: 'apptest@example.com',
-    birthDate: new Date('1990-01-01'),
-    sex: 'other',
-    primaryLanguage: 'English',
-    symptomsBegin: '2023-01-01',
-    paymentStatus: 'pending',
-    primaryReason: 'General checkup',
-    symptomsList: ['fatigue'],
-    ...overrides
-});
-
 let mongoServer;
-const adminObjectId = new mongoose.Types.ObjectId();
-const mockAdminUser = JSON.stringify({ userId: adminObjectId.toString(), userType: 'admin' });
+const mockAdminUser = JSON.stringify({ userId: 'admin123', userType: 'admin' });
+
+// --- helper: required fields for Appointment documents ---
+const createAppointmentData = (overrides = {}) => ({
+  phoneNumber: '9999999999',
+  email: 'apptest@example.com',
+  birthDate: new Date('1990-01-01'),
+  sex: 'other',
+  primaryLanguage: 'English',
+  symptomsBegin: '2023-01-01',
+  paymentStatus: 'pending',
+  primaryReason: 'General checkup',
+  symptomsList: ['fatigue'],
+  ...overrides,
+});
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -90,19 +88,7 @@ afterEach(async () => {
     await Doctor.deleteMany({});
     await Patient.deleteMany({});
     await Appointment.deleteMany({});
-    await Admin.deleteMany({});
     mockSendEmail.mockClear();
-});
-
-beforeEach(async () => {
-    await Admin.deleteMany({});
-    await Admin.create({
-        _id: adminObjectId,
-        fullName: 'Super Admin',
-        email: 'admin@test.com',
-        password: 'Secret@123',
-        userType: 'admin'
-    });
 });
 
 describe('Admin Routes (Vitest)', () => {
@@ -459,7 +445,7 @@ describe('Admin Routes (Vitest)', () => {
             }]);
             const patient = patients[0];
 
-            await Appointment.create({
+            await Appointment.insertMany([{
                 patient: patient._id,
                 doctor: doctor._id,
                 date: new Date(),
@@ -467,8 +453,8 @@ describe('Admin Routes (Vitest)', () => {
                 consultationFeeAtBooking: 500,
                 status: 'upcoming',
                 patientNameForVisit: 'Patient Test',
-                ...requiredAppointmentFields({ email: patient.email })
-            });
+                ...createAppointmentData({ email: patient.email })
+            }]);
 
             const res = await request(app)
                 .get('/api/admin/appointments')
@@ -610,7 +596,7 @@ describe('Admin Routes (Vitest)', () => {
             const patient = pats[0];
 
             // Create an upcoming appointment
-            await Appointment.create({
+            await Appointment.insertMany([{
                 doctor: doctor._id,
                 patient: patient._id,
                 status: 'upcoming',
@@ -618,8 +604,8 @@ describe('Admin Routes (Vitest)', () => {
                 time: '10:00 AM',
                 consultationFeeAtBooking: 600,
                 patientNameForVisit: 'Test Patient',
-                ...requiredAppointmentFields({ email: patient.email })
-            });
+                ...createAppointmentData({ email: patient.email })
+            }]);
 
             const res = await request(app)
                 .put(`/api/admin/suspend-doctor/${doctor._id}`)
@@ -873,7 +859,7 @@ describe('Admin Routes (Vitest)', () => {
                 time: '11:00 AM',
                 consultationFeeAtBooking: 500,
                 patientNameForVisit: 'Patient Active',
-                ...requiredAppointmentFields({ email: patient.email })
+                ...createAppointmentData({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1218,11 +1204,11 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 { doctor: doctor._id, patient: patient._id, date: new Date('2020-01-01'),
                   time: '10:00 AM', consultationFeeAtBooking: 500, status: 'completed',
                   patientNameForVisit: 'Patient Sort',
-                  ...requiredAppointmentFields({ email: 'sort@example.com' }) },
+                  ...createAppointmentData({ email: 'sort@example.com' }) },
                 { doctor: doctor._id, patient: patient._id, date: new Date('2024-01-01'),
                   time: '11:00 AM', consultationFeeAtBooking: 500, status: 'upcoming',
                   patientNameForVisit: 'Patient Sort',
-                  ...requiredAppointmentFields({ email: 'sort@example.com' }) }
+                  ...createAppointmentData({ email: 'sort@example.com' }) }
             ]);
 
             const res = await request(app)
@@ -1310,7 +1296,7 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 doctor: doctor._id, patient: patient._id, date: new Date(),
                 time: '12:00 PM', consultationFeeAtBooking: 500, status: 'upcoming',
                 patientNameForVisit: 'Patient Populate',
-                ...requiredAppointmentFields({ email: patient.email })
+                ...createAppointmentData({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1338,7 +1324,7 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 doctor: doctor._id, patient: patient._id, date: new Date(),
                 time: '1:00 PM', consultationFeeAtBooking: 600, status: 'upcoming',
                 patientNameForVisit: 'Patient PopulateDoc',
-                ...requiredAppointmentFields({ email: patient.email })
+                ...createAppointmentData({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1721,11 +1707,11 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 { doctor: doctor._id, patient: patient._id, status: 'upcoming',
                   date: new Date(), time: '2:00 PM', consultationFeeAtBooking: 500,
                   patientNameForVisit: 'Patient Cancel',
-                  ...requiredAppointmentFields({ email: 'cancel@example.com' }) },
+                  ...createAppointmentData({ email: patient.email }) },
                 { doctor: doctor._id, patient: patient._id, status: 'completed',
                   date: new Date(), time: '3:00 PM', consultationFeeAtBooking: 500,
                   patientNameForVisit: 'Patient Cancel',
-                  ...requiredAppointmentFields({ email: 'cancel@example.com' }) }
+                  ...createAppointmentData({ email: patient.email }) }
             ]);
 
             await request(app)
@@ -1761,11 +1747,11 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 { doctor: doctor._id, patient: patient._id, status: 'upcoming',
                   date: new Date(), time: '4:00 PM', consultationFeeAtBooking: 500,
                   patientNameForVisit: 'Patient CancelTest',
-                  ...requiredAppointmentFields({ email: 'canceltest@example.com' }) },
+                  ...createAppointmentData({ email: patient.email }) },
                 { doctor: doctor._id, patient: patient._id, status: 'completed',
                   date: new Date(), time: '5:00 PM', consultationFeeAtBooking: 500,
                   patientNameForVisit: 'Patient CancelTest',
-                  ...requiredAppointmentFields({ email: 'canceltest@example.com' }) }
+                  ...createAppointmentData({ email: patient.email }) }
             ]);
 
             await request(app)
@@ -1804,7 +1790,7 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 doctor: doctor._id, patient: patient._id, status: 'upcoming',
                 date: new Date(), time: '6:00 PM', consultationFeeAtBooking: 500,
                 patientNameForVisit: 'Patient LogTest',
-                ...requiredAppointmentFields({ email: patient.email })
+                ...createAppointmentData({ email: patient.email })
             });
 
             await request(app)
@@ -1833,7 +1819,7 @@ describe('Mutation Coverage Tests for admin.js', () => {
                 doctor: doctor._id, patient: patient._id, status: 'upcoming',
                 date: new Date(), time: '7:00 PM', consultationFeeAtBooking: 500,
                 patientNameForVisit: 'Patient PatLogTest',
-                ...requiredAppointmentFields({ email: patient.email })
+                ...createAppointmentData({ email: patient.email })
             });
 
             await request(app)
@@ -1967,5 +1953,93 @@ describe('Mutation Coverage Tests for admin.js', () => {
             consoleErrorSpy.mockRestore();
         });
     });
+
+    describe('Extra edge-case tests to raise branch coverage', () => {
+    const mockNonAdminUser = JSON.stringify({ userId: 'user123', userType: 'doctor' });
+
+    it('should return 401 when no auth header provided (auth middleware branch)', async () => {
+        const res = await request(app).get('/api/admin/users'); // no mock-user header
+        expect(res.statusCode).toBe(401);
+        expect(res.body).toHaveProperty('message', 'No token, authorization denied');
+    });
+
+    it('should return 403 when user is authenticated but not admin (admin middleware branch)', async () => {
+        const res = await request(app)
+            .get('/api/admin/users')
+            .set('mock-user', mockNonAdminUser);
+        expect(res.statusCode).toBe(403);
+        expect(res.body).toHaveProperty('message', 'Access denied. Admin only.');
+    });
+
+    it('GET /api/admin/users should return empty arrays when there are no doctors or patients', async () => {
+        // ensure DB is empty (afterEach usually does this, but be explicit)
+        await Doctor.deleteMany({});
+        await Patient.deleteMany({});
+
+        const res = await request(app)
+            .get('/api/admin/users')
+            .set('mock-user', mockAdminUser);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body).toHaveProperty('doctors');
+        expect(res.body).toHaveProperty('patients');
+        expect(Array.isArray(res.body.doctors)).toBe(true);
+        expect(Array.isArray(res.body.patients)).toBe(true);
+        expect(res.body.doctors.length).toBe(0);
+        expect(res.body.patients.length).toBe(0);
+    });
+
+    it('GET /api/admin/appointments should return empty array when no appointments exist', async () => {
+        await Appointment.deleteMany({});
+
+        const res = await request(app)
+            .get('/api/admin/appointments')
+            .set('mock-user', mockAdminUser);
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+        expect(res.body.length).toBe(0);
+    });
+
+    it('verify-doctor should not call send-email when Doctor.findById returns null (404 path)', async () => {
+        // Spy to ensure sendEmail not called when doctor missing
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const fakeId = new mongoose.Types.ObjectId();
+
+        const res = await request(app)
+            .put(`/api/admin/verify-doctor/${fakeId}`)
+            .set('mock-user', mockAdminUser);
+
+        expect(res.statusCode).toBe(404);
+        // sendEmail should not be called for non-existent doctor
+        expect(mockSendEmail).not.toHaveBeenCalled();
+        consoleSpy.mockRestore();
+    });
+
+    it('suspend-doctor should return 404 and not change DB if doctor does not exist', async () => {
+        const fakeId = new mongoose.Types.ObjectId();
+        const beforeCount = await Doctor.countDocuments();
+
+        const res = await request(app)
+            .put(`/api/admin/suspend-doctor/${fakeId}`)
+            .set('mock-user', mockAdminUser);
+
+        expect(res.statusCode).toBe(404);
+
+        const afterCount = await Doctor.countDocuments();
+        expect(afterCount).toBe(beforeCount); // no deletion or change
+    });
+
+    it('reject-doctor should return 404 and not call sendEmail for non-existent doctor', async () => {
+        const fakeId = new mongoose.Types.ObjectId();
+
+        const res = await request(app)
+            .delete(`/api/admin/reject-doctor/${fakeId}`)
+            .set('mock-user', mockAdminUser);
+
+        expect(res.statusCode).toBe(404);
+        expect(mockSendEmail).not.toHaveBeenCalled();
+    });
+});
 
 });
