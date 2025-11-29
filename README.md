@@ -66,7 +66,8 @@ IntelliConsult is a healthcare management platform that helps patients book appo
 
 ## Deployed Website Link
 
-Here is the website link where you can use Intelliconsult: [https://smart-healthcare-appointment-and-triage.onrender.com/](url)
+You can access IntelliConsult here:  
+👉 https://smart-healthcare-appointment-and-triage.onrender.com/
 
 ---
 
