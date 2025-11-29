@@ -39,8 +39,9 @@ export default function VideoCallPage() {
   const myMeeting = async (element) => {
      if (!element) return;
 
-    const APP_ID = Number(import.meta.env.VITE_ZEGO_ID);
-    const SERVER_SECRET = import.meta.env.VITE_ZEGO_SECRET;
+    // Prefer Vite's import.meta.env, but fall back to globals for test environments
+    const APP_ID = Number((import.meta && import.meta.env && import.meta.env.VITE_ZEGO_ID) || globalThis.VITE_ZEGO_ID);
+    const SERVER_SECRET = (import.meta && import.meta.env && import.meta.env.VITE_ZEGO_SECRET) || globalThis.VITE_ZEGO_SECRET;
 
     if (!APP_ID || !SERVER_SECRET) {
       console.error('ZEGO env vars missing. In production generate token on server instead of exposing secret.');

@@ -12,6 +12,10 @@ export default function DoctorProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
+  if (!id) {
+    return <div className="flex items-center justify-center h-screen">No doctor ID provided.</div>;
+  }
+
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
@@ -24,9 +28,7 @@ export default function DoctorProfilePage() {
       }
     };
 
-    if (id) {
-      fetchDoctorProfile();
-    }
+    fetchDoctorProfile();
   }, [id]);
 
   if (isLoading) {

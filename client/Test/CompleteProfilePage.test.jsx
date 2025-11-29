@@ -19,7 +19,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 });
 
 vi.mock('lucide-react', () => ({
-    Stethoscope: () => <span data-testid="icon-stethoscope" />,
+    Stethoscope: (props) => <span data-testid="icon-stethoscope" {...props} />,
 }));
 
 vi.mock('@/components/ui/button', () => ({
@@ -337,5 +337,125 @@ describe('CompleteProfilePage', () => {
         });
         
         expect(mockNavigate).toHaveBeenCalledWith('/');
+    });
+
+    it('shows initial loading placeholders before profile fetch resolves', async () => {
+       
+        axios.get.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: mockProfile }), 50)));
+        renderComponent();
+        expect(screen.getByText(/Welcome, Loading.../i)).toBeInTheDocument();
+        expect(screen.getByText(/You signed in with Google \(Loading...\)/i)).toBeInTheDocument();
+       
+        await waitFor(() => expect(screen.getByText(/Welcome, Test User!/i)).toBeInTheDocument());
+    });
+
+    it('doctor fields are empty upon first reveal', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        const roleSelect = screen.getByTestId('select');
+        fireEvent.change(roleSelect, { target: { value: 'doctor' } });
+        // Field values should be empty strings initially
+        expect(screen.getByTestId('experience').value).toBe('');
+        expect(screen.getByTestId('licenseNumber').value).toBe('');
+        expect(screen.getByTestId('address').value).toBe('');
+        expect(screen.getByTestId('consultationFee').value).toBe('');
+        expect(screen.getByTestId('bio').value).toBe('');
+    });
+
+    it('specialties list renders all expected non-empty options', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        const roleSelect = screen.getByTestId('select');
+        fireEvent.change(roleSelect, { target: { value: 'doctor' } });
+        const specialtySelect = screen.getByText('Select your specialty').closest('select');
+        const optionTexts = Array.from(specialtySelect.querySelectorAll('option')).map(o => o.textContent).filter(t => t !== 'Select your specialty');
+        ['Cardiology','Dermatology','Pediatrics','Neurology','Orthopedics'].forEach(spec => {
+            expect(optionTexts).toContain(spec);
+        });
+       
+        expect(optionTexts).not.toContain('');
+    });
+
+    it('primaryColor used in icon style (kills style object mutants)', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        const icon = screen.getByTestId('icon-stethoscope');
+       
+        expect(icon.getAttribute('style')).toMatch(/color:\s*(#0F5257|rgb\(\s*15\s*,\s*82\s*,\s*87\s*\))/i);
+    });
+
+    it('Authorization header sent on profile fetch', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        expect(axios.get).toHaveBeenCalledWith(
+            `${BASE_URL}/api/users/profile`,
+            expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringContaining('Bearer') }) })
+        );
+    });
+
+    it('Authorization header sent on profile submit', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        fireEvent.change(screen.getByTestId('select'), { target: { value: 'patient' } });
+        fireEvent.click(screen.getByRole('button', { name: /Complete Profile/i }));
+        await waitFor(() => {
+            expect(axios.put).toHaveBeenCalledWith(
+                `${BASE_URL}/api/users/complete-profile`,
+                { userType: 'patient' },
+                expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringContaining('Bearer') }) })
+            );
+        });
+    });
+
+    it('shows loading then resets isLoading after submit (kills isLoading true/false mutants)', async () => {
+        // Delay put to observe loading state
+        axios.put.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: { message: 'Profile updated' } }), 50)));
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        fireEvent.change(screen.getByTestId('select'), { target: { value: 'patient' } });
+        const submitButton = screen.getByRole('button', { name: /Complete Profile/i });
+        fireEvent.click(submitButton);
+        expect(submitButton.textContent).toMatch(/Saving.../i);
+        await waitFor(() => expect(submitButton.textContent).toMatch(/Complete Profile/i));
+    });
+
+    it('does not render error paragraph when error is empty (kills logical operator mutant)', async () => {
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        expect(screen.queryByText(/Authentication error/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/License number already in use/)).not.toBeInTheDocument();
+    });
+
+    it('alert uses fallback message when response lacks message (kills alert conditional mutants)', async () => {
+        axios.put.mockResolvedValue({ data: {} });
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        fireEvent.change(screen.getByTestId('select'), { target: { value: 'patient' } });
+        fireEvent.click(screen.getByRole('button', { name: /Complete Profile/i }));
+        await waitFor(() => {
+            expect(window.alert).toHaveBeenCalledWith('Profile completed successfully!');
+        });
+    });
+
+    it('optional chaining fallback on error message when response.data missing', async () => {
+        axios.put.mockRejectedValue({ response: {} });
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        fireEvent.change(screen.getByTestId('select'), { target: { value: 'patient' } });
+        fireEvent.click(screen.getByRole('button', { name: /Complete Profile/i }));
+        expect(await screen.findByText('An error occurred while completing your profile.')).toBeInTheDocument();
+    });
+
+    it('does not update token when response lacks token (kills unconditional token branch mutant)', async () => {
+        axios.put.mockResolvedValue({ data: { message: 'ok' } });
+        renderComponent();
+        await screen.findByText(/Welcome, Test User!/i);
+        fireEvent.change(screen.getByTestId('select'), { target: { value: 'patient' } });
+        fireEvent.click(screen.getByRole('button', { name: /Complete Profile/i }));
+        await waitFor(() => {
+           
+            const calls = Storage.prototype.setItem.mock.calls.filter(c => c[0] === 'token');
+            expect(calls.length).toBe(0);
+        });
     });
 });

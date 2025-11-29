@@ -11,38 +11,26 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { ArrowLeft, Save, Loader2, LogOut, CalendarDays, Settings, CreditCard, UserCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserProfileModal } from "@/components/UserProfileModal";
+import { DEFAULT_FORM_DATA, SPECIALIZATIONS, DEFAULT_ERROR, DEFAULT_SUCCESS, DEFAULT_SUCCESS_TEXT, ERROR_FETCH_TEXT, ERROR_UPDATE_TEXT } from '@/lib/doctorDefaults';
+import { getAuthToken } from '@/lib/auth';
+import { normalizePhone, shouldClearPhoneError } from '@/lib/phoneUtils';
 
 export default function DoctorUpdateProfile() {
     const navigate = useNavigate();
     const [doctor, setDoctor] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [successMessage, setSuccessMessage] = useState('');
+    const [error, setError] = useState(DEFAULT_ERROR);
+    const [successMessage, setSuccessMessage] = useState(DEFAULT_SUCCESS);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [formErrors, setFormErrors] = useState({});
 
-    const [formData, setFormData] = useState({
-        fullName: "",
-        email: "",
-        specialization: "",
-        experience: "",
-        licenseNumber: "",
-        address: "",
-        consultationFee: "",
-        bio: "",
-        phoneNumber: ""
-    });
-
-    const specializations = [
-        "Cardiology", "Dermatology", "Endocrinology", "Gastroenterology", 
-        "Neurology", "Oncology", "Orthopedics", "Pediatrics", "Psychiatry", 
-        "Radiology", "General Practice", "Internal Medicine"
-    ];
+    const [formData, setFormData] = useState(DEFAULT_FORM_DATA);
+    const specializations = SPECIALIZATIONS;
 
     useEffect(() => {
         const fetchDoctorProfile = async () => {
-            const token = localStorage.getItem('token');
+            const token = getAuthToken();
             if (!token) {
                 navigate('/login');
                 return;
@@ -60,19 +48,20 @@ export default function DoctorUpdateProfile() {
 
                 setDoctor(response.data);
                 setFormData({
-                    fullName: response.data.fullName || "",
-                    email: response.data.email || "",
-                    specialization: response.data.specialization || "",
-                    experience: response.data.experience || "",
-                    licenseNumber: response.data.licenseNumber || "",
-                    address: response.data.address || "",
-                    consultationFee: response.data.consultationFee || "",
-                    bio: response.data.bio || "",
-                    phoneNumber: response.data.phoneNumber || ""
+                    ...DEFAULT_FORM_DATA,
+                    fullName: response.data.fullName || DEFAULT_FORM_DATA.fullName,
+                    email: response.data.email || DEFAULT_FORM_DATA.email,
+                    specialization: response.data.specialization || DEFAULT_FORM_DATA.specialization,
+                    experience: response.data.experience || DEFAULT_FORM_DATA.experience,
+                    licenseNumber: response.data.licenseNumber || DEFAULT_FORM_DATA.licenseNumber,
+                    address: response.data.address || DEFAULT_FORM_DATA.address,
+                    consultationFee: response.data.consultationFee || DEFAULT_FORM_DATA.consultationFee,
+                    bio: response.data.bio || DEFAULT_FORM_DATA.bio,
+                    phoneNumber: response.data.phoneNumber || DEFAULT_FORM_DATA.phoneNumber
                 });
             } catch (err) {
-                console.error("Error fetching doctor profile:", err);
-                setError('Failed to fetch doctor profile. Please try again.');
+                console.error(ERROR_FETCH_TEXT, err);
+                setError(ERROR_FETCH_TEXT);
             } finally {
                 setIsLoading(false);
             }
@@ -86,12 +75,12 @@ export default function DoctorUpdateProfile() {
         let updatedValue = value;
 
         if (name === 'phoneNumber') {
-            const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+            const digitsOnly = normalizePhone(value);
             updatedValue = digitsOnly;
 
             setFormErrors(prev => ({
                 ...prev,
-                phoneNumber: digitsOnly.length === 0 || digitsOnly.length === 10 ? '' : prev.phoneNumber
+                phoneNumber: shouldClearPhoneError(digitsOnly) ? '' : prev.phoneNumber
             }));
         }
 
@@ -127,7 +116,7 @@ export default function DoctorUpdateProfile() {
 
         setIsSaving(true);
 
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
         if (!token) {
             navigate('/login');
             return;
@@ -142,7 +131,7 @@ export default function DoctorUpdateProfile() {
             );
 
             setDoctor(response.data.user);
-            setSuccessMessage(response.data.message || 'Profile updated successfully!');
+            setSuccessMessage(response.data.message || DEFAULT_SUCCESS_TEXT);
             
             // Show alert message and then route to dashboard
             alert('Profile updated successfully!');
@@ -150,7 +139,7 @@ export default function DoctorUpdateProfile() {
 
         } catch (err) {
             console.error("Error updating profile:", err);
-            setError(err.response?.data?.message || 'Failed to update profile. Please try again.');
+            setError(err.response?.data?.message || ERROR_UPDATE_TEXT);
         } finally {
             setIsSaving(false);
         }

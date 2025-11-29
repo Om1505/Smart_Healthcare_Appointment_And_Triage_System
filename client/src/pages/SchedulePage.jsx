@@ -330,8 +330,9 @@ const getStatusBadge = (status) => {
         }
     };
 
-    if (isLoading || !workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
+    if (isLoading) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
     if (error) return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
+    if (!workingHours) return <div className="flex items-center justify-center h-screen">Loading Schedule...</div>;
 
     return (
         <div className="min-h-screen bg-emerald-50 text-gray-800">

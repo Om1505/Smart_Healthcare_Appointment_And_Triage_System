@@ -10,13 +10,17 @@ export default defineConfig({
     },
   },
   test: {
-    globals: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.js', // This is the new file you'll create
+    setupFiles: ['./src/setupTests.js'],
+    globals: true,
+    exclude: [
+      '**/.stryker-tmp/**',
+      '**/node_modules/**/.stryker-tmp/**',
+      '**/.stryker-tmp/**/sandbox*/**',
+      'node_modules/server/**',
+    ],
     coverage: {
-      provider: 'v8', // or 'istanbul'
-      reporter: ['text', 'json', 'html'], // Reports to generate
-      reportsDirectory: './coverage', // Where to output the reports
+      reporter: ['text', 'html'],
     },
   },
 })

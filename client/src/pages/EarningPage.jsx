@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { TrendingUp, Calendar, Download, ArrowLeft, LogOut, IndianRupee, CalendarDays, Settings, CreditCard, UserCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { UserProfileModal } from "@/components/UserProfileModal";
+import { getAuthHeaders, ERROR_FETCH_EARNINGS, defaultFileNameForEarnings, parseFileNameFromContentDisposition, getInitials, getBadgeVariant, getBadgeText } from '@/lib/earningUtils';
 
 export default function DoctorEarningsPage() {
     const [earningsData, setEarningsData] = useState(null);
@@ -20,23 +21,21 @@ export default function DoctorEarningsPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
+            const headers = getAuthHeaders();
+            if (!headers.headers.Authorization || headers.headers.Authorization === 'Bearer null' || headers.headers.Authorization === 'Bearer undefined') {
                 window.location.href = '/login';
                 return;
             }
             try {
-                const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
                 const [earningsRes, profileRes] = await Promise.all([
-                    // --- UPDATE THIS URL ---
-                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/earnings/data', authHeaders), // Use the new route
-                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', authHeaders)
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/earnings/data', headers),
+                    axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/users/profile', headers)
                 ]);
                 setEarningsData(earningsRes.data);
                 setDoctor(profileRes.data);
             } catch (err) {
                 console.error("Error fetching data:", err.response || err);
-                setError(`Failed to fetch earnings data (${err.response?.status || 'Network Error'}).`);
+                setError(ERROR_FETCH_EARNINGS(err.response?.status));
             } finally {
                 setIsLoading(false);
             }
@@ -54,40 +53,28 @@ export default function DoctorEarningsPage() {
         setIsProfileModalOpen(false);
     };
     const handleDownloadReport = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        const headers = getAuthHeaders();
+        if (!headers.headers.Authorization || headers.headers.Authorization === 'Bearer null' || headers.headers.Authorization === 'Bearer undefined') {
             alert("Authentication error. Please log in again.");
             return;
         }
 
         try {
             const response = await axios.get('https://smart-healthcare-appointment-and-triage.onrender.com/api/doctors/earnings/download-report', {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob', // Important: Tell axios to expect binary data (the file)
+                ...headers,
+                responseType: 'blob',
             });
 
-            // Create a URL for the blob data
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
 
-            // Extract filename from content-disposition header if available, otherwise use default
             const contentDisposition = response.headers['content-disposition'];
-            let fileName = `earnings-report-${new Date().toISOString().split('T')[0]}.csv`; // Default
-            if (contentDisposition) {
-                const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/);
-                if (fileNameMatch && fileNameMatch.length === 2)
-                    fileName = fileNameMatch[1];
-            }
+            let fileName = parseFileNameFromContentDisposition(contentDisposition) || defaultFileNameForEarnings();
             link.setAttribute('download', fileName);
 
-            // Append to html link element page
             document.body.appendChild(link);
-
-            // Start download
             link.click();
-
-            // Clean up and remove the link
             link.parentNode.removeChild(link);
             window.URL.revokeObjectURL(url);
 
@@ -131,9 +118,9 @@ export default function DoctorEarningsPage() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Avatar className="h-8 w-8 sm:h-10 sm:w-10 cursor-pointer hover:opacity-80 transition-opacity">
-                                        <AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} />
+                                            <AvatarImage src="/female-doctor.jpg" alt={doctor.fullName} />
                                         <AvatarFallback className="bg-teal-100 text-teal-800 text-xs sm:text-sm">
-                                            {doctor.fullName.split(" ").map((n) => n[0]).join("")}
+                                            {getInitials(doctor.fullName)}
                                         </AvatarFallback>
                                     </Avatar>
                                 </DropdownMenuTrigger>
@@ -257,7 +244,7 @@ export default function DoctorEarningsPage() {
                                                 <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                                                     <AvatarImage src="/placeholder.svg" />
                                                     <AvatarFallback className="text-xs sm:text-sm">
-                                                        {tx.patientName.split(" ").map((n) => n[0]).join("")}
+                                                        {getInitials(tx.patientName)}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div>
@@ -269,8 +256,8 @@ export default function DoctorEarningsPage() {
                                             </div>
                                             <div className="text-left sm:text-right">
                                                 <div className="font-semibold text-sm sm:text-base">₹{tx.amount?.toFixed(2) ?? '0.00'}</div>
-                                                <Badge variant={tx.status === "completed" ? "default" : "secondary"} className="text-xs">
-                                                    {tx.status === 'upcoming' ? 'Upcoming' : 'Completed'}
+                                                <Badge variant={getBadgeVariant(tx.status)} className="text-xs">
+                                                    {getBadgeText(tx.status)}
                                                 </Badge>
                                             </div>
                                         </div>

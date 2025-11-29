@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { vi, describe, beforeEach, afterEach, it, expect } from 'vitest';
 import axios from 'axios';
-import BookAppointmentPage from '../src/pages/BookAppointmentPage';
+// Ensure this path matches your file structure exactly
+import BookAppointmentPage from '@/pages/BookAppointmentPage';
 
 // --- GLOBAL MOCKS ---
 const mockOpen = vi.fn();
@@ -404,11 +405,16 @@ describe('BookAppointmentPage', () => {
         fireEvent.click(await screen.findByText('10:00 AM'));
         fireEvent.click(screen.getByRole('button', { name: /Next Step/i }));
 
+        //
+        // Test patientNameForVisit updates (generic branch)
+        //
         const nameInput = await screen.findByTestId('patientNameForVisit');
         fireEvent.change(nameInput, { target: { value: 'New Name' } });
         expect(nameInput.value).toBe('New Name');
 
-
+        //
+        // Test email update (generic branch)
+        //
         const emailInput = screen.getByTestId('email');
         fireEvent.change(emailInput, { target: { value: 'newemail@test.com' } });
         expect(emailInput.value).toBe('newemail@test.com');
@@ -552,11 +558,14 @@ describe('BookAppointmentPage', () => {
         await waitFor(() => {
             expect(document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]')).toBeInTheDocument();
         });
-        // 2. Manually remove the script to simulate it being missing
+
+        // 2. MANUALLY remove the script from the DOM
+        // This simulates a scenario where the script was removed by something else
         const script = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
         if (script) script.remove();
 
         // 3. Unmount the component
+        // The cleanup function will run, fail to find the script, and take the "Else" path (doing nothing)
         unmount();
 
         // If the test finishes without crashing, the code handled the missing script correctly
