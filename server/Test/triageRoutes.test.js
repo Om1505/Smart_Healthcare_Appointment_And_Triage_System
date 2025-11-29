@@ -88,6 +88,20 @@ function createMockUserHeader(userId, userType) {
     return JSON.stringify({ userId, userType });
 }
 
+const requiredAppointmentFields = {
+    phoneNumber: '9999999999',
+    email: 'triage@test.com',
+    birthDate: new Date('1990-01-01'),
+    sex: 'other',
+    primaryLanguage: 'English',
+    symptomsBegin: '2023-01-01'
+};
+
+const withRequiredAppointmentFields = (data = {}) => ({
+    ...requiredAppointmentFields,
+    ...data
+});
+
 // Helper function to create test appointment
 async function createTestAppointment(overrides = {}) {
     const defaultAppointment = {
@@ -106,8 +120,7 @@ async function createTestAppointment(overrides = {}) {
         medications: 'Paracetamol',
         allergies: 'None',
         age: 30,
-        sex: 'Male',
-        ...overrides
+        ...withRequiredAppointmentFields(overrides)
     };
 
     const appointments = await Appointment.insertMany([defaultAppointment]);
@@ -129,10 +142,10 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should log success message when triage is performed', async () => {
         const doctor = await Doctor.insertMany([{ fullName: 'Dr. Log', email: 'log@test.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'LIC1', address: '123 St', isProfileComplete: true, emailVerified: true }]);
         const patient = await Patient.insertMany([{ fullName: 'Log Pat', email: 'logp@test.com', password: 'Test@1234', isProfileComplete: true, emailVerified: true }]);
-        const appointment = await Appointment.insertMany([{
+        const appointment = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patient[0]._id, doctor: doctor[0]._id, patientNameForVisit: 'Log',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid'
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
 
@@ -305,11 +318,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should return cached triage if already exists', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Cache', email: 'c@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P C', email: 'pc@t.com', password: 'Test@1234', isProfileComplete: true, emailVerified: true }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'C',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             triagePriority: 'YELLOW', triagePriorityLevel: 'P2', triageLabel: 'Urgent'
-        }]);
+        })]);
 
         const res = await request(app)
             .get(`/api/triage/appointment/${appointments[0]._id}`)
@@ -325,11 +338,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should perform AI triage for YELLOW (P2) - urgent case', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Y', email: 'y@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P Y', email: 'py@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, patientNameForVisit: 'Y', doctor: doctors[0]._id,
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             primaryReason: 'Fever', symptomsList: ['High Fever'], severeSymptomsCheck: ['High fever (over 103°F / 39.4°C)']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'YELLOW', priorityLevel: 'P2', label: 'Urgent' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -343,11 +356,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should perform AI triage for GREEN (P3) - minor injury', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. G', email: 'g@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P G', email: 'pg@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, patientNameForVisit: 'G', doctor: doctors[0]._id,
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             primaryReason: 'Cut', symptomsList: ['Laceration']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'GREEN', priorityLevel: 'P3', label: 'Minor' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -358,11 +371,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should perform AI triage for BLACK (P4) - non-urgent', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. B', email: 'b@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P B', email: 'pb@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, patientNameForVisit: 'B', doctor: doctors[0]._id,
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             primaryReason: 'Checkup'
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'BLACK', priorityLevel: 'P4', label: 'Non-Urgent' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -373,11 +386,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle stroke symptoms (neurological emergency)', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Stroke', email: 'st@t.com', password: 'Test@1234', specialization: 'Neuro', experience: 10, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P S', email: 'ps@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, patientNameForVisit: 'S', doctor: doctors[0]._id,
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             severeSymptomsCheck: ['Sudden confusion, disorientation, or difficulty speaking']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'RED', priorityLevel: 'P1', label: 'Immediate' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -388,11 +401,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle comprehensive medical history', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Comp', email: 'cmp@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P C', email: 'pc@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'C',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             preExistingConditions: ['Diabetes'], familyHistory: ['Heart Disease']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -402,10 +415,10 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle minimal appointment data', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Min', email: 'min@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P M', email: 'pm@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'M',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid'
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -428,10 +441,10 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should return 500 if Groq API fails', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Fail', email: 'f@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P F', email: 'pf@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'F',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid'
-        }]);
+        })]);
 
         mockGroqCreate.mockRejectedValue(new Error('API Error'));
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -443,11 +456,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle uncontrolled bleeding', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Bleed', email: 'bl@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P B', email: 'pb@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'B',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             severeSymptomsCheck: ['Uncontrolled bleeding']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'RED' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -457,11 +470,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle severe headache emergency', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Head', email: 'hd@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P H', email: 'ph@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'H',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             severeSymptomsCheck: ['Sudden, severe headache (worst of your life)']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'RED' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -479,11 +492,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should properly format triage data with all fields', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Full', email: 'fl@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P F', email: 'pfull@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'F',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             symptomsList: ['Symptom A'], preExistingConditions: ['Condition A']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -493,11 +506,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should handle patient with multiple severe symptoms', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Multi', email: 'mul@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P M', email: 'pmul@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'M',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             severeSymptomsCheck: ['Severe chest pain', 'Shortness of breath']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: JSON.stringify({ priority: 'RED' }) } }] });
         const res = await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -521,7 +534,7 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
         }]);
 
         // 3. Use them correctly
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, // Now 'patients' is defined
             doctor: doctors[0]._id,   // Now 'doctors' is defined
             patientNameForVisit: 'Null',
@@ -531,7 +544,7 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
             consultationFeeAtBooking: 500,
             paymentStatus: 'paid'
             // Omit all optional fields
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app)
@@ -550,12 +563,12 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
         }]);
         const patients = await Patient.insertMany([{ fullName: 'Join Pat', email: 'joinp@t.com', password: 'Test@1234' }]);
 
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctor[0]._id, patientNameForVisit: 'Join',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             symptomsList: ['A', 'B'],
             severeSymptomsCheck: ['C'] // Prevent "None reported"
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctor[0]._id, 'doctor'));
@@ -569,11 +582,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should trigger SPECIFIC critical alerts (Kill Logic Branch Mutants)', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Spec', email: 'spc@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'Spec Pat', email: 'spc@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'Spec',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             severeSymptomsCheck: ['High fever (over 103°F / 39.4°C)']
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -601,14 +614,14 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should include "Other" fields in lists (Kill Conditional Mutants)', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Oth', email: 'o@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P O', email: 'po@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'O',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             symptomsList: ['Headache'],
             symptomsOther: 'Dizziness',
             preExistingConditionsOther: 'Rare Disease',
             familyHistoryOther: 'Genetic Issue'
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({ choices: [{ message: { content: '{}' } }] });
         await request(app).get(`/api/triage/appointment/${appointments[0]._id}`).set('mock-user', createMockUserHeader(doctors[0]._id, 'doctor'));
@@ -728,7 +741,7 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
         }]);
         const patients = await Patient.insertMany([{ fullName: 'P Clean', email: 'pc@t.com', password: 'Test@1234' }]);
 
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id,
             doctor: doctors[0]._id,
             patientNameForVisit: 'Clean',
@@ -743,7 +756,7 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
             pastSurgeries: '',
             medications: '',
             allergies: ''
-        }]);
+        })]);
 
         mockGroqCreate.mockResolvedValue({
             choices: [{
@@ -779,8 +792,7 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
         const appointment = await createTestAppointment({
             medications: null,
             allergies: undefined,
-            age: null,
-            sex: undefined
+            age: null
         });
 
         mockGroqCreate.mockResolvedValue({
@@ -1049,14 +1061,17 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
             .set('mock-user', createMockUserHeader(appointment.doctor, 'doctor'));
 
         const prompt = mockGroqCreate.mock.calls[0][0].messages[0].content;
-        expect(prompt).toContain('CURRENT SYMPTOMS:\nNone reported');
+        expect(prompt).toContain('CURRENT SYMPTOMS:\n- None reported');
         // Ensure no Stryker marker sneaks in
         expect(prompt).not.toContain('Stryker was here');
     });
 
     // 4) Assert 'Unknown' symptomsBegin default (kills conditional mutants)
     it('should include "SYMPTOM ONSET: Unknown" when symptomsBegin missing', async () => {
-        const appointment = await createTestAppointment({ symptomsBegin: undefined });
+        const appointment = await createTestAppointment();
+
+        // Remove symptomsBegin after creation to simulate missing value (schema requires it on insert)
+        await Appointment.updateOne({ _id: appointment._id }, { $unset: { symptomsBegin: '' } });
         mockGroqCreate.mockResolvedValue({
             choices: [{ message: { content: JSON.stringify({ priority: "GREEN", priorityLevel: "P3", label: "Minor" }) } }]
         });
@@ -1107,11 +1122,11 @@ describe('GET /api/triage/appointment/:appointmentId', () => {
     it('should return cached triage object and success true when triage fields present', async () => {
         const doctors = await Doctor.insertMany([{ fullName: 'Dr. Cache', email: 'c@t.com', password: 'Test@1234', specialization: 'Gen', experience: 5, consultationFee: 500, phoneNumber: '1234567890', licenseNumber: 'L1', address: 'A', isProfileComplete: true, emailVerified: true }]);
         const patients = await Patient.insertMany([{ fullName: 'P C', email: 'pc@t.com', password: 'Test@1234' }]);
-        const appointments = await Appointment.insertMany([{
+        const appointments = await Appointment.insertMany([withRequiredAppointmentFields({
             patient: patients[0]._id, doctor: doctors[0]._id, patientNameForVisit: 'C',
             date: new Date(), time: '10:00 AM', status: 'upcoming', consultationFeeAtBooking: 500, paymentStatus: 'paid',
             triagePriority: 'YELLOW', triagePriorityLevel: 'P2', triageLabel: 'Urgent'
-        }]);
+        })]);
 
         const res = await request(app)
             .get(`/api/triage/appointment/${appointments[0]._id}`)

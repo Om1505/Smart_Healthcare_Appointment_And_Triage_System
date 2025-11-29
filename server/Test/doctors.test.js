@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach, beforeEach } from 'vitest';
+import '../routes/doctors';
 
 const request = require('supertest');
 const express = require('express');
@@ -40,6 +41,24 @@ const authMiddleware = require('../middleware/auth');
 
 app.use('/api/doctors', doctorRoutes);
 
+const requiredAppointmentFields = (overrides = {}) => ({
+    phoneNumber: '9999999999',
+    email: 'appointment@example.com',
+    birthDate: new Date('1990-01-01'),
+    sex: 'other',
+    primaryLanguage: 'English',
+    symptomsBegin: '2023-01-01',
+    paymentStatus: 'paid',
+    primaryReason: 'Follow-up',
+    symptomsList: ['fatigue'],
+    ...overrides
+});
+
+const buildAppointment = (data = {}, overrides = {}) => ({
+    ...requiredAppointmentFields(overrides),
+    ...data
+});
+
 let mongoServer;
 
 beforeAll(async () => {
@@ -77,7 +96,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 10,
                     licenseNumber: 'LIC001',
                     address: '123 Main St',
-                    consultationFee: 500
+                    consultationFee: 500,
+                    isVerified: true
                 },
                 { 
                     fullName: 'Dr. House', 
@@ -87,7 +107,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 15,
                     licenseNumber: 'LIC002',
                     address: '456 Elm St',
-                    consultationFee: 600
+                    consultationFee: 600,
+                    isVerified: true
                 }
             ]);
 
@@ -108,7 +129,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 5,
                     licenseNumber: 'LIC003',
                     address: '789 Oak St',
-                    consultationFee: 400
+                    consultationFee: 400,
+                    isVerified: true
                 },
                 { 
                     fullName: 'Dr. B', 
@@ -118,7 +140,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 8,
                     licenseNumber: 'LIC004',
                     address: '321 Pine St',
-                    consultationFee: 350
+                    consultationFee: 350,
+                    isVerified: true
                 }
             ]);
 
@@ -138,7 +161,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 5,
                     licenseNumber: 'LIC005',
                     address: '789 Oak St',
-                    consultationFee: 400
+                    consultationFee: 400,
+                    isVerified: true
                 },
                 { 
                     fullName: 'Dr. B', 
@@ -148,7 +172,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 8,
                     licenseNumber: 'LIC006',
                     address: '321 Pine St',
-                    consultationFee: 350
+                    consultationFee: 350,
+                    isVerified: true
                 }
             ]);
 
@@ -167,7 +192,8 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 12,
                     licenseNumber: 'LIC007',
                     address: '111 Maple St',
-                    consultationFee: 550
+                    consultationFee: 550,
+                    isVerified: true
                 },
                 { 
                     fullName: 'Dr. Jane Doe', 
@@ -177,11 +203,12 @@ describe('Doctor Routes (Vitest)', () => {
                     experience: 9,
                     licenseNumber: 'LIC008',
                     address: '222 Cedar St',
-                    consultationFee: 500
+                    consultationFee: 500,
+                    isVerified: true
                 }
             ]);
 
-            const res = await request(app).get('/api/doctors?search=dr. j');
+            const res = await request(app).get('/api/doctors?search=dr. j&includeUnverified=true');
             expect(res.statusCode).toBe(200);
             expect(res.body.length).toBe(2); // Both start with "Dr. J"
         });
@@ -244,7 +271,7 @@ describe('Doctor Routes (Vitest)', () => {
 
     // Create Appointments
     await Appointment.create([
-        {
+        buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: now,
@@ -253,8 +280,8 @@ describe('Doctor Routes (Vitest)', () => {
             status: 'completed',
             patientNameForVisit: 'Patient A',
             reasonForVisit: 'Checkup'
-        },
-        {
+        }, { email: 'patientA@test.com' }),
+        buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: yesterday,
@@ -263,8 +290,8 @@ describe('Doctor Routes (Vitest)', () => {
             status: 'upcoming',
             patientNameForVisit: 'Patient B',
             reasonForVisit: 'Consultation'
-        },
-        {
+        }, { email: 'patientB@test.com' }),
+        buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: lastWeek,
@@ -273,7 +300,7 @@ describe('Doctor Routes (Vitest)', () => {
             status: 'cancelled',
             patientNameForVisit: 'Patient C',
             reasonForVisit: 'Followup'
-        }
+        }, { email: 'patientC@test.com' })
     ]);
 
     const res = await request(app)
@@ -296,7 +323,7 @@ describe('Doctor Routes (Vitest)', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -304,8 +331,8 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 0,
                     status: 'completed',
                     patientNameForVisit: 'Patient A'
-                },
-                {
+                }, { email: 'patientNullA@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -313,7 +340,7 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 0,
                     status: 'upcoming',
                     patientNameForVisit: 'Patient B'
-                }
+                }, { email: 'patientNullB@test.com' })
             ]);
 
             const res = await request(app)
@@ -331,7 +358,7 @@ describe('Doctor Routes (Vitest)', () => {
 
     const appointments = [];
     for (let i = 0; i < 15; i++) {
-        appointments.push({
+        appointments.push(buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: new Date(),
@@ -339,7 +366,7 @@ describe('Doctor Routes (Vitest)', () => {
             consultationFeeAtBooking: 100,
             status: 'completed',
             patientNameForVisit: `Patient ${i}`
-        });
+        }, { email: `patient${i}@test.com` }));
     }
     await Appointment.create(appointments);
 
@@ -377,7 +404,7 @@ describe('Doctor Routes (Vitest)', () => {
             const twoYearsAgo = currentYear - 2;
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 5, 15), // June current year
@@ -385,8 +412,8 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 500,
                     status: 'completed',
                     patientNameForVisit: 'Patient A'
-                },
-                {
+                }, { email: 'mbA@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(lastYear, 11, 20), // December last year
@@ -394,8 +421,8 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 400,
                     status: 'completed',
                     patientNameForVisit: 'Patient B'
-                },
-                {
+                }, { email: 'mbB@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(lastYear, 2, 10), // March last year
@@ -403,8 +430,8 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 300,
                     status: 'completed',
                     patientNameForVisit: 'Patient C'
-                },
-                {
+                }, { email: 'mbC@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(twoYearsAgo, 8, 5), // September two years ago
@@ -412,7 +439,7 @@ describe('Doctor Routes (Vitest)', () => {
                     consultationFeeAtBooking: 200,
                     status: 'completed',
                     patientNameForVisit: 'Patient D'
-                }
+                }, { email: 'mbD@test.com' })
             ]);
 
             const res = await request(app)
@@ -453,7 +480,7 @@ describe('Doctor Routes (Vitest)', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -462,7 +489,7 @@ describe('Doctor Routes (Vitest)', () => {
                     status: 'completed',
                     patientNameForVisit: 'John Doe',
                     reasonForVisit: 'Checkup'
-                }
+                })
             ]);
 
             const res = await request(app)
@@ -504,7 +531,7 @@ describe('Doctor Routes (Vitest)', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             const appointmentId = new mongoose.Types.ObjectId();
-            await Appointment.create({
+            await Appointment.create(buildAppointment({
                 _id: appointmentId,
                 patient: patientId,
                 doctor: doctorId,
@@ -514,7 +541,7 @@ describe('Doctor Routes (Vitest)', () => {
                 status: 'completed',
                 patientNameForVisit: 'CSV Test Patient',
                 reasonForVisit: 'Annual Physical'
-            });
+            }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/download-report')
@@ -536,7 +563,7 @@ describe('Doctor Routes (Vitest)', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date('2024-01-01'),
@@ -545,8 +572,8 @@ describe('Doctor Routes (Vitest)', () => {
                     status: 'completed',
                     patientNameForVisit: 'Old Patient',
                     reasonForVisit: 'Old Visit'
-                },
-                {
+                }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date('2024-12-01'),
@@ -555,7 +582,7 @@ describe('Doctor Routes (Vitest)', () => {
                     status: 'completed',
                     patientNameForVisit: 'New Patient',
                     reasonForVisit: 'New Visit'
-                }
+                })
             ]);
 
             const res = await request(app)
@@ -632,7 +659,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     experience: 5,
                     licenseNumber: 'LIC100',
                     address: '100 Test St',
-                    consultationFee: 400
+                    consultationFee: 400,
+                    isVerified: true
                 },
                 { 
                     fullName: 'John Smith MD', 
@@ -642,7 +670,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     experience: 8,
                     licenseNumber: 'LIC101',
                     address: '101 Test St',
-                    consultationFee: 350
+                    consultationFee: 350,
+                    isVerified: true
                 }
             ]);
 
@@ -663,7 +692,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     experience: 5,
                     licenseNumber: 'LIC102',
                     address: '102 Test St',
-                    consultationFee: 400
+                    consultationFee: 400,
+                    isVerified: true
                 }
             ]);
 
@@ -769,7 +799,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             beforeWeekStart.setDate(beforeWeekStart.getDate() - 1);
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: weekStartAppt,
@@ -778,8 +808,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient A',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: beforeWeekStart,
@@ -788,7 +818,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient B',
                     reasonForVisit: 'Checkup'
-                }
+                })
             ]);
 
             const res = await request(app)
@@ -815,7 +845,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             prevMonth.setDate(prevMonth.getDate() - 1);
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: monthStartAppt,
@@ -824,8 +854,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient A',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: prevMonth,
@@ -834,7 +864,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient B',
                     reasonForVisit: 'Checkup'
-                }
+                })
             ]);
 
             const res = await request(app)
@@ -861,7 +891,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             yesterday.setDate(yesterday.getDate() - 1);
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: todayStartAppt,
@@ -870,8 +900,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient A',
                     reasonForVisit: 'Emergency'
-                },
-                {
+                }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: yesterday,
@@ -880,7 +910,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient B',
                     reasonForVisit: 'Checkup'
-                }
+                })
             ]);
 
             const res = await request(app)
@@ -900,7 +930,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             // Create appointment with explicit null status
-            const appointment = new Appointment({
+            const appointment = await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: new Date(),
@@ -909,8 +939,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 status: null,
                 patientNameForVisit: 'Patient A',
                 reasonForVisit: 'Checkup'
-            });
-            await appointment.save();
+            }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/data')
@@ -927,7 +956,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             // Create appointment without status field
-            const appointment = new Appointment({
+            const appointment = await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: new Date(),
@@ -935,9 +964,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 consultationFeeAtBooking: 500,
                 patientNameForVisit: 'Patient A',
                 reasonForVisit: 'Checkup'
-            });
-            delete appointment.status; // Ensure undefined
-            await appointment.save();
+            }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/data')
@@ -953,7 +980,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -962,8 +989,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient A',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }, { email: 'statusA@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -972,8 +999,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'upcoming',
                     patientNameForVisit: 'Patient B',
                     reasonForVisit: 'Consultation'
-                },
-                {
+                }, { email: 'statusB@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(),
@@ -982,7 +1009,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'cancelled',
                     patientNameForVisit: 'Patient C',
                     reasonForVisit: 'Followup'
-                }
+                }, { email: 'statusC@test.com' })
             ]);
 
             const res = await request(app)
@@ -1005,7 +1032,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
     const newDate = new Date('2024-12-01');
 
     await Appointment.create([
-        {
+        buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: oldDate,
@@ -1014,8 +1041,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             status: 'completed',
             patientNameForVisit: 'Old Patient',
             reasonForVisit: 'Old Visit'
-        },
-        {
+        }, { email: 'sortOld@test.com' }),
+        buildAppointment({
             patient: patientId,
             doctor: doctorId,
             date: newDate,
@@ -1024,7 +1051,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             status: 'completed',
             patientNameForVisit: 'New Patient',
             reasonForVisit: 'New Visit'
-        }
+        }, { email: 'sortNew@test.com' })
     ]);
 
     const res = await request(app)
@@ -1052,7 +1079,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const currentYear = new Date().getFullYear();
             
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 0, 15), // January
@@ -1061,8 +1088,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient Jan',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }, { email: 'monthJan@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 11, 15), // December
@@ -1071,7 +1098,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient Dec',
                     reasonForVisit: 'Checkup'
-                }
+                }, { email: 'monthDec@test.com' })
             ]);
 
             const res = await request(app)
@@ -1096,7 +1123,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const targetDate = new Date(2024, 5, 15); // June 2024
 
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: targetDate,
@@ -1105,8 +1132,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient 1',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }, { email: 'calc1@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: targetDate,
@@ -1115,7 +1142,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient 2',
                     reasonForVisit: 'Consultation'
-                }
+                }, { email: 'calc2@test.com' })
             ]);
 
             const res = await request(app)
@@ -1141,7 +1168,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             // Create appointments for 12 different months
             const appointments = [];
             for (let month = 0; month < 12; month++) {
-                appointments.push({
+                appointments.push(buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, month, 15),
@@ -1150,7 +1177,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: `Patient ${month}`,
                     reasonForVisit: 'Checkup'
-                });
+                }, { email: `limit${month}@test.com` }));
             }
             await Appointment.create(appointments);
 
@@ -1167,7 +1194,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const patientId = new mongoose.Types.ObjectId();
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
-            await Appointment.create({
+            await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: new Date(2024, 5, 15), // June 2024
@@ -1176,7 +1203,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 status: 'completed',
                 patientNameForVisit: 'Patient',
                 reasonForVisit: 'Checkup'
-            });
+            }, { email: 'monthFormat@test.com' }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/data')
@@ -1197,7 +1224,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const patientId = new mongoose.Types.ObjectId();
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
-            await Appointment.create({
+            await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: new Date('2024-06-15'),
@@ -1206,7 +1233,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 status: 'completed',
                 patientNameForVisit: 'Test Patient',
                 reasonForVisit: 'Annual Checkup'
-            });
+            }, { email: 'csvfields@test.com' }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/download-report')
@@ -1228,7 +1255,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
             const testDate = new Date('2024-06-15');
-            await Appointment.create({
+            await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: testDate,
@@ -1237,7 +1264,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 status: 'completed',
                 patientNameForVisit: 'Test Patient',
                 reasonForVisit: 'Checkup'
-            });
+            }, { email: 'csvdate@test.com' }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/download-report')
@@ -1309,7 +1336,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const currentYear = new Date().getFullYear();
             
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 2, 15), // March
@@ -1318,8 +1345,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient March',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }, { email: 'sortMarch@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 8, 15), // September
@@ -1328,7 +1355,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient September',
                     reasonForVisit: 'Checkup'
-                }
+                }, { email: 'sortSeptember@test.com' })
             ]);
 
             const res = await request(app)
@@ -1356,7 +1383,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const lastYear = currentYear - 1;
             
             await Appointment.create([
-                {
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(lastYear, 5, 15), // June last year
@@ -1365,8 +1392,8 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient Last Year',
                     reasonForVisit: 'Checkup'
-                },
-                {
+                }, { email: 'sortLastYear@test.com' }),
+                buildAppointment({
                     patient: patientId,
                     doctor: doctorId,
                     date: new Date(currentYear, 1, 15), // February current year
@@ -1375,7 +1402,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                     status: 'completed',
                     patientNameForVisit: 'Patient This Year',
                     reasonForVisit: 'Checkup'
-                }
+                }, { email: 'sortThisYear@test.com' })
             ]);
 
             const res = await request(app)
@@ -1402,7 +1429,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
             const patientId = new mongoose.Types.ObjectId();
             const mockDoctorUser = JSON.stringify({ userId: doctorId, userType: 'doctor' });
 
-            await Appointment.create({
+            await Appointment.create(buildAppointment({
                 patient: patientId,
                 doctor: doctorId,
                 date: new Date(),
@@ -1411,7 +1438,7 @@ describe('Mutation Coverage Tests for doctors.js', () => {
                 status: 'completed',
                 patientNameForVisit: 'Test',
                 // Missing reasonForVisit
-            });
+            }, { email: 'edgeMissing@test.com' }));
 
             const res = await request(app)
                 .get('/api/doctors/earnings/download-report')

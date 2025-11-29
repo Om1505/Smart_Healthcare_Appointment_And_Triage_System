@@ -4,14 +4,16 @@ const Groq = require('groq-sdk');
 const protect = require('../middleware/auth');
 const Appointment = require('../models/Appointment');
 
-const groq = new Groq({
+const createGroqClient = () => new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
+
+let groq = createGroqClient();
 
 const formatAppointmentData = (appointment) => {
   // --- 1. FIX SYMPTOMS LOGIC ---
   // Start with the new list
-  let allSymptoms = appointment.symptomsList ? [...appointment.symptomsList] : [];
+  const allSymptoms = appointment.symptomsList ? [...appointment.symptomsList] : [];
   
   // Add "Other" symptoms if present
   if (appointment.symptomsOther) {
@@ -20,13 +22,17 @@ const formatAppointmentData = (appointment) => {
 
   // BACKWARD COMPATIBILITY: Check the old 'symptoms' string field
   // If the list is empty but the old field has data, use it
-  if (allSymptoms.length === 0 && appointment.symptoms && typeof appointment.symptoms === 'string') {
-    allSymptoms.push(appointment.symptoms);
+  if (allSymptoms.length === 0) {
+    if (Array.isArray(appointment.symptoms) && appointment.symptoms.length > 0) {
+      allSymptoms.push(...appointment.symptoms);
+    } else if (appointment.symptoms && typeof appointment.symptoms === 'string') {
+      allSymptoms.push(appointment.symptoms);
+    }
   }
   // -----------------------------
 
-  // ... (severe symptoms logic from previous fix) ...
-  const severeSymptoms = appointment.severeSymptomsCheck || []; 
+  // severe symptoms
+  const severeSymptoms = appointment.severeSymptomsCheck || [];
 
   // ... (conditions logic) ...
   const conditions = appointment.preExistingConditions || [];
@@ -113,7 +119,7 @@ Keep it professional and concise.`;
     return chatCompletion.choices[0]?.message?.content || 'Unable to generate summary';
   } catch (error) {
     console.error('Groq API Error:', error);
-    throw new Error('Failed to generate AI summary');
+    throw error;
   }
 };
 
@@ -158,5 +164,13 @@ router.get('/appointment/:appointmentId', protect, async (req, res) => {
     });
   }
 });
+
+router.__setGroqClient = (client) => {
+  groq = client;
+};
+
+router.__resetGroqClient = () => {
+  groq = createGroqClient();
+};
 
 module.exports = router;

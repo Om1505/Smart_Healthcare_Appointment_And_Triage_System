@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import '../routes/user';
 
 const request = require('supertest');
 const express = require('express');

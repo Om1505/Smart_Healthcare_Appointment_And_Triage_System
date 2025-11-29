@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import '../routes/reviews';
 
 const request = require('supertest');
 const express = require('express');
@@ -29,6 +30,7 @@ const Review = require('../models/Review');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
+const reviewsRouter = require('../routes/reviews');
 
 let mongoServer;
 let app;
@@ -40,7 +42,7 @@ beforeAll(async () => {
 
     app = express();
     app.use(express.json());
-    app.use('/api/reviews', require('../routes/reviews'));
+    app.use('/api/reviews', reviewsRouter);
 });
 
 afterAll(async () => {
@@ -56,9 +58,25 @@ afterEach(async () => {
 });
 
 // Helper function to create mock user header
-const createMockUserHeader = (userId, userType) => {
-    return JSON.stringify({ userId, userType });
-};
+const createMockUserHeader = (userId, userType) => JSON.stringify({ userId, userType });
+
+const buildAppointmentPayload = (patientId, doctorId, overrides = {}) => ({
+    patient: patientId,
+    doctor: doctorId,
+    patientNameForVisit: 'John Doe',
+    date: new Date('2024-01-15'),
+    time: '10:00 AM',
+    status: 'completed',
+    consultationFeeAtBooking: 500,
+    paymentStatus: 'paid',
+    phoneNumber: '9999999999',
+    email: 'test@example.com',
+    birthDate: new Date('1990-01-01'),
+    sex: 'other',
+    primaryLanguage: 'English',
+    symptomsBegin: '2023-01-01',
+    ...overrides,
+});
 
 describe('POST /api/reviews', () => {
     it('should create a review for a completed appointment successfully', async () => {
@@ -94,16 +112,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         const mockUser = createMockUserHeader(patient._id, 'patient');
 
@@ -164,16 +175,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         const mockUser = createMockUserHeader(patient._id, 'patient');
 
@@ -241,27 +245,17 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment1 = await Appointment.create({
-            patient: patient1._id,
-            patientNameForVisit: "Patient One",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment1 = await Appointment.create(
+            buildAppointmentPayload(patient1._id, doctor._id, { patientNameForVisit: 'Patient One' })
+        );
 
-        const appointment2 = await Appointment.create({
-            patient: patient2._id,
-            patientNameForVisit: "Patient Two",
-            doctor: doctor._id,
-            date: new Date('2024-01-16'),
-            time: '11:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment2 = await Appointment.create(
+            buildAppointmentPayload(patient2._id, doctor._id, {
+                patientNameForVisit: 'Patient Two',
+                date: new Date('2024-01-16'),
+                time: '11:00 AM',
+            })
+        );
 
         // First review
         const mockUser1 = createMockUserHeader(patient1._id, 'patient');
@@ -358,16 +352,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'upcoming', // Not completed
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id, { status: 'upcoming' })
+        );
 
         const mockUser = createMockUserHeader(patient._id, 'patient');
 
@@ -435,16 +422,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient1._id,
-            patientNameForVisit: "Patient One", // Appointment belongs to patient1
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient1._id, doctor._id, { patientNameForVisit: 'Patient One' })
+        );
 
         const mockUser = createMockUserHeader(patient2._id, 'patient'); // Patient2 trying to review
 
@@ -495,16 +475,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         // Create existing review
         await Review.create({
@@ -619,16 +592,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         const mockUser = createMockUserHeader(patient._id, 'patient');
 
@@ -643,6 +609,7 @@ describe('POST /api/reviews', () => {
             });
 
         expect(response.status).toBe(500);
+        expect(response.text).toBe('Server Error');
     });
 
     it('should handle rating validation (maximum 5)', async () => {
@@ -678,16 +645,9 @@ describe('POST /api/reviews', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         const mockUser = createMockUserHeader(patient._id, 'patient');
 
@@ -702,6 +662,7 @@ describe('POST /api/reviews', () => {
             });
 
         expect(response.status).toBe(500);
+        expect(response.text).toBe('Server Error');
     });
 });
 
@@ -756,27 +717,17 @@ describe('GET /api/reviews/doctor/:doctorId', () => {
             emailVerified: true,
         });
 
-        const appointment1 = await Appointment.create({
-            patient: patient1._id,
-            patientNameForVisit: "Patient One",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment1 = await Appointment.create(
+            buildAppointmentPayload(patient1._id, doctor._id, { patientNameForVisit: 'Patient One' })
+        );
 
-        const appointment2 = await Appointment.create({
-            patient: patient2._id,
-            patientNameForVisit: "Patient Two",
-            doctor: doctor._id,
-            date: new Date('2024-01-16'),
-            time: '11:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment2 = await Appointment.create(
+            buildAppointmentPayload(patient2._id, doctor._id, {
+                patientNameForVisit: 'Patient Two',
+                date: new Date('2024-01-16'),
+                time: '11:00 AM',
+            })
+        );
 
         await Review.create({
             doctor: doctor._id,
@@ -880,27 +831,17 @@ describe('GET /api/reviews/doctor/:doctorId', () => {
             emailVerified: true,
         });
 
-        const appointment1 = await Appointment.create({
-            patient: patient1._id,
-            patientNameForVisit: "Patient One",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment1 = await Appointment.create(
+            buildAppointmentPayload(patient1._id, doctor._id, { patientNameForVisit: 'Patient One' })
+        );
 
-        const appointment2 = await Appointment.create({
-            patient: patient2._id,
-            patientNameForVisit: "Patient Two",
-            doctor: doctor._id,
-            date: new Date('2024-01-16'),
-            time: '11:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment2 = await Appointment.create(
+            buildAppointmentPayload(patient2._id, doctor._id, {
+                patientNameForVisit: 'Patient Two',
+                date: new Date('2024-01-16'),
+                time: '11:00 AM',
+            })
+        );
 
         // Create first review (older)
         const review1 = await Review.create({
@@ -967,16 +908,9 @@ describe('GET /api/reviews/doctor/:doctorId', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         await Review.create({
             doctor: doctor._id,
@@ -1082,27 +1016,17 @@ describe('GET /api/reviews/doctor/:doctorId', () => {
             emailVerified: true,
         });
 
-        const appointment1 = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor1._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment1 = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor1._id)
+        );
 
-        const appointment2 = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor2._id,
-            date: new Date('2024-01-16'),
-            time: '11:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 600,
-            paymentStatus: 'paid',
-        });
+        const appointment2 = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor2._id, {
+                consultationFeeAtBooking: 600,
+                date: new Date('2024-01-16'),
+                time: '11:00 AM',
+            })
+        );
 
         // Create reviews for both doctors
         await Review.create({
@@ -1169,16 +1093,9 @@ describe('updateDoctorRating function', () => {
             emailVerified: true,
         });
 
-        const appointment = await Appointment.create({
-            patient: patient._id,
-            patientNameForVisit: "John Doe",
-            doctor: doctor._id,
-            date: new Date('2024-01-15'),
-            time: '10:00 AM',
-            status: 'completed',
-            consultationFeeAtBooking: 500,
-            paymentStatus: 'paid',
-        });
+        const appointment = await Appointment.create(
+            buildAppointmentPayload(patient._id, doctor._id)
+        );
 
         // Create a review
         const review = await Review.create({

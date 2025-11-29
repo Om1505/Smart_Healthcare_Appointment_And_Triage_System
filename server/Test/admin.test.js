@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
+import '../routes/admin';
 
 const request = require('supertest');
 const express = require('express');
@@ -47,13 +48,28 @@ const adminRoutes = require('../routes/admin');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const Appointment = require('../models/Appointment');
+const Admin = require('../models/Admin');
 
 const app = express();
 app.use(express.json());
 app.use('/api/admin', adminRoutes);
 
+const requiredAppointmentFields = (overrides = {}) => ({
+    phoneNumber: '9999999999',
+    email: 'apptest@example.com',
+    birthDate: new Date('1990-01-01'),
+    sex: 'other',
+    primaryLanguage: 'English',
+    symptomsBegin: '2023-01-01',
+    paymentStatus: 'pending',
+    primaryReason: 'General checkup',
+    symptomsList: ['fatigue'],
+    ...overrides
+});
+
 let mongoServer;
-const mockAdminUser = JSON.stringify({ userId: 'admin123', userType: 'admin' });
+const adminObjectId = new mongoose.Types.ObjectId();
+const mockAdminUser = JSON.stringify({ userId: adminObjectId.toString(), userType: 'admin' });
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
@@ -74,7 +90,19 @@ afterEach(async () => {
     await Doctor.deleteMany({});
     await Patient.deleteMany({});
     await Appointment.deleteMany({});
+    await Admin.deleteMany({});
     mockSendEmail.mockClear();
+});
+
+beforeEach(async () => {
+    await Admin.deleteMany({});
+    await Admin.create({
+        _id: adminObjectId,
+        fullName: 'Super Admin',
+        email: 'admin@test.com',
+        password: 'Secret@123',
+        userType: 'admin'
+    });
 });
 
 describe('Admin Routes (Vitest)', () => {
@@ -431,15 +459,16 @@ describe('Admin Routes (Vitest)', () => {
             }]);
             const patient = patients[0];
 
-            await Appointment.insertMany([{
+            await Appointment.create({
                 patient: patient._id,
                 doctor: doctor._id,
                 date: new Date(),
                 time: '10:00 AM',
                 consultationFeeAtBooking: 500,
                 status: 'upcoming',
-                patientNameForVisit: 'Patient Test'
-            }]);
+                patientNameForVisit: 'Patient Test',
+                ...requiredAppointmentFields({ email: patient.email })
+            });
 
             const res = await request(app)
                 .get('/api/admin/appointments')
@@ -581,15 +610,16 @@ describe('Admin Routes (Vitest)', () => {
             const patient = pats[0];
 
             // Create an upcoming appointment
-            await Appointment.insertMany([{
+            await Appointment.create({
                 doctor: doctor._id,
                 patient: patient._id,
                 status: 'upcoming',
                 date: new Date(),
                 time: '10:00 AM',
                 consultationFeeAtBooking: 600,
-                patientNameForVisit: 'Test Patient'
-            }]);
+                patientNameForVisit: 'Test Patient',
+                ...requiredAppointmentFields({ email: patient.email })
+            });
 
             const res = await request(app)
                 .put(`/api/admin/suspend-doctor/${doctor._id}`)
@@ -842,7 +872,8 @@ describe('Admin Routes (Vitest)', () => {
                 date: new Date(),
                 time: '11:00 AM',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Patient Active'
+                patientNameForVisit: 'Patient Active',
+                ...requiredAppointmentFields({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1186,10 +1217,12 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.insertMany([
                 { doctor: doctor._id, patient: patient._id, date: new Date('2020-01-01'),
                   time: '10:00 AM', consultationFeeAtBooking: 500, status: 'completed',
-                  patientNameForVisit: 'Patient Sort' },
+                  patientNameForVisit: 'Patient Sort',
+                  ...requiredAppointmentFields({ email: 'sort@example.com' }) },
                 { doctor: doctor._id, patient: patient._id, date: new Date('2024-01-01'),
                   time: '11:00 AM', consultationFeeAtBooking: 500, status: 'upcoming',
-                  patientNameForVisit: 'Patient Sort' }
+                  patientNameForVisit: 'Patient Sort',
+                  ...requiredAppointmentFields({ email: 'sort@example.com' }) }
             ]);
 
             const res = await request(app)
@@ -1276,7 +1309,8 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.create({
                 doctor: doctor._id, patient: patient._id, date: new Date(),
                 time: '12:00 PM', consultationFeeAtBooking: 500, status: 'upcoming',
-                patientNameForVisit: 'Patient Populate'
+                patientNameForVisit: 'Patient Populate',
+                ...requiredAppointmentFields({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1303,7 +1337,8 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.create({
                 doctor: doctor._id, patient: patient._id, date: new Date(),
                 time: '1:00 PM', consultationFeeAtBooking: 600, status: 'upcoming',
-                patientNameForVisit: 'Patient PopulateDoc'
+                patientNameForVisit: 'Patient PopulateDoc',
+                ...requiredAppointmentFields({ email: patient.email })
             });
 
             const res = await request(app)
@@ -1685,10 +1720,12 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.insertMany([
                 { doctor: doctor._id, patient: patient._id, status: 'upcoming',
                   date: new Date(), time: '2:00 PM', consultationFeeAtBooking: 500,
-                  patientNameForVisit: 'Patient Cancel' },
+                  patientNameForVisit: 'Patient Cancel',
+                  ...requiredAppointmentFields({ email: 'cancel@example.com' }) },
                 { doctor: doctor._id, patient: patient._id, status: 'completed',
                   date: new Date(), time: '3:00 PM', consultationFeeAtBooking: 500,
-                  patientNameForVisit: 'Patient Cancel' }
+                  patientNameForVisit: 'Patient Cancel',
+                  ...requiredAppointmentFields({ email: 'cancel@example.com' }) }
             ]);
 
             await request(app)
@@ -1723,10 +1760,12 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.insertMany([
                 { doctor: doctor._id, patient: patient._id, status: 'upcoming',
                   date: new Date(), time: '4:00 PM', consultationFeeAtBooking: 500,
-                  patientNameForVisit: 'Patient CancelTest' },
+                  patientNameForVisit: 'Patient CancelTest',
+                  ...requiredAppointmentFields({ email: 'canceltest@example.com' }) },
                 { doctor: doctor._id, patient: patient._id, status: 'completed',
                   date: new Date(), time: '5:00 PM', consultationFeeAtBooking: 500,
-                  patientNameForVisit: 'Patient CancelTest' }
+                  patientNameForVisit: 'Patient CancelTest',
+                  ...requiredAppointmentFields({ email: 'canceltest@example.com' }) }
             ]);
 
             await request(app)
@@ -1764,7 +1803,8 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.create({
                 doctor: doctor._id, patient: patient._id, status: 'upcoming',
                 date: new Date(), time: '6:00 PM', consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Patient LogTest'
+                patientNameForVisit: 'Patient LogTest',
+                ...requiredAppointmentFields({ email: patient.email })
             });
 
             await request(app)
@@ -1792,7 +1832,8 @@ describe('Mutation Coverage Tests for admin.js', () => {
             await Appointment.create({
                 doctor: doctor._id, patient: patient._id, status: 'upcoming',
                 date: new Date(), time: '7:00 PM', consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Patient PatLogTest'
+                patientNameForVisit: 'Patient PatLogTest',
+                ...requiredAppointmentFields({ email: patient.email })
             });
 
             await request(app)

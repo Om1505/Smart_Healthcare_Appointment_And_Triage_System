@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import '../routes/prescriptions';
 
 const request = require('supertest');
 const express = require('express');
@@ -72,6 +73,34 @@ const MedicalRecord = require('../models/MedicalRecord');
 const Patient = require('../models/Patient');
 const Doctor = require('../models/Doctor');
 
+const buildAppointmentData = (overrides = {}) => ({
+    phoneNumber: '9999999999',
+    email: 'appointment@example.com',
+    birthDate: new Date('1990-01-01'),
+    sex: 'other',
+    primaryLanguage: 'English',
+    symptomsBegin: '2023-01-01',
+    paymentStatus: 'pending',
+    ...overrides
+});
+
+if (!Appointment.schema.statics.__defaultsApplied) {
+    Appointment.schema.pre('validate', function (next) {
+        const defaults = buildAppointmentData();
+        Object.entries(defaults).forEach(([field, value]) => {
+            if (this[field] === undefined || this[field] === null) {
+                this[field] = value;
+            }
+        });
+        next();
+    });
+    Appointment.schema.statics.__defaultsApplied = true;
+}
+
+const createAppointment = (data = {}) => Appointment.create(buildAppointmentData(data));
+const createAppointments = (list = []) => Appointment.create(list.map(buildAppointmentData));
+const insertAppointmentRaw = (data = {}) => Appointment.collection.insertOne(buildAppointmentData(data));
+
 let mongoServer;
 let app;
 
@@ -121,7 +150,7 @@ describe('POST /api/prescriptions', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -294,7 +323,7 @@ describe('POST /api/prescriptions', () => {
             address: '456 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor1._id,
             patientNameForVisit: 'John Doe',
@@ -337,7 +366,7 @@ describe('POST /api/prescriptions', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -388,7 +417,7 @@ describe('POST /api/prescriptions', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -474,7 +503,7 @@ describe('POST /api/prescriptions', () => {
             address: 'No Address',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patientId,
             doctor: doctor._id,
             patientNameForVisit: 'No Email Patient',
@@ -519,7 +548,7 @@ describe('POST /api/prescriptions', () => {
             address: 'Email St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'EmailPresent Patient',
@@ -575,7 +604,7 @@ describe('GET /api/prescriptions/appointment/:appointmentId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -632,7 +661,7 @@ describe('GET /api/prescriptions/appointment/:appointmentId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -736,7 +765,7 @@ describe('GET /api/prescriptions/appointment/:appointmentId', () => {
             address: '456 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor1._id,
             patientNameForVisit: 'John Doe',
@@ -781,7 +810,7 @@ describe('GET /api/prescriptions/appointment/:appointmentId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient1._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -820,7 +849,7 @@ describe('GET /api/prescriptions/appointment/:appointmentId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -889,7 +918,7 @@ describe('GET /api/prescriptions/doctor & /patient', () => {
             address: '123 Medical St',
         });
 
-        const appointment1 = await Appointment.create({
+        const appointment1 = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -900,7 +929,7 @@ describe('GET /api/prescriptions/doctor & /patient', () => {
             status: 'completed',
         });
 
-        const appointment2 = await Appointment.create({
+        const appointment2 = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1026,7 +1055,7 @@ describe('GET /api/prescriptions/doctor & /patient', () => {
             address: '123 Medical St',
         });
 
-        const appointment1 = await Appointment.create({
+        const appointment1 = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1037,7 +1066,7 @@ describe('GET /api/prescriptions/doctor & /patient', () => {
             status: 'completed',
         });
 
-        const appointment2 = await Appointment.create({
+        const appointment2 = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1160,7 +1189,7 @@ describe('PUT /api/prescriptions/:recordId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1299,7 +1328,7 @@ describe('PUT /api/prescriptions/:recordId', () => {
             address: '456 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor1._id,
             patientNameForVisit: 'John Doe',
@@ -1349,7 +1378,7 @@ describe('PUT /api/prescriptions/:recordId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1401,7 +1430,7 @@ describe('PUT /api/prescriptions/:recordId', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1488,7 +1517,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1546,7 +1575,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1593,7 +1622,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1683,7 +1712,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: '123 Medical St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient1._id,
             doctor: doctor._id,
             patientNameForVisit: 'John Doe',
@@ -1758,7 +1787,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: 'Nowhere',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'NoMed Patient',
@@ -1813,7 +1842,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
             address: 'Follow St',
         });
 
-        const appointment = await Appointment.create({
+        const appointment = await createAppointment({
             patient: patient._id,
             doctor: doctor._id,
             patientNameForVisit: 'Follow Patient',
@@ -1867,7 +1896,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
                 address: 'Edge St',
             });
 
-            const appointment = await Appointment.create({
+            const appointment = await createAppointment({
                 patient: patient._id,
                 doctor: doctor._id,
                 patientNameForVisit: 'Edge Follow',
@@ -1913,7 +1942,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
                 address: 'Weird Ave',
             });
 
-            const appointment = await Appointment.create({
+            const appointment = await createAppointment({
                 patient: patient._id,
                 doctor: doctor._id,
                 patientNameForVisit: 'Weird Presc',
@@ -1963,7 +1992,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
                 password: 'Test@1234',
             });
 
-            const appointment = await Appointment.create({
+            const appointment = await createAppointment({
                 patient: patient._id,
                 doctor: doctorId,
                 patientNameForVisit: 'PatientForDocNoEmail',
@@ -2013,7 +2042,7 @@ describe('GET /api/prescriptions/:recordId/pdf', () => {
                 address: 'NoName St',
             });
 
-            const appInsert = await Appointment.collection.insertOne({
+            const appInsert = await insertAppointmentRaw({
                 patient: patient._id,
                 doctor: doctor._id,
                 consultationFeeAtBooking: 80,

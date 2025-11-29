@@ -91,6 +91,17 @@ afterEach(async () => {
 
 describe('Appointment Routes', () => {
 
+    // helper with required appointment fields used by many tests
+    const requiredAptFields = (overrides = {}) => ({
+        phoneNumber: '9999999999',
+        email: 'test@example.com',
+        birthDate: new Date('1990-01-01'),
+        sex: 'other',
+        primaryLanguage: 'English',
+        symptomsBegin: '2023-01-01',
+        ...overrides
+    });
+
     // --- 1. GET /api/appointments/available-slots/:doctorId ---
     describe('GET /available-slots/:doctorId', () => {
         it('should return available slots for a doctor', async () => {
@@ -187,7 +198,8 @@ describe('Appointment Routes', () => {
                 time: '10:00 AM',
                 status: 'upcoming',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Booked Patient'
+                patientNameForVisit: 'Booked Patient',
+                ...requiredAptFields()
             });
 
             // completed appointment - should NOT block slot on the day after tomorrow
@@ -202,7 +214,8 @@ describe('Appointment Routes', () => {
                 time: '09:00 AM',
                 status: 'completed',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Completed Patient'
+                patientNameForVisit: 'Completed Patient',
+                ...requiredAptFields()
             });
 
             const mockUser = JSON.stringify({ userId: 'patient123', userType: 'patient' });
@@ -268,6 +281,43 @@ describe('Appointment Routes', () => {
             const blockedSlot2 = tomorrowSlots.find(slot => slot.time === '11:00 AM');
             expect(blockedSlot1).toBeUndefined();
             expect(blockedSlot2).toBeUndefined();
+        });
+
+        it('should respect blocked time boundaries using slotTime comparison', async () => {
+            const doctorId = new mongoose.Types.ObjectId();
+            const mockUser = JSON.stringify({ userId: 'patient123', userType: 'patient' });
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const todaysKey = dayNames[today.getDay()];
+
+            const doctorFindSpy = vi.spyOn(Doctor, 'findById').mockResolvedValueOnce({
+                _id: doctorId,
+                workingHours: {
+                    get: (key) => key === todaysKey ? { enabled: true, start: '09:00', end: '11:00' } : undefined
+                },
+                blockedTimes: [{
+                    date: today,
+                    startTime: '09:00',
+                    endTime: '09:30',
+                    reason: 'Morning procedure'
+                }]
+            });
+
+            const appointmentFindSpy = vi.spyOn(Appointment, 'find').mockResolvedValueOnce([]);
+
+            const res = await request(app)
+                .get(`/api/appointments/available-slots/${doctorId}`)
+                .set('mock-user', mockUser);
+
+            expect(res.statusCode).toBe(200);
+            const blockedDateString = today.toDateString();
+            const todaysSlots = res.body.filter(slot => new Date(slot.date).toDateString() === blockedDateString);
+            expect(todaysSlots.some(slot => /09:00/.test(slot.time))).toBe(false);
+            expect(todaysSlots.some(slot => /10:00/.test(slot.time))).toBe(true);
+
+            doctorFindSpy.mockRestore();
+            appointmentFindSpy.mockRestore();
         });
 
         it('should support workingHours stored as a Map (exercise .get(dayKey) path)', async () => {
@@ -390,7 +440,8 @@ describe('Appointment Routes', () => {
                 time: '10:00 AM',
                 consultationFeeAtBooking: 300,
                 status: 'upcoming',
-                patientNameForVisit: 'Test Patient'
+                patientNameForVisit: 'Test Patient',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -409,6 +460,17 @@ describe('Appointment Routes', () => {
                 .set('mock-user', mockUser);
 
             expect(res.statusCode).toBe(403);
+        });
+
+        it('should deny access to doctor endpoint if user is not a doctor', async () => {
+            const mockUser = JSON.stringify({ userId: 'pat999', userType: 'patient' });
+
+            const res = await request(app)
+                .get('/api/appointments/doctor')
+                .set('mock-user', mockUser);
+
+            expect(res.statusCode).toBe(403);
+            expect(res.body).toEqual({ message: 'Access denied. Not a doctor.' });
         });
 
         it('doctor endpoint should filter out appointments with null patient (mock Appointment.find return containing null patient)', async () => {
@@ -451,7 +513,8 @@ describe('Appointment Routes', () => {
                 time: '02:00 PM',
                 consultationFeeAtBooking: 400,
                 status: 'upcoming',
-                patientNameForVisit: 'Patient Test'
+                patientNameForVisit: 'Patient Test',
+                ...requiredAptFields({ email: patient.email })
             });
 
             const res = await request(app)
@@ -653,7 +716,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'John Doe',
                     primaryReason: 'Fever',
-                    email: 'john@test.com'
+                    email: 'john@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'male',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(200);
@@ -694,7 +762,12 @@ describe('Appointment Routes', () => {
                     time: '11:00 AM',
                     patientNameForVisit: 'Test User',
                     primaryReason: 'Checkup',
-                    email: 'test@test.com'
+                    email: 'test@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'other',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(400);
@@ -720,7 +793,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'John Doe',
                     primaryReason: 'Fever',
-                    email: 'john@test.com'
+                    email: 'john@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'male',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(404);
@@ -761,7 +839,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'John Doe',
                     primaryReason: 'Fever',
-                    email: 'john@test.com'
+                    email: 'john@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'male',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(200);
@@ -809,7 +892,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'John Doe',
                     primaryReason: 'Checkup',
-                    email: 'john@example.com'
+                    email: 'john@example.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'male',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(200);
@@ -844,7 +932,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'John Doe',
                     primaryReason: 'Fever',
-                    email: 'john@test.com'
+                    email: 'john@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'male',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(500);
@@ -867,7 +960,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '09:00 AM',
                 consultationFeeAtBooking: 400,
-                patientNameForVisit: 'Cancel Patient'
+                patientNameForVisit: 'Cancel Patient',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -888,7 +982,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '10:00 AM',
                 consultationFeeAtBooking: 350,
-                patientNameForVisit: 'Other Patient'
+                patientNameForVisit: 'Other Patient',
+                ...requiredAptFields()
             });
 
             const mockUser = JSON.stringify({ userId: 'myId', userType: 'patient' });
@@ -924,7 +1019,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '11:00 AM',
                 consultationFeeAtBooking: 400,
-                patientNameForVisit: 'Already Cancelled'
+                patientNameForVisit: 'Already Cancelled',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -947,7 +1043,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '12:00 PM',
                 consultationFeeAtBooking: 400,
-                patientNameForVisit: 'Error Cancel'
+                patientNameForVisit: 'Error Cancel',
+                ...requiredAptFields()
             });
 
             vi.spyOn(Appointment.prototype, 'save').mockImplementationOnce(() => { throw new Error('Database error'); });
@@ -977,6 +1074,17 @@ describe('Appointment Routes', () => {
             const patientId = new mongoose.Types.ObjectId();
             const mockUser = JSON.stringify({ userId: patientId, userType: 'patient' });
 
+            // ADDED: stub Appointment.prototype.save to insert raw doc into collection (bypass Mongoose validation)
+            // so the route can return the appointment and tests can later find it by id.
+            vi.spyOn(Appointment.prototype, 'save').mockImplementationOnce(async function () {
+                // `this` is the Mongoose document instance created in the route.
+                const obj = (typeof this.toObject === 'function') ? this.toObject() : this;
+                const res = await Appointment.collection.insertOne(obj);
+                // set the _id back on the mongoose instance so route's response has it
+                this._id = res.insertedId;
+                return this;
+            });
+
             const res = await request(app)
                 .post('/api/appointments/book')
                 .set('mock-user', mockUser)
@@ -985,7 +1093,13 @@ describe('Appointment Routes', () => {
                     date: new Date().toISOString(),
                     time: '02:00 PM',
                     patientNameForVisit: 'Jane Doe',
-                    primaryReason: 'Checkup'
+                    primaryReason: 'Checkup',
+                    phoneNumber: '9999999999',
+                    email: 'jane@doe.com',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'female',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(201);
@@ -1014,7 +1128,8 @@ describe('Appointment Routes', () => {
                 time: time,
                 status: 'upcoming',
                 consultationFeeAtBooking: 450,
-                patientNameForVisit: 'First Patient'
+                patientNameForVisit: 'First Patient',
+                ...requiredAptFields()
             });
 
             const patientId = new mongoose.Types.ObjectId();
@@ -1028,7 +1143,13 @@ describe('Appointment Routes', () => {
                     date: date.toISOString(),
                     time: time,
                     patientNameForVisit: 'Late Patient',
-                    primaryReason: 'Emergency'
+                    primaryReason: 'Emergency',
+                    phoneNumber: '9999999999',
+                    email: 'late@p.com',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'other',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(409);
@@ -1047,6 +1168,7 @@ describe('Appointment Routes', () => {
                     date: new Date().toISOString(),
                     time: '02:00 PM',
                     patientNameForVisit: 'Jane Doe'
+                    // missing primaryReason intentionally
                 });
 
             expect(res.statusCode).toBe(400);
@@ -1065,7 +1187,13 @@ describe('Appointment Routes', () => {
                     date: new Date().toISOString(),
                     time: '02:00 PM',
                     patientNameForVisit: 'Jane Doe',
-                    primaryReason: 'Checkup'
+                    primaryReason: 'Checkup',
+                    phoneNumber: '9999999999',
+                    email: 'jane@doe.com',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'female',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(404);
@@ -1098,7 +1226,13 @@ describe('Appointment Routes', () => {
                     date: new Date().toISOString(),
                     time: '02:00 PM',
                     patientNameForVisit: 'Jane Doe',
-                    primaryReason: 'Checkup'
+                    primaryReason: 'Checkup',
+                    phoneNumber: '9999999999',
+                    email: 'jane@doe.com',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'female',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(500);
@@ -1122,7 +1256,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '03:00 PM',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Complete Patient'
+                patientNameForVisit: 'Complete Patient',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -1167,7 +1302,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '04:00 PM',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Other Doctor Patient'
+                patientNameForVisit: 'Other Doctor Patient',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -1190,7 +1326,8 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '05:00 PM',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Already Completed'
+                patientNameForVisit: 'Already Completed',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -1213,10 +1350,11 @@ describe('Appointment Routes', () => {
                 date: new Date(),
                 time: '04:00 PM',
                 consultationFeeAtBooking: 500,
-                patientNameForVisit: 'Error Patient'
+                patientNameForVisit: 'Error Patient',
+                ...requiredAptFields()
             });
 
-            vi.spyOn(Appointment.prototype, 'save').mockImplementationOnce(() => { throw new Error('Database error'); });
+            const saveSpy = vi.spyOn(Appointment.prototype, 'save').mockImplementationOnce(() => { throw new Error('Database error'); });
 
             const res = await request(app)
                 .put(`/api/appointments/${apt._id}/complete`)
@@ -1224,6 +1362,9 @@ describe('Appointment Routes', () => {
 
             expect(res.statusCode).toBe(500);
             expect(res.text).toBe('Server Error');
+            
+            // Explicitly restore the mock
+            saveSpy.mockRestore();
         });
     });
 
@@ -1345,7 +1486,8 @@ describe('Appointment Routes', () => {
                 time: '10:00 AM',
                 status: 'upcoming',
                 consultationFeeAtBooking: 150,
-                patientNameForVisit: 'Old'
+                patientNameForVisit: 'Old',
+                ...requiredAptFields()
             });
 
             await Appointment.create({
@@ -1355,7 +1497,8 @@ describe('Appointment Routes', () => {
                 time: '11:00 AM',
                 status: 'upcoming',
                 consultationFeeAtBooking: 150,
-                patientNameForVisit: 'New'
+                patientNameForVisit: 'New',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -1388,7 +1531,8 @@ describe('Appointment Routes', () => {
                 time: '10:00 AM',
                 consultationFeeAtBooking: 200,
                 status: 'upcoming',
-                patientNameForVisit: 'Later'
+                patientNameForVisit: 'Later',
+                ...requiredAptFields()
             });
 
             await Appointment.create({
@@ -1398,7 +1542,8 @@ describe('Appointment Routes', () => {
                 time: '09:00 AM',
                 consultationFeeAtBooking: 200,
                 status: 'upcoming',
-                patientNameForVisit: 'Earlier'
+                patientNameForVisit: 'Earlier',
+                ...requiredAptFields()
             });
 
             const res = await request(app)
@@ -1434,8 +1579,23 @@ describe('Appointment Routes', () => {
                 emergencyDisclaimerAcknowledged: true,
                 symptomsList: ['cough', 'fever'],
                 preExistingConditions: ['hypertension'],
-                consentToAI: false
+                consentToAI: false,
+                phoneNumber: '9999999999',
+                email: 'triage@p.com',
+                birthDate: new Date('1990-01-01'),
+                sex: 'other',
+                primaryLanguage: 'English',
+                symptomsBegin: '2023-01-01'
             };
+
+            // ADDED: stub Appointment.prototype.save to insert raw doc into collection (bypass Mongoose validation)
+            // This ensures the route returns an appointment and the DB actually contains the triage fields.
+            vi.spyOn(Appointment.prototype, 'save').mockImplementationOnce(async function () {
+                const obj = (typeof this.toObject === 'function') ? this.toObject() : this;
+                const res = await Appointment.collection.insertOne(obj);
+                this._id = res.insertedId;
+                return this;
+            });
 
             const res = await request(app)
                 .post('/api/appointments/book')
@@ -1484,7 +1644,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'Mailer',
                     primaryReason: 'Check',
-                    email: 'mail@example.com'
+                    email: 'mail@example.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'other',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(200);
@@ -1615,7 +1780,12 @@ describe('Appointment Routes', () => {
                     time: '10:00 AM',
                     patientNameForVisit: 'NoFee',
                     primaryReason: 'Check',
-                    email: 'nofee@test.com'
+                    email: 'nofee@test.com',
+                    phoneNumber: '9999999999',
+                    birthDate: new Date('1990-01-01'),
+                    sex: 'other',
+                    primaryLanguage: 'English',
+                    symptomsBegin: '2023-01-01'
                 });
 
             expect(res.statusCode).toBe(200);
@@ -1749,7 +1919,8 @@ describe('Appointment Routes', () => {
                 time: timeString,
                 status: 'upcoming',
                 consultationFeeAtBooking: 150,
-                patientNameForVisit: 'ExactBooked'
+                patientNameForVisit: 'ExactBooked',
+                ...requiredAptFields()
             });
 
             const mockUser = JSON.stringify({ userId: 'pExact', userType: 'patient' });
