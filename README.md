@@ -44,6 +44,7 @@
 ## 📋 Table of Contents
 
 - [Introduction](#introduction)
+- [Deployed Website Link](#deployment)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
@@ -58,6 +59,14 @@
 ## Introduction
 
 IntelliConsult is a healthcare management platform that helps patients book appointments, consult with doctors, and manage their medical records. The system includes features for appointment scheduling, AI-powered symptom triage, video consultations, prescription management, and review systems for both patients and doctors.
+
+---
+
+---
+
+## Deployed Website Link
+
+Here is the website link where you can use Intelliconsult: [https://smart-healthcare-appointment-and-triage.onrender.com/](url)
 
 ---
 
